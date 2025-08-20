@@ -1,0 +1,176 @@
+#property copyright "Swing Point Visualizer EA"
+#property version   "1.0"
+#property strict
+//#property show_inputs
+
+input int SwingShift = 3; // Số nến kiểm tra swing
+
+//+------------------------------------------------------------------+
+//| Lớp SwingPoint để quản lý các điểm swing                         |
+//+------------------------------------------------------------------+
+class CSwingPoint {
+public:
+   datetime time;
+   double price;
+   bool isHigh;
+   ENUM_TIMEFRAMES timeframe;
+   
+   CSwingPoint(datetime t, double p, bool high, ENUM_TIMEFRAMES tf) :
+      time(t), price(p), isHigh(high), timeframe(tf) {}
+};
+
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+int OnInit() {
+   // Xóa các đối tượng vẽ cũ
+   ObjectsDeleteAll(0, -1, OBJ_ARROW);
+   ObjectsDeleteAll(0, -1, OBJ_TEXT);
+   
+   // Tìm và vẽ swing points
+   FindAndDrawSwingPoints(PERIOD_M5, clrRed, 242);
+   FindAndDrawSwingPoints(PERIOD_H1, clrBlue, 241);
+   
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Expert deinitialization function                                 |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason) {
+   ObjectsDeleteAll(0, -1, OBJ_ARROW);
+   ObjectsDeleteAll(0, -1, OBJ_TEXT);
+}
+
+//+------------------------------------------------------------------+
+//| Expert tick function                                             |
+//+------------------------------------------------------------------+
+void OnTick() {
+   // Chúng ta chỉ cần vẽ 1 lần khi khởi động
+   if(IsNewBar(PERIOD_M5)) {
+      FindAndDrawSwingPoints(PERIOD_M5, clrRed, 242);
+   }
+   
+   if(IsNewBar(PERIOD_H1)) {
+      FindAndDrawSwingPoints(PERIOD_H1, clrBlue, 241);
+   }
+   
+   
+   
+   
+}
+
+//+------------------------------------------------------------------+
+//| Hàm kiểm tra bar mới cho bất kỳ khung thời gian nào               |
+//+------------------------------------------------------------------+
+bool IsNewBar(ENUM_TIMEFRAMES timeframe)
+{
+    // Cấu trúc lưu trữ thời gian bar
+    struct TimeStorage
+    {
+        datetime lastBarTime;
+    };
+    
+    // Biến static lưu trữ theo timeframe
+    static TimeStorage timeStorage;
+    static ENUM_TIMEFRAMES lastTimeframe = PERIOD_CURRENT;
+    
+    // Kiểm tra timeframe mới
+    if(timeframe != lastTimeframe)
+    {
+        lastTimeframe = timeframe;
+        timeStorage.lastBarTime = 0; // Reset khi đổi timeframe
+    }
+    
+    // Lấy thời gian mở của bar hiện tại
+    datetime currentBarTime[1];
+    if(CopyTime(_Symbol, timeframe, 0, 1, currentBarTime) < 1)
+    {
+        Print("Error copying time data!");
+        return false;
+    }
+    
+    // Kiểm tra bar mới
+    if(timeStorage.lastBarTime != currentBarTime[0])
+    {
+        timeStorage.lastBarTime = currentBarTime[0];
+        return true;
+    }
+    
+    return false;
+}
+
+//+------------------------------------------------------------------+
+//| Hàm tìm và vẽ swing points                                       |
+//+------------------------------------------------------------------+
+void FindAndDrawSwingPoints(ENUM_TIMEFRAMES tf, color clr, int arrowCode) {
+   string symbol = Symbol();
+   int bars = iBars(symbol, tf);
+   if(bars < SwingShift*2) return;
+   
+   for(int i = SwingShift; i < bars - SwingShift; i++) {
+      if(IsSwingHigh(tf, i)) {
+         DrawSwingPoint(iHigh(symbol, tf, i), iTime(symbol, tf, i), clr, arrowCode, tf);
+      }
+      else if(IsSwingLow(tf, i)) {
+         DrawSwingPoint(iLow(symbol, tf, i), iTime(symbol, tf, i), clr, arrowCode, tf);
+      }
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Kiểm tra swing high                                              |
+//+------------------------------------------------------------------+
+bool IsSwingHigh(ENUM_TIMEFRAMES tf, int index) {
+   double high = iHigh(Symbol(), tf, index);
+   for(int i = 1; i <= SwingShift; i++) {
+      if(high <= iHigh(Symbol(), tf, index-i) || high <= iHigh(Symbol(), tf, index+i))
+         return false;
+   }
+   return true;
+}
+
+//+------------------------------------------------------------------+
+//| Kiểm tra swing low                                               |
+//+------------------------------------------------------------------+
+bool IsSwingLow(ENUM_TIMEFRAMES tf, int index) {
+   double low = iLow(Symbol(), tf, index);
+   for(int i = 1; i <= SwingShift; i++) {
+      if(low >= iLow(Symbol(), tf, index-i) || low >= iLow(Symbol(), tf, index+i))
+         return false;
+   }
+   return true;
+}
+
+//+------------------------------------------------------------------+
+//| Vẽ swing point lên biểu đồ                                       |
+//+------------------------------------------------------------------+
+void DrawSwingPoint(double price, datetime time, color clr, int arrowCode, ENUM_TIMEFRAMES tf) {
+   string name = "SWP_" + IntegerToString(time) + "_" + IntegerToString(tf);
+   
+   // Tạo mũi tên
+   if(!ObjectCreate(0, name, OBJ_ARROW, 0, time, price)) {
+      Print("Failed to create arrow! Error: ", GetLastError());
+      return;
+   }
+   
+   ObjectSetInteger(0, name, OBJPROP_ARROWCODE, arrowCode);
+   ObjectSetInteger(0, name, OBJPROP_COLOR, clr);
+   ObjectSetInteger(0, name, OBJPROP_WIDTH, 3);
+   ObjectSetInteger(0, name, OBJPROP_ANCHOR, ANCHOR_BOTTOM);
+   
+   // Thêm nhãn khung thời gian
+   string tfName = (tf == PERIOD_H1) ? "H1" : "M5";
+   string labelName = name + "_LBL";
+   
+   if(!ObjectCreate(0, labelName, OBJ_TEXT, 0, time, price)) {
+      Print("Failed to create label! Error: ", GetLastError());
+      return;
+   }
+   
+   ObjectSetString(0, labelName, OBJPROP_TEXT, tfName);
+   ObjectSetInteger(0, labelName, OBJPROP_COLOR, clr);
+   ObjectSetInteger(0, labelName, OBJPROP_ANCHOR, ANCHOR_UPPER);
+   ObjectSetDouble(0, labelName, OBJPROP_ANGLE, 90); // Xoay dọc
+   ObjectSetInteger(0, labelName, OBJPROP_FONTSIZE, 8);
+}
