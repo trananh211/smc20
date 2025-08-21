@@ -250,6 +250,5 @@ void ProcessLTF()
       else lowCount++;
    }
    
-   Print(StringFormat("LTF: %s Swing Highs: %d, Swing Lows: %d", 
-          EnumToString(LTF), highCount, lowCount));
+   Print(StringFormat("LTF: %s Swing Highs: %d, Swing Lows: %d", EnumToString(LTF), highCount, lowCount));
 }
