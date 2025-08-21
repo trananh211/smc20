@@ -8,6 +8,20 @@
 #property version   "1.00"
 #property strict
 
+
+//#region variable declaration
+input int _PointSpace = 1000; // space for draw with swing, line
+input int poi_limit = 30; // poi limit save to array
+int limit = 10; 
+// định nghĩa riêng cặp khung thời gian trade
+enum pairTF {m1_m15 = 1, m5_h1 = 5, m15_h4 = 15, h1_d1 = 60};
+input pairTF pairTimeFrameInput = m5_h1; // Cặp khung thời gian trade: low TimeFrame _ high TimeFrame
+int lowPairTF = pairTimeFrameInput;
+int highPairTF;
+ENUM_TIMEFRAMES lowTimeFrame, highTimeFrame;
+
+// End #region variale declaration
+
 //+------------------------------------------------------------------+
 //| PoiZone structure                                                |
 //+------------------------------------------------------------------+
@@ -763,10 +777,146 @@ bool IsPoiZoneMitigated(PoiZone &zone, double currentPrice, double tolerance = 0
 //+------------------------------------------------------------------+
 //| Example usage                                                    |
 //+------------------------------------------------------------------+
+struct marketStructs{
+   
+   MqlRates waveRates[],rates[];
+   
+   public: 
+   void test2(ENUM_TIMEFRAMES timeframe) {
+      
+      definedFunction(timeframe);
+      
+   }
+   
+   void test1(ENUM_TIMEFRAMES timeframe) {
+      Print("New "+EnumToString(timeframe)+" bar formed: ", TimeToString(TimeCurrent()));
+      
+   }
+   
+   private:
+   
+   void definedFunction(ENUM_TIMEFRAMES timeframe) {
+   
+//      ArraySetAsSeries(waveRates, true);
+//      ArraySetAsSeries(rates, true);
+//      
+//      int copied = CopyRates(_Symbol, timeframe, 0, 10, waveRates);
+//      ArrayPrint(waveRates);
+//      MqlRates bar1, bar2, bar3;
+//      // danh dau vi tri bat dau
+//      createObj(waveRates[ArraySize(waveRates) - 1].time, waveRates[ArraySize(waveRates) - 1].low, 238, -1, clrRed, "Start");
+//      for (int j = ArraySize(waveRates) - 3; j >=0; j--){
+//         
+//         Print("No:" + (string) j);
+//         Print(inInfoBar(bar1, bar2, bar3));
+//         //Print("First: "+getValueTrend());
+//         bar1 = waveRates[j];
+//         bar2 = waveRates[j+1];
+//         bar3 = waveRates[j+2];
+//         
+////         int resultStructure = drawStructureInternal(bar1, bar2, bar3, enabledComment);
+////         updatePointTopBot(bar1, bar2, bar3, enabledComment);
+////         
+////         // POI
+////         getZoneValid();
+////         drawZone(bar1);
+//         
+//         //Print("\n Final: "+getValueTrend());
+//         Print(" ------------------------------------------------------ End ---------------------------------------------------------\n");
+//      }
+//      // danh dau vi tri ket thuc
+//      createObj(waveRates[0].time, waveRates[0].low, 238, -1, clrRed, "Stop");
+   }
+};
+
+marketStructs highTFStruct;
+marketStructs lowTFStruct;
+
+marketStructs prewHighTFStruct;
+marketStructs prewLowTFStruct;
+//+------------------------------------------------------------------+
+//| End Market Struct                                                |
+//+------------------------------------------------------------------+
 
 // OnInit function
 int OnInit()
 {
+   //demoInit();
+   
+   defaultGlobal();
+//---
+   prewHighTFStruct.test2(highTimeFrame);
+   //prewLowTFStruct.test2(lowTimeFrame);
+//---
+   
+   return(INIT_SUCCEEDED);
+}
+
+// OnTick function
+void OnTick()
+{
+   //demoOntick();
+   // Kiểm tra nến mới cho H1
+    if(IsNewBar(highTimeFrame)) {
+        highTFStruct.test1(highTimeFrame);
+        // Thêm logic xử lý tại đây
+        
+    }
+    
+    // Kiểm tra nến mới cho M5
+    if(IsNewBar(lowTimeFrame)) {
+        
+        // Thêm logic xử lý tại đây
+        lowTFStruct.test1(lowTimeFrame);
+    }
+}
+
+// OnDeinit function
+void OnDeinit(const int reason)
+{
+   // Dọn dẹp tất cả dữ liệu
+   ENUM_TIMEFRAMES timeframes[];
+   int count = GlobalVars.GetTimeframes(timeframes);
+   
+   for(int i = 0; i < count; i++)
+   {
+      GlobalVars.RemoveTimeFrame(timeframes[i]);
+   }
+}
+
+// Dinh nghia va xac nhan bien toan cuc
+void defaultGlobal() {
+   // xac dinh cap low high time frame by minutes
+   switch(lowPairTF)
+     {
+      case  1:
+        highPairTF = 15;
+        lowTimeFrame = PERIOD_M1;
+        highTimeFrame = PERIOD_M15;
+        break;
+      case  15:
+        highPairTF = 240;
+        lowTimeFrame = PERIOD_M15;
+        highTimeFrame = PERIOD_H4;
+        break;
+      case  60:
+        highPairTF = 1440;
+        lowTimeFrame = PERIOD_H1;
+        highTimeFrame = PERIOD_D1;
+        break;
+      default:
+         highPairTF = 60;
+         lowTimeFrame = PERIOD_M5;
+         highTimeFrame = PERIOD_H1;
+        break;
+     }
+}
+
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+//| Example usage                                                    |
+//+------------------------------------------------------------------+ 
+void demoInit() {
    // Lấy dữ liệu cho khung H1
    TimeFrameData* h1Data = GlobalVars.GetData(PERIOD_H1);
    
@@ -808,13 +958,9 @@ int OnInit()
    PoiZone latestZone;
    if(GlobalVars.GetLatestZHighs(PERIOD_H1, latestZone))
       PrintPoiZone(latestZone, "Latest: ");
-   
-   return(INIT_SUCCEEDED);
 }
 
-// OnTick function
-void OnTick()
-{
+void demoOntick() {
    // Lấy giá hiện tại
    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
    
@@ -838,18 +984,138 @@ void OnTick()
       GlobalVars.CleanupOldData(PERIOD_H1, 24); // Giữ dữ liệu 24 giờ
       lastCleanup = TimeCurrent();
    }
+   
+   ArrayPrint(h1Data.Highs);
+   ArrayPrint(h1Data.zHighs);
 }
 
-// OnDeinit function
-void OnDeinit(const int reason)
-{
-   // Dọn dẹp tất cả dữ liệu
-   ENUM_TIMEFRAMES timeframes[];
-   int count = GlobalVars.GetTimeframes(timeframes);
-   
-   for(int i = 0; i < count; i++)
-   {
-      GlobalVars.RemoveTimeFrame(timeframes[i]);
+//+------------------------------------------------------------------+
+//| End Example usage                                                |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//| Hàm kiểm tra nến mới cho bất kỳ khung thời gian nào               |
+//+------------------------------------------------------------------+
+bool IsNewBar(ENUM_TIMEFRAMES timeframe) {
+    // Tạo key duy nhất từ symbol + timeframe
+    static string _prevKeys[];    // Lưu trữ các key đã kiểm tra
+    static datetime _prevTimes[]; // Lưu trữ thời gian mở nến trước đó
+    
+    string key = _Symbol + "|" + IntegerToString(timeframe);
+    
+    // Lấy thời gian mở nến hiện tại
+    datetime currentTime = iTime(_Symbol, timeframe, 0);
+    if(currentTime == 0) return false; // Kiểm tra dữ liệu hợp lệ
+    
+    // Tìm key trong mảng lưu trữ
+    int index = -1;
+    for(int i = 0; i < ArraySize(_prevKeys); i++) {
+        if(_prevKeys[i] == key) {
+            index = i;
+            break;
+        }
+    }
+    
+    // Xử lý khi gặp khung thời gian mới
+    if(index == -1) {
+        int newSize = ArraySize(_prevKeys) + 1;
+        ArrayResize(_prevKeys, newSize);
+        ArrayResize(_prevTimes, newSize);
+        
+        _prevKeys[newSize-1] = key;
+        _prevTimes[newSize-1] = currentTime;
+        return false; // Không trả true ở lần đầu tiên
+    }
+    
+    // Kiểm tra nến mới
+    if(_prevTimes[index] != currentTime) {
+        _prevTimes[index] = currentTime;
+        return true;
+    }
+    //ArrayPrint(_prevKeys);
+    //ArrayPrint(_prevTimes);
+    return false;
+}
+
+string inInfoBar(MqlRates& bar1, MqlRates& bar2, MqlRates& bar3) {
+   string text = " Bar1 high: "+ (string) bar1.high +" - low: "+ (string) bar1.low + " --- "+" Bar2 high: "+ (string) bar2.high +" - low: "+ (string) bar2.low+ " --- "+" Bar3 high: "+ (string) bar3.high +" - low: "+ (string) bar3.low;
+   return text;
+}
+
+//+------------------------------------------------------------------+
+void createObj(datetime time, double price, int arrowCode, int direction, color clr, string txt)
+  {
+   string objName ="";
+   StringConcatenate(objName, "Signal@", time, "at", DoubleToString(price, _Digits), "(", arrowCode, ")");
+
+   double ask=SymbolInfoDouble(Symbol(), SYMBOL_ASK);
+   double bid=SymbolInfoDouble(Symbol(), SYMBOL_BID);
+   double spread=ask-bid;
+
+   if(direction > 0){
+      price -= _PointSpace*spread * _Point;
+   } else if(direction < 0){
+      price += _PointSpace*spread * _Point;
+   }
+
+   if(ObjectCreate(0, objName, OBJ_ARROW, 0, time, price))
+     {
+      ObjectSetInteger(0, objName, OBJPROP_ARROWCODE, arrowCode);
+      ObjectSetInteger(0, objName, OBJPROP_COLOR, clr);
+      if( direction > 0)
+         ObjectSetInteger(0, objName, OBJPROP_ANCHOR, ANCHOR_TOP);
+      if(direction < 0)
+         ObjectSetInteger(0, objName, OBJPROP_ANCHOR, ANCHOR_BOTTOM);
+   }
+   string objNameDesc = objName + txt;
+   if (ObjectCreate(0, objNameDesc, OBJ_TEXT, 0, time, price)) {
+      ObjectSetString(0, objNameDesc, OBJPROP_TEXT, " "+txt);
+      ObjectSetInteger(0, objNameDesc, OBJPROP_COLOR, clr);
+      if( direction > 0)
+         ObjectSetInteger(0, objNameDesc, OBJPROP_ANCHOR, ANCHOR_TOP);
+      if(direction < 0)
+         ObjectSetInteger(0, objNameDesc, OBJPROP_ANCHOR, ANCHOR_BOTTOM);
    }
 }
+
+//+------------------------------------------------------------------+
+//| Function to delete objects created by createObj                   |
+//+------------------------------------------------------------------+
+void deleteObj(datetime time, double price, int arrowCode, string txt) {
+   // Create the object name using the same format as createObj
+   string objName = "";
+   StringConcatenate(objName, "Signal@", time, "at", DoubleToString(price, _Digits), "(", arrowCode, ")");
+   
+   // Delete the arrow object
+   if(ObjectFind(0, objName) != -1) // Check if the object exists
+     {
+      ObjectDelete(0, objName);
+     }
+   
+   // Create the description object name
+   string objNameDesc = objName + txt;
+   
+   // Delete the text object
+   if(ObjectFind(0, objNameDesc) != -1) // Check if the object exists
+     {
+      ObjectDelete(0, objNameDesc);
+     }
+}
+
+//+------------------------------------------------------------------+
+//| Function to delete line created by drawline                      |
+//+------------------------------------------------------------------+
+void deleteLine(datetime time, double price, string name) {
+   // Create the object name using the same format as drawline
+   string objName = name + TimeToString(time);
+   //StringConcatenate(objName, "Signal@", time, "at", DoubleToString(price, _Digits), "(", arrowCode, ")");
+   
+   // Delete the arrow object
+   if(ObjectFind(0, objName) != -1) // Check if the object exists
+     {
+      ObjectDelete(0, objName);
+     }
+}
+
 //+------------------------------------------------------------------+
