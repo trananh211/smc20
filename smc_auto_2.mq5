@@ -93,6 +93,7 @@ public:
    datetime LowsTime[];
    long volHighs[];
    long volLows[];
+   
    int LastSwingMeter;
    int gTrend;
 
@@ -103,6 +104,7 @@ public:
    datetime intSLowTime[];
    long volIntSHighs[];
    long volIntSLows[];
+   
    int LastSwingInternal;
    int iTrend;
 
@@ -113,6 +115,7 @@ public:
    datetime arrBotTime[];
    long volArrTop[];
    long volArrBot[];
+
    int mTrend;
    int sTrend;
    datetime arrPbHTime[];
@@ -143,6 +146,7 @@ public:
    datetime lastTimeL;
    double L; long vol_L;
    double H; long vol_H;
+
    double idmLow;
    double idmHigh;
    double L_idmLow;
@@ -183,7 +187,7 @@ public:
    PoiZone zPoiHigh[];
    PoiZone zPoiDecisionalLow[];
    PoiZone zPoiDecisionalHigh[];
-   
+
    double arrDecisionalHigh[];
    double arrDecisionalLow[];
    datetime arrDecisionalHighTime[];
@@ -251,14 +255,15 @@ public:
       ArrayInitialize(LowsTime, 0);
       ArrayInitialize(volHighs, 0.0);
       ArrayInitialize(volLows, 0.0);
-      
+
       ArrayInitialize(intSHighs, 0.0);
       ArrayInitialize(intSLows, 0.0);
       ArrayInitialize(intSHighTime, 0);
       ArrayInitialize(intSLowTime, 0);
+      
       ArrayInitialize(volIntSHighs, 0.0);
       ArrayInitialize(volIntSLows, 0.0);
-      
+
       ArrayInitialize(arrTop, 0.0);
       ArrayInitialize(arrBot, 0.0);
       ArrayInitialize(arrTopTime, 0);
@@ -270,20 +275,23 @@ public:
       ArrayInitialize(arrPbHigh, 0.0);
       ArrayInitialize(arrPbLTime, 0);
       ArrayInitialize(arrPbLow, 0.0);
+
       ArrayInitialize(volArrPbHigh, 0);
       ArrayInitialize(volArrPbLow, 0);
-      
+
       ArrayInitialize(arrChoHigh, 0.0);
       ArrayInitialize(arrChoLow, 0.0);
       ArrayInitialize(arrChoHighTime, 0);
       ArrayInitialize(arrChoLowTime, 0);
+      
       ArrayInitialize(volArrChoHigh, 0);
       ArrayInitialize(volArrChoLow, 0);
-      
+
       ArrayInitialize(arrBoHigh, 0.0);
       ArrayInitialize(arrBoLow, 0.0);
       ArrayInitialize(arrBoHighTime, 0);
       ArrayInitialize(arrBoLowTime, 0);
+
       ArrayInitialize(volArrBoHigh, 0);
       ArrayInitialize(volArrBoLow, 0);
       
@@ -291,6 +299,7 @@ public:
       ArrayInitialize(arrDecisionalLow, 0.0);
       ArrayInitialize(arrDecisionalHighTime, 0);
       ArrayInitialize(arrDecisionalLowTime, 0);
+
       ArrayInitialize(volArrDecisionalHigh, 0);
       ArrayInitialize(volArrDecisionalLow, 0);
       
@@ -299,7 +308,7 @@ public:
    }
    
    // Helper Methods for Array Management
-   
+
    // Phương thức thêm phần tử vào mảng long
    int AddToLongArray(long &array[], long value, int ilimit = 10)
    {
@@ -315,7 +324,7 @@ public:
       
       return ArraySize(array);
    }
-   
+
    // Phương thức thêm phần tử vào mảng double
    int AddToDoubleArray(double &array[], double value, int ilimit = 10)
    {
@@ -376,7 +385,7 @@ public:
       ArrayResize(array, size - 1);
       return true;
    }
-   
+
    // Phương thức xóa phần tử từ mảng double theo index
    bool RemoveFromDoubleArray(double &array[], int index)
    {
@@ -1018,6 +1027,7 @@ struct marketStructs{
       tfData.AddToDoubleArray(tfData.Lows, firstBarLow);
       tfData.AddToDateTimeArray(tfData.LowsTime, firstBarTime);
       tfData.AddToLongArray(tfData.volLows, firstBarVol);
+
       
       // internal structure
       tfData.AddToDoubleArray(tfData.intSHighs, firstBarHigh);
@@ -1027,6 +1037,7 @@ struct marketStructs{
       tfData.AddToDoubleArray(tfData.intSLows, firstBarLow);
       tfData.AddToDateTimeArray(tfData.intSLowTime, firstBarTime);
       tfData.AddToLongArray(tfData.volIntSLows, firstBarVol);
+
       
       // pullback structure
       tfData.AddToDoubleArray(tfData.arrTop, firstBarHigh);
@@ -1040,6 +1051,7 @@ struct marketStructs{
       // array pullback
       tfData.AddToDoubleArray(tfData.arrPbHigh, firstBarHigh);
       tfData.AddToDateTimeArray(tfData.arrPbHTime, firstBarTime);
+      
       tfData.AddToLongArray(tfData.volArrPbHigh, firstBarVol);
       
       tfData.AddToDoubleArray(tfData.arrPbLow, firstBarLow);
@@ -1154,9 +1166,10 @@ struct marketStructs{
       for (int j = 1; j <= ArraySize(waveRates) - 2; j++){
          Print("TF: "+ (string)tfData.isTimeframe+" No:" + (string) j);
          
-         bar1 = waveRates[j-1];
+         bar1 = waveRates[j+1];
          bar2 = waveRates[j];
-         bar3 = waveRates[j+1];
+         bar3 = waveRates[j-1];
+         
          Print(inInfoBar(bar1, bar2, bar3));
          Print("First: "+getValueTrend(tfData));
          
@@ -1273,6 +1286,7 @@ struct marketStructs{
       
       string textTop = "";
       string textBot = "";
+
       long maxVolume = 0;
       
    //    swing high
@@ -1281,6 +1295,7 @@ struct marketStructs{
          // set Zone
          PoiZone zone2 = CreatePoiZone(bar2.high, bar2.low, bar2.open, bar2.close, bar2.time);
          maxVolume = MathMax(MathMax(bar1.tick_volume, bar2.tick_volume), bar3.tick_volume);
+
          // gann finding high
          if (tfData.LastSwingMeter == 1 || tfData.LastSwingMeter == 0) {
             textGannHigh += "Gann: LastSwingMeter == 1 or 0 => New Highs= "+(string) bar2.high +"; LastSwingMeter = -1" ;
@@ -1288,7 +1303,7 @@ struct marketStructs{
             tfData.AddToDoubleArray(tfData.Highs, bar2.high, limit);
             tfData.AddToDateTimeArray(tfData.HighsTime, bar2.time, limit);
             tfData.AddToLongArray(tfData.volHighs, maxVolume, limit);
-            
+
             drawPointStructure(tfData, 1, bar2.high, bar2.time, GANN_STRUCTURE, false, enabledDraw);
             tfData.LastSwingMeter = -1;
             // cap nhat Zone. Khong xoa (updatePointZone)
@@ -1306,7 +1321,7 @@ struct marketStructs{
                tfData.UpdateDoubleArray(tfData.Highs, 0, bar2.high);
                tfData.UpdateDateTimeArray(tfData.HighsTime, 0, bar2.time);
                tfData.UpdateLongArray(tfData.volHighs, 0, maxVolume);
-               
+
                drawPointStructure(tfData, 1, bar2.high, bar2.time, GANN_STRUCTURE, true, enabledDraw);
                tfData.LastSwingMeter = -1;
                // cap nhat Zone. Xoa 0 (updatePointZone)
@@ -1332,7 +1347,7 @@ struct marketStructs{
             tfData.AddToDoubleArray(tfData.intSHighs, bar2.high);
             tfData.AddToDateTimeArray(tfData.intSHighTime, bar2.time);
             tfData.AddToLongArray(tfData.volIntSHighs, maxVolume);
-            
+
             drawPointStructure(tfData, 1, bar2.high, bar2.time, INTERNAL_STRUCTURE, false, enabledDraw);
             
             tfData.iTrend = 1;
@@ -1604,6 +1619,7 @@ struct marketStructs{
             tfData.idmLow = tfData.Highs[0];
             tfData.idmLowTime = tfData.HighsTime[0];
             //tfData.vol_idmLow = tfData.volHighs[0];
+            
             tfData.sTrend = -1; tfData.mTrend = -1; tfData.LastSwingMajor = 1;
             
          } else if (barHigh > tfData.arrTop[0]) { 
@@ -1726,7 +1742,7 @@ struct marketStructs{
             text += "\n => Cap nhat findLow = 1; L = bar1.low = "+ (string) bar1.low;
             
             // active find Low
-            tfData.findLow = 1; 
+            tfData.findLow = 1;
             tfData.L = bar1.low; tfData.LTime = bar1.time; tfData.vol_L = bar1.tick_volume;
             tfData.L_bar = bar1; 
             tfData.findHigh = 0; tfData.H = 0; tfData.vol_H = 0;
@@ -1744,7 +1760,7 @@ struct marketStructs{
             // Add new point
             tfData.AddToDoubleArray( tfData.arrChoLow, tfData.arrPbLow[0]);
             tfData.AddToDateTimeArray( tfData.arrChoLowTime, tfData.arrPbLTime[0]);
-            tfData.AddToLongArray( tfData.volArrChoLow, tfData.volArrPbLow[0]);          
+            tfData.AddToLongArray( tfData.volArrChoLow, tfData.volArrPbLow[0]);
          
             text += "\n => Cap nhat => POI Bearish : arrPbHigh[0] "+ (string) tfData.arrPbHigh[0];
             
@@ -2465,9 +2481,9 @@ bool IsNewBar(ENUM_TIMEFRAMES timeframe) {
 }
 
 string inInfoBar(MqlRates& bar1, MqlRates& bar2, MqlRates& bar3) {
-   string text = " Bar1 high: "+ (string) bar1.high +" - low: "+ (string) bar1.low + " - vol: "+ (string) bar1.tick_volume +
+   string text = "Bar1 (R) high: "+ (string) bar1.high +" - low: "+ (string) bar1.low + " - vol: "+ (string) bar1.tick_volume +
                   " --- "+" Bar2 high: "+ (string) bar2.high +" - low: "+ (string) bar2.low+ " - vol: "+ (string) bar2.tick_volume +
-                  " --- "+" Bar3 high: "+ (string) bar3.high +" - low: "+ (string) bar3.low+" - vol: "+ (string) bar3.tick_volume;
+                  " --- "+" Bar3 (L) high: "+ (string) bar3.high +" - low: "+ (string) bar3.low+" - vol: "+ (string) bar3.tick_volume;
    return text;
 }
 
@@ -2695,7 +2711,7 @@ string getValueTrend(TimeFrameData& tfData) {
 void showComment(TimeFrameData& tfData) {
    Print("Timeframe: "+ (string) tfData.isTimeframe + "\n");
    if (tfData.sTrend == 1 || tfData.sTrend == -1) {
-      
+   
       //Print("Lows: "); ArrayPrint(tfData.Lows); 
       //Print("Vol Lows: "); ArrayPrint(tfData.volLows); 
       
