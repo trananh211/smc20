@@ -312,7 +312,7 @@ public:
    // Phương thức thêm phần tử vào mảng long
    int AddToLongArray(long &array[], long value, int ilimit = 10)
    {
-      if ( ArraySize(array) > 0 && array[0] == value) return 0;
+      //if ( ArraySize(array) > 0 && array[0] == value) return 0;
       // Store value in array[]
       // shift existing elements in array[] to make space for the new value
       ArrayResize(array, MathMin(ArraySize(array) + 1, ilimit));
@@ -328,7 +328,7 @@ public:
    // Phương thức thêm phần tử vào mảng double
    int AddToDoubleArray(double &array[], double value, int ilimit = 10)
    {
-      if ( ArraySize(array) > 0 && array[0] == value) return 0;
+      //if ( ArraySize(array) > 0 && array[0] == value) return 0;
       // Store value in array[]
       // shift existing elements in array[] to make space for the new value
       ArrayResize(array, MathMin(ArraySize(array) + 1, ilimit));
@@ -344,7 +344,7 @@ public:
    // Phương thức thêm phần tử vào mảng datetime
    int AddToDateTimeArray(datetime &array[], datetime value, int ilimit = 10)
    {
-      if ( ArraySize(array) > 0 && array[0] == value) return 0;
+      //if ( ArraySize(array) > 0 && array[0] == value) return 0;
       // Store value in array[]
       // shift existing elements in array[] to make space for the new value
       ArrayResize(array, MathMin(ArraySize(array) + 1, ilimit));
