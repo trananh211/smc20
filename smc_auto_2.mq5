@@ -1792,7 +1792,7 @@ struct marketStructs{
             tfData.AddToLongArray( tfData.volArrChoHigh, tfData.volArrPbHigh[0]);
             
             // update Point HL
-            if (tfData.L != 0 && tfData.L != tfData.arrPbLow[0] && tfData.LTime != tfData.arrPbLTime[0]) {
+            if (tfData.L != 0 && (tfData.L != tfData.arrPbLow[0] || (tfData.L == tfData.arrPbLow[0] && tfData.LTime != tfData.arrPbLTime[0]))) {
                text += "\n----> IF: L != 0 && L != arrPbLow[0]("+(string)tfData.arrPbLow[0]+") => Update: New arrPbLow[0] = "+(string)tfData.L;
                // Add new point
                tfData.AddToDoubleArray( tfData.arrPbLow, tfData.L);
@@ -1828,7 +1828,8 @@ struct marketStructs{
             tfData.AddToDateTimeArray( tfData.arrChoHighTime, tfData.arrPbHTime[0]);
             tfData.AddToLongArray( tfData.volArrChoHigh, tfData.volArrPbHigh[0]);
             
-            if (tfData.L != 0 && tfData.L != tfData.arrPbLow[0] && tfData.LTime != tfData.arrPbLTime[0]) {
+            // update Point HL
+            if (tfData.L != 0 && (tfData.L != tfData.arrPbLow[0] || (tfData.L == tfData.arrPbLow[0] && tfData.LTime != tfData.arrPbLTime[0]))) {
                // Add new point
                tfData.AddToDoubleArray( tfData.arrPbLow, tfData.L);
                tfData.AddToDateTimeArray( tfData.arrPbLTime, tfData.LTime);
@@ -1995,10 +1996,9 @@ struct marketStructs{
             tfData.AddToDoubleArray( tfData.arrChoLow, tfData.arrPbLow[0]);
             tfData.AddToDateTimeArray( tfData.arrChoLowTime, tfData.arrPbLTime[0]);
             tfData.AddToLongArray( tfData.volArrChoLow, tfData.volArrPbLow[0]);
-            
                         
             // update Point LH         
-            if (tfData.H != 0 && tfData.H != tfData.arrPbHigh[0] && tfData.HTime != tfData.arrPbHTime[0]) {
+            if (tfData.H != 0 && (tfData.H != tfData.arrPbHigh[0] || (tfData.H == tfData.arrPbHigh[0] && tfData.HTime != tfData.arrPbHTime[0]))) {
                text += "\n----> IF: H != 0 && H != arrPbHigh[0]("+(string)tfData.arrPbHigh[0]+") => Update: New arrPbHigh[0] = "+(string)tfData.H;
                // Add new point
                tfData.AddToDoubleArray( tfData.arrPbHigh, tfData.H);
@@ -2033,8 +2033,8 @@ struct marketStructs{
             tfData.AddToDateTimeArray( tfData.arrChoLowTime, tfData.arrPbLTime[0]);
             tfData.AddToLongArray( tfData.volArrChoLow, tfData.volArrPbLow[0]);
             
-            if (tfData.H != 0 && tfData.H != tfData.arrPbHigh[0] && tfData.HTime != tfData.arrPbHTime[0]) {
-               
+            // update Point LH         
+            if (tfData.H != 0 && (tfData.H != tfData.arrPbHigh[0] || (tfData.H == tfData.arrPbHigh[0] && tfData.HTime != tfData.arrPbHTime[0]))) {
                // Add new point
                tfData.AddToDoubleArray( tfData.arrPbHigh, tfData.H);
                tfData.AddToDateTimeArray( tfData.arrPbHTime, tfData.HTime);
