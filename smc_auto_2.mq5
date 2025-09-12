@@ -312,7 +312,7 @@ public:
    // Phương thức thêm phần tử vào mảng long
    int AddToLongArray(long &array[], long value, int ilimit = 10)
    {
-      if ( ArraySize(array) > 0 && array[0] == value) return 0;
+      //if ( ArraySize(array) > 0 && array[0] == value) return 0;
       // Store value in array[]
       // shift existing elements in array[] to make space for the new value
       ArrayResize(array, MathMin(ArraySize(array) + 1, ilimit));
@@ -328,7 +328,7 @@ public:
    // Phương thức thêm phần tử vào mảng double
    int AddToDoubleArray(double &array[], double value, int ilimit = 10)
    {
-      if ( ArraySize(array) > 0 && array[0] == value) return 0;
+      //if ( ArraySize(array) > 0 && array[0] == value) return 0;
       // Store value in array[]
       // shift existing elements in array[] to make space for the new value
       ArrayResize(array, MathMin(ArraySize(array) + 1, ilimit));
@@ -344,7 +344,7 @@ public:
    // Phương thức thêm phần tử vào mảng datetime
    int AddToDateTimeArray(datetime &array[], datetime value, int ilimit = 10)
    {
-      if ( ArraySize(array) > 0 && array[0] == value) return 0;
+      //if ( ArraySize(array) > 0 && array[0] == value) return 0;
       // Store value in array[]
       // shift existing elements in array[] to make space for the new value
       ArrayResize(array, MathMin(ArraySize(array) + 1, ilimit));
@@ -1202,7 +1202,7 @@ struct marketStructs{
       
       text += "--------------Real Gann Wave----------------";
       text += "\n "+inInfoBar(bar1, bar2, bar3);
-      text += "\n First: "+getValueTrend(tfData);
+      text += "\nFirst: "+getValueTrend(tfData);
       Print(text);
       int resultStructure = drawStructureInternal(tfData, bar1, bar2, bar3, enabledComment);
       updatePointTopBot(tfData, bar1, bar2, bar3, enabledComment);
@@ -1298,7 +1298,7 @@ struct marketStructs{
 
          // gann finding high
          if (tfData.LastSwingMeter == 1 || tfData.LastSwingMeter == 0) {
-            textGannHigh += "Gann: LastSwingMeter == 1 or 0 => New Highs= "+(string) bar2.high +"; LastSwingMeter = -1" ;
+            textGannHigh += "; Gann: LastSwingMeter == 1 or 0 => New Highs= "+(string) bar2.high +"; LastSwingMeter = -1" ;
             // Add high moi (updatePointStructure), khong xoa Highs 0
             tfData.AddToDoubleArray(tfData.Highs, bar2.high, limit);
             tfData.AddToDateTimeArray(tfData.HighsTime, bar2.time, limit);
@@ -1314,7 +1314,7 @@ struct marketStructs{
          if (tfData.LastSwingMeter == -1) {
             //    xoa high cu. viet high moi
             if (bar2.high > tfData.highEst) {
-               textGannHigh += "Gann: LastSwingMeter == -1 => Delete Highs[0] = "+(string)tfData.Highs[0]+" ,New Highs= "+(string) bar2.high +"; LastSwingMeter = -1" ;
+               textGannHigh += "; Gann: LastSwingMeter == -1 => Delete Highs[0] = "+(string)tfData.Highs[0]+" ,New Highs= "+(string) bar2.high +"; LastSwingMeter = -1" ;
                // xoa high cu
                if (ArraySize(tfData.Highs) > 1) deleteObj(tfData.HighsTime[0], tfData.Highs[0], iWingding_gann_high, "");
                //       cap nhat high moi
@@ -1332,6 +1332,7 @@ struct marketStructs{
          if (isComment) {
             Print(textGannHigh);
             ArrayPrint(tfData.Highs);
+            ArrayPrint(tfData.volHighs);
          }
          
          // Internal Structure
@@ -1341,8 +1342,8 @@ struct marketStructs{
          
          // DONE 1
          // HH
-         if ( (tfData.iTrend == 0 || (tfData.iTrend == 1 && tfData.LastSwingInternal == 1)) && bar2.high > tfData.intSHighs[0]){ // BOS
-            textInternalHigh += "\n"+"## High 1 BOS --> Update: "+ "iTrend: 1, LastSwingInternal: -1 , New intSHighs[0]: "+(string) bar2.high;
+         if ( (tfData.iTrend == 0 || (tfData.iTrend == 1 && tfData.LastSwingInternal == 1)) && bar2.high > tfData.intSHighs[0]){ // iBOS
+            textInternalHigh += "\n"+"## High 1 iBOS --> Update: "+ "iTrend: 1, LastSwingInternal: -1 , New intSHighs[0]: "+(string) bar2.high;
             // Add new intSHigh.
             tfData.AddToDoubleArray(tfData.intSHighs, bar2.high);
             tfData.AddToDateTimeArray(tfData.intSHighTime, bar2.time);
@@ -1381,8 +1382,8 @@ struct marketStructs{
          }
          
          // DONE 3
-         if (tfData.iTrend == -1 && tfData.LastSwingInternal == 1 && bar2.high > tfData.intSHighs[0]) {  // CHoCH
-            textInternalHigh += "\n"+"## High 3 CHoCH --> Update: "+ "iTrend: 1, LastSwingInternal: -1, New intSHighs[0]: "+(string) bar2.high;
+         if (tfData.iTrend == -1 && tfData.LastSwingInternal == 1 && bar2.high > tfData.intSHighs[0]) {  // iCHoCH
+            textInternalHigh += "\n"+"## High 3 iCHoCH --> Update: "+ "iTrend: 1, LastSwingInternal: -1, New intSHighs[0]: "+(string) bar2.high;
             // add new intSHighs
             tfData.AddToDoubleArray(tfData.intSHighs, bar2.high);
             tfData.AddToDateTimeArray(tfData.intSHighTime, bar2.time);
@@ -1417,8 +1418,8 @@ struct marketStructs{
          }
          
          // DONE 5
-         if (tfData.iTrend == -1 && tfData.LastSwingInternal == -1 && bar2.high > tfData.intSHighs[0] ) {    // CHoCH
-            textInternalHigh += "\n"+"## High 5 CHoCH --> Update: LastSwingInternal: -1, Update intSHighs[0]: "+(string) bar2.high+", Xoa intSHighs[0] old: "+(string) tfData.intSHighs[0];
+         if (tfData.iTrend == -1 && tfData.LastSwingInternal == -1 && bar2.high > tfData.intSHighs[0] ) {    // iCHoCH
+            textInternalHigh += "\n"+"## High 5 iCHoCH --> Update: LastSwingInternal: -1, Update intSHighs[0]: "+(string) bar2.high+", Xoa intSHighs[0] old: "+(string) tfData.intSHighs[0];
             // Delete prev label
             if (ArraySize(tfData.intSHighs) > 1) deleteObj(tfData.intSHighTime[0], tfData.intSHighs[0], iWingding_internal_high, "");
             // Update new intSHigh.
@@ -1439,6 +1440,7 @@ struct marketStructs{
          if( isComment) {
             Print(textInternalHigh);
             ArrayPrint(tfData.intSHighs);
+            ArrayPrint(tfData.volIntSHighs);
          }
          
       }
@@ -1450,7 +1452,7 @@ struct marketStructs{
          maxVolume = MathMax(MathMax(bar1.tick_volume, bar2.tick_volume), bar3.tick_volume);
          // gann finding low
          if (tfData.LastSwingMeter == -1 || tfData.LastSwingMeter == 0) {
-            textGannHigh += "Gann: LastSwingMeter == -1 or 0 => New Lows[0] = "+(string) bar2.low +"; LastSwingMeter = 1" ;
+            textGannHigh += "; Gann: LastSwingMeter == -1 or 0 => New Lows[0] = "+(string) bar2.low +"; LastSwingMeter = 1" ;
             // cap nhat low moi, khong xoa Lows 0
             tfData.AddToDoubleArray(tfData.Lows, bar2.low);
             tfData.AddToDateTimeArray(tfData.LowsTime, bar2.time);
@@ -1465,7 +1467,7 @@ struct marketStructs{
          if (tfData.LastSwingMeter == 1) {
             // xoa low cu. viet high moi
             if (bar2.low < tfData.lowEst) {
-               textGannHigh += "Gann: LastSwingMeter == 1 => Delete Lows[0] = "+(string)tfData.Lows[0]+" ,New Lows= "+(string) bar2.low +"; LastSwingMeter = 1" ;
+               textGannHigh += "; Gann: LastSwingMeter == 1 => Delete Lows[0] = "+(string)tfData.Lows[0]+" ,New Lows= "+(string) bar2.low +"; LastSwingMeter = 1" ;
                // xoa low cu
                if (ArraySize(tfData.Lows) > 1) deleteObj(tfData.LowsTime[0], tfData.Lows[0], iWingding_gann_low, "");
                // cap nhat low moi.
@@ -1482,6 +1484,7 @@ struct marketStructs{
          if (isComment) {
             Print(textGannLow);
             ArrayPrint(tfData.Lows);
+            ArrayPrint(tfData.volLows);
          }
          
          // Internal Structure 
@@ -1490,8 +1493,8 @@ struct marketStructs{
          // finding Low
          // DONE 1
          // LL
-         if ((tfData.iTrend == 0 || tfData.iTrend == -1) && tfData.LastSwingInternal == -1 && bar2.low < tfData.intSLows[0]){ // BOS
-            textInternalLow += "\n"+("## Low 1 BOS --> Update: "+ "iTrend: -1, LastSwingInternal: 1, New intSLows[0]: "+(string) bar2.low);
+         if ((tfData.iTrend == 0 || tfData.iTrend == -1) && tfData.LastSwingInternal == -1 && bar2.low < tfData.intSLows[0]){ // iBOS
+            textInternalLow += "\n"+("## Low 1 iBOS --> Update: "+ "iTrend: -1, LastSwingInternal: 1, New intSLows[0]: "+(string) bar2.low);
             // Add new intSLows
             tfData.AddToDoubleArray(tfData.intSLows, bar2.low);
             tfData.AddToDateTimeArray(tfData.intSLowTime, bar2.time);
@@ -1529,8 +1532,8 @@ struct marketStructs{
          }
          
          // DONE 3
-         if (tfData.iTrend == 1 && tfData.LastSwingInternal == -1 && bar2.low < tfData.intSLows[0]) { // CHoCH
-            textInternalLow += "\n"+("## Low 3 CHoCH --> Update: "+ "iTrend: -1, LastSwingInternal: 1, Update intSLows[0]: "+(string) bar2.low);
+         if (tfData.iTrend == 1 && tfData.LastSwingInternal == -1 && bar2.low < tfData.intSLows[0]) { // iCHoCH
+            textInternalLow += "\n"+("## Low 3 iCHoCH --> Update: "+ "iTrend: -1, LastSwingInternal: 1, Update intSLows[0]: "+(string) bar2.low);
             
             // Add new intSLows
             tfData.AddToDoubleArray(tfData.intSLows, bar2.low);
@@ -1565,8 +1568,8 @@ struct marketStructs{
          }
          
          // DONE 5
-         if (tfData.iTrend == 1 && tfData.LastSwingInternal == 1 && bar2.low < tfData.intSLows[0] ) {  // CHoCH
-            textInternalLow += "\n"+("## Low 5 CHoCH --> Update:  LastSwingInternal: 1, Update intSLows[0]: "+(string) bar2.low+", Xoa intSLows[0] old: "+(string) tfData.intSLows[0]);
+         if (tfData.iTrend == 1 && tfData.LastSwingInternal == 1 && bar2.low < tfData.intSLows[0] ) {  // iCHoCH
+            textInternalLow += "\n"+("## Low 5 iCHoCH --> Update:  LastSwingInternal: 1, Update intSLows[0]: "+(string) bar2.low+", Xoa intSLows[0] old: "+(string) tfData.intSLows[0]);
             // Delete Label
             if (ArraySize(tfData.intSLows) > 1) deleteObj(tfData.intSLowTime[0], tfData.intSLows[0], iWingding_internal_low, "");
             // Update new intSLows
@@ -1587,6 +1590,7 @@ struct marketStructs{
          if(isComment) {
             Print(textInternalLow);
             ArrayPrint(tfData.intSLows);
+            ArrayPrint(tfData.volIntSLows);
          }
       }
       return resultStructure;
@@ -1596,7 +1600,8 @@ struct marketStructs{
    //--- Ham cap nhat cau truc thi truong
    //---
    void updatePointTopBot(TimeFrameData& tfData, MqlRates& bar1, MqlRates& bar2, MqlRates& bar3, bool isComment = false){
-      string text = "----- updatePointTopBot -----\n";
+      string textall = "----- updatePointTopBot -----\n";
+      string text = "";
       //text +=  "First: " + getValueTrend(tfData);
       //text += "\n"+inInfoBar(bar1, bar2, bar3);
       PoiZone zone2 = CreatePoiZone(bar2.high, bar2.low, bar2.open, bar2.close, bar2.time);
@@ -1636,8 +1641,9 @@ struct marketStructs{
       // End Lan dau tien
       
       if (bar3.high <= bar2.high && bar2.high >= bar1.high) { // tim thay dinh high
-         text += "\n 0.2. Find Swing High";
+         
          if (tfData.findHigh == 1 && bar2.high > tfData.H) {
+            text += "\n 0.2. Find Swing High";
             text += " => findhigh == 1 , H new > H old "+(string) bar2.high+" > "+(string) tfData.H+". Update new High = "+(string) bar2.high;
             
             tfData.H = bar2.high;
@@ -1647,8 +1653,9 @@ struct marketStructs{
          }
       }
       if (bar3.low >= bar2.low && bar2.low <= bar1.low) { // tim thay swing low 
-         text += "\n 0.-2. Find Swing Low";
+         
          if (tfData.findLow == 1 && bar2.low < tfData.L) {
+            text += "\n 0.-2. Find Swing Low";
             text += " => findlow == 1 , L new < L old "+(string) bar2.low+" < "+(string) tfData.L+". Update new Low = "+(string) bar2.low;
             
             tfData.L = bar2.low;
@@ -1660,11 +1667,11 @@ struct marketStructs{
       
       if(tfData.sTrend == 1 && tfData.mTrend == 1) {
          // continue BOS 
-         if (tfData.LastSwingMajor == -1 && bar1.high > tfData.arrTop[0] && tfData.arrTop[0] != tfData.arrBoHigh[0]) {
+         if (tfData.LastSwingMajor == -1 && bar1.high > tfData.arrTop[0] && tfData.arrTop[0] != tfData.arrBoHigh[0]) { // Done
             text += "\n 1.1. continue BOS, sTrend == 1 && mTrend == 1 && LastSwingMajor == -1 && bar1.high > arrTop[0] : "
             +(string)  bar1.high +" > "+(string) tfData.arrTop[0];
             text += "\n => Cap nhat: findLow = 0, idmHigh = Lows[0] = "+(string) tfData.Lows[0]+" ; sTrend == 1; mTrend == 1; LastSwingMajor == 1;";
-            
+            text += "\n => New arrBoHigh = arrTop[0] = " + (string)tfData.arrTop[0] + "; New arrBot = intSLows[0] = " + (string)tfData.intSLows[0];
             // Add new point swing
             tfData.AddToDoubleArray(tfData.arrBoHigh, tfData.arrTop[0]);
             tfData.AddToDateTimeArray(tfData.arrBoHighTime, tfData.arrTopTime[0]);
@@ -1785,7 +1792,7 @@ struct marketStructs{
             tfData.AddToLongArray( tfData.volArrChoHigh, tfData.volArrPbHigh[0]);
             
             // update Point HL
-            if (tfData.L != 0 && tfData.L != tfData.arrPbLow[0]) {
+            if (tfData.L != 0 && (tfData.L != tfData.arrPbLow[0] || (tfData.L == tfData.arrPbLow[0] && tfData.LTime != tfData.arrPbLTime[0]))) {
                text += "\n----> IF: L != 0 && L != arrPbLow[0]("+(string)tfData.arrPbLow[0]+") => Update: New arrPbLow[0] = "+(string)tfData.L;
                // Add new point
                tfData.AddToDoubleArray( tfData.arrPbLow, tfData.L);
@@ -1821,7 +1828,8 @@ struct marketStructs{
             tfData.AddToDateTimeArray( tfData.arrChoHighTime, tfData.arrPbHTime[0]);
             tfData.AddToLongArray( tfData.volArrChoHigh, tfData.volArrPbHigh[0]);
             
-            if (tfData.L != 0 && tfData.L != tfData.arrPbLow[0]) {
+            // update Point HL
+            if (tfData.L != 0 && (tfData.L != tfData.arrPbLow[0] || (tfData.L == tfData.arrPbLow[0] && tfData.LTime != tfData.arrPbLTime[0]))) {
                // Add new point
                tfData.AddToDoubleArray( tfData.arrPbLow, tfData.L);
                tfData.AddToDateTimeArray( tfData.arrPbLTime, tfData.LTime);
@@ -1864,10 +1872,10 @@ struct marketStructs{
       
       if(tfData.sTrend == -1 && tfData.mTrend == -1) {
          // continue BOS 
-         if (tfData.LastSwingMajor == 1 && bar1.low < tfData.arrBot[0] && tfData.arrBot[0] != tfData.arrBoLow[0]) {
-            text += "\n -3.1. continue BOS, sTrend == -1 && mTrend == -1 && LastSwingMajor == 1 && bar1.low < arrBot[0] : "+ (string) bar1.low +" > "+(string) tfData.arrBot[0];
+         if (tfData.LastSwingMajor == 1 && bar1.low < tfData.arrBot[0] && tfData.arrBot[0] != tfData.arrBoLow[0]) { // Done
+            text += "\n -3.1. continue BOS, sTrend == -1 && mTrend == -1 && LastSwingMajor == 1 && bar1.low < arrBot[0] : "+ (string) bar1.low +" < "+(string) tfData.arrBot[0];
             text += "\n => Cap nhat: findHigh = 0, idmLow = Highs[0] = "+(string) tfData.Highs[0]+" ; sTrend == -1; mTrend == -1; LastSwingMajor == -1;";
-                           
+            text += "\n => New arrBoLow = arrBot[0] = " + (string)tfData.arrBot[0] + "; New arrTop = intSHighs[0] = " + (string)tfData.intSHighs[0];               
             // Add new point
             tfData.AddToDoubleArray( tfData.arrBoLow, tfData.arrBot[0]);
             tfData.AddToDateTimeArray( tfData.arrBoLowTime, tfData.arrBotTime[0]);
@@ -1988,9 +1996,9 @@ struct marketStructs{
             tfData.AddToDoubleArray( tfData.arrChoLow, tfData.arrPbLow[0]);
             tfData.AddToDateTimeArray( tfData.arrChoLowTime, tfData.arrPbLTime[0]);
             tfData.AddToLongArray( tfData.volArrChoLow, tfData.volArrPbLow[0]);
-            
+                        
             // update Point LH         
-            if (tfData.H != 0 && tfData.H != tfData.arrPbHigh[0]) {
+            if (tfData.H != 0 && (tfData.H != tfData.arrPbHigh[0] || (tfData.H == tfData.arrPbHigh[0] && tfData.HTime != tfData.arrPbHTime[0]))) {
                text += "\n----> IF: H != 0 && H != arrPbHigh[0]("+(string)tfData.arrPbHigh[0]+") => Update: New arrPbHigh[0] = "+(string)tfData.H;
                // Add new point
                tfData.AddToDoubleArray( tfData.arrPbHigh, tfData.H);
@@ -2025,8 +2033,8 @@ struct marketStructs{
             tfData.AddToDateTimeArray( tfData.arrChoLowTime, tfData.arrPbLTime[0]);
             tfData.AddToLongArray( tfData.volArrChoLow, tfData.volArrPbLow[0]);
             
-            if (tfData.H != 0 && tfData.H != tfData.arrPbHigh[0]) {
-               
+            // update Point LH         
+            if (tfData.H != 0 && (tfData.H != tfData.arrPbHigh[0] || (tfData.H == tfData.arrPbHigh[0] && tfData.HTime != tfData.arrPbHTime[0]))) {
                // Add new point
                tfData.AddToDoubleArray( tfData.arrPbHigh, tfData.H);
                tfData.AddToDateTimeArray( tfData.arrPbHTime, tfData.HTime);
@@ -2069,15 +2077,80 @@ struct marketStructs{
          }
       }
       
-      if(isComment) {
+      if(isComment && StringLen(text) > 0) {
+         textall += text;
          //text +=  "\n Last: "+getValueTrend(tfData);
-         text += "\n ---------- END updatePointTopBot ------------";
-         Print(text);
+         textall += "\n ---------- END updatePointTopBot ------------";
+         Print(textall);
          showComment(tfData);
       }
       
    } //--- End Ham cap nhat cau truc thi truong : updatePointTopBot
    
+   void showComment(TimeFrameData& tfData) {
+      Print("Timeframe: "+ (string) tfData.isTimeframe);
+      if (tfData.sTrend == 1 || tfData.sTrend == -1) {
+      
+         //Print("Lows: "); ArrayPrint(tfData.Lows); 
+         //Print("Vol Lows: "); ArrayPrint(tfData.volLows); 
+         
+         //Print("intSLows: "); ArrayPrint(tfData.intSLows); 
+         //Print("Vol intSLows: "); ArrayPrint(tfData.volIntSLows); 
+         
+         //Print("arrBot: "); ArrayPrint(tfData.arrBot); 
+         //Print("Vol arrBot: "); ArrayPrint(tfData.volArrBot);
+         
+         Print("arrPbLow: "); ArrayPrint(tfData.arrPbLow); 
+         Print("Vol arrPbLow: "); ArrayPrint(tfData.volArrPbLow);
+         
+         //Print("arrDecisionalLow: "); ArrayPrint(tfData.arrDecisionalLow);
+         //Print("Vol arrDecisionalLow: "); ArrayPrint(tfData.volArrDecisionalLow);
+         
+//         Print("arrBoLow: "+(string) tfData.arrBoLow[0]);
+//         Print("Vol arrBoLow: "); ArrayPrint(tfData.volArrBoLow);
+//         
+//         Print("arrChoLow: "+(string) tfData.arrChoLow[0]);
+//         Print("Vol arrChoLow: "); ArrayPrint(tfData.volArrChoLow);
+         
+         //Print(" zLows: "); ArrayPrint(tfData.zLows);
+         //Print(" zIntSLows: "); ArrayPrint(tfData.zIntSLows);
+         //Print(" zArrBot: "); ArrayPrint(tfData.zArrBot);
+         
+         //Print("zArrPbLow"); ArrayPrint(tfData.zArrPbLow);
+         //Print("zPoiExtremeLow: "); ArrayPrint(tfData.zPoiExtremeLow);
+         //Print("zPoiDecisionalLow: "); ArrayPrint(tfData.zPoiDecisionalLow);
+      }
+      if (tfData.sTrend == -1 || tfData.sTrend == 1) {
+         //Print("Highs: "); ArrayPrint(tfData.Highs);
+         //Print("Vol Highs: "); ArrayPrint(tfData.volHighs);
+         
+         //Print("intSHighs: "); ArrayPrint(tfData.intSHighs);
+         //Print("Vol intSHighs: "); ArrayPrint(tfData.volIntSHighs);
+         
+         //Print("arrTop: "); ArrayPrint(tfData.arrTop); 
+         //Print("Vol arrTop: "); ArrayPrint(tfData.volArrTop);
+         
+         Print("arrPbHigh: "); ArrayPrint(tfData.arrPbHigh); 
+         Print("Vol arrPbHigh: "); ArrayPrint(tfData.volArrPbHigh);
+         
+         //Print("arrDecisionalHigh: "); ArrayPrint(tfData.arrDecisionalHigh);
+         //Print("Vol arrDecisionalHigh: "); ArrayPrint(tfData.volArrDecisionalHigh);
+         
+//         Print("arrBoHigh: "+(string) tfData.arrBoHigh[0]);
+//         Print("Vol arrBoHigh: "); ArrayPrint(tfData.volArrBoHigh);
+//         
+//         Print("arrChoHigh: "+(string) tfData.arrChoHigh[0]);
+//         Print("Vol arrChoHigh: "); ArrayPrint(tfData.volArrChoHigh);
+               
+         //Print(" zHighs: "); ArrayPrint(tfData.zHighs);
+         //Print(" zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
+         //Print(" zArrTop: "); ArrayPrint(tfData.zArrTop);
+         
+         //Print("zArrPbHigh"); ArrayPrint(tfData.zArrPbHigh); 
+         //Print("zPoiExtremeHigh: "); ArrayPrint(tfData.zPoiExtremeHigh);
+         //Print("zPoiDecisionalHigh: "); ArrayPrint(tfData.zPoiDecisionalHigh);
+      }
+   }  
    
    void getZoneValid(TimeFrameData& tfData) {
       //showComment();
@@ -2706,70 +2779,4 @@ string getValueTrend(TimeFrameData& tfData) {
                " | | gTrend: "+(string) tfData.gTrend+ " - LastSwingMeter: "+(string) tfData.LastSwingMeter+
                " | | H: "+ (string) tfData.H +" - L: "+(string) tfData.L;  
    return text;
-}
-
-void showComment(TimeFrameData& tfData) {
-   Print("Timeframe: "+ (string) tfData.isTimeframe + "\n");
-   if (tfData.sTrend == 1 || tfData.sTrend == -1) {
-   
-      //Print("Lows: "); ArrayPrint(tfData.Lows); 
-      //Print("Vol Lows: "); ArrayPrint(tfData.volLows); 
-      
-      Print("intSLows: "); ArrayPrint(tfData.intSLows); 
-      Print("Vol intSLows: "); ArrayPrint(tfData.volIntSLows); 
-      
-      //Print("arrBot: "); ArrayPrint(tfData.arrBot); 
-      //Print("Vol arrBot: "); ArrayPrint(tfData.volArrBot);
-      
-      Print("arrPbLow: "); ArrayPrint(tfData.arrPbLow); 
-      Print("Vol arrPbLow: "); ArrayPrint(tfData.volArrPbLow);
-      
-      //Print("arrDecisionalLow: "); ArrayPrint(tfData.arrDecisionalLow);
-      //Print("Vol arrDecisionalLow: "); ArrayPrint(tfData.volArrDecisionalLow);
-      
-      //Print("arrBoLow: "+(string) tfData.arrBoLow[0]);
-      //Print("Vol arrBoLow: "); ArrayPrint(tfData.volArrBoLow);
-      
-      //Print("arrChoLow: "+(string) tfData.arrChoLow[0]);
-      //Print("Vol arrChoLow: "); ArrayPrint(tfData.volArrChoLow);
-      
-      //Print(" zLows: "); ArrayPrint(tfData.zLows);
-      //Print(" zIntSLows: "); ArrayPrint(tfData.zIntSLows);
-      //Print(" zArrBot: "); ArrayPrint(tfData.zArrBot);
-      
-      //Print("zArrPbLow"); ArrayPrint(tfData.zArrPbLow);
-      //Print("zPoiExtremeLow: "); ArrayPrint(tfData.zPoiExtremeLow);
-      //Print("zPoiDecisionalLow: "); ArrayPrint(tfData.zPoiDecisionalLow);
-   }
-   Print("-----\n");
-   if (tfData.sTrend == -1 || tfData.sTrend == 1) {
-      //Print("Highs: "); ArrayPrint(tfData.Highs);
-      //Print("Vol Highs: "); ArrayPrint(tfData.volHighs);
-      
-      Print("intSHighs: "); ArrayPrint(tfData.intSHighs);
-      Print("Vol intSHighs: "); ArrayPrint(tfData.volIntSHighs);
-      
-      //Print("arrTop: "); ArrayPrint(tfData.arrTop); 
-      //Print("Vol arrTop: "); ArrayPrint(tfData.volArrTop);
-      
-      Print("arrPbHigh: "); ArrayPrint(tfData.arrPbHigh); 
-      Print("Vol arrPbHigh: "); ArrayPrint(tfData.volArrPbHigh);
-      
-      //Print("arrDecisionalHigh: "); ArrayPrint(tfData.arrDecisionalHigh);
-      //Print("Vol arrDecisionalHigh: "); ArrayPrint(tfData.volArrDecisionalHigh);
-      
-      //Print("arrBoHigh: "+(string) tfData.arrBoHigh[0]);
-      //Print("Vol arrBoHigh: "); ArrayPrint(tfData.volArrBoHigh);
-      
-      //Print("arrChoHigh: "+(string) tfData.arrChoHigh[0]);
-      //Print("Vol arrChoHigh: "); ArrayPrint(tfData.volArrChoHigh);
-            
-      //Print(" zHighs: "); ArrayPrint(tfData.zHighs);
-      //Print(" zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
-      //Print(" zArrTop: "); ArrayPrint(tfData.zArrTop);
-      
-      //Print("zArrPbHigh"); ArrayPrint(tfData.zArrPbHigh); 
-      //Print("zPoiExtremeHigh: "); ArrayPrint(tfData.zPoiExtremeHigh);
-      //Print("zPoiDecisionalHigh: "); ArrayPrint(tfData.zPoiDecisionalHigh);
-   }
-}        
+}      
