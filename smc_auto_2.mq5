@@ -1119,7 +1119,7 @@ struct marketStructs{
       
    // Ham ve swing point
    void drawPointStructure(TimeFrameData& tfData, int itype, double priceNew, datetime timeNew, int typeStructure, bool del, bool isDraw) { // type: 1 High, -1 Low
-      int iWingding;
+      int iWingding = 0;
       color iColor = tfData.tfColor;
       // Color and wingdings
       if (typeStructure == GANN_STRUCTURE) {
