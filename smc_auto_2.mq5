@@ -54,6 +54,9 @@ int highPairTF;
 ENUM_TIMEFRAMES lowTimeFrame, highTimeFrame;
 input bool isDrawHighTF = true; // Draw Zone HighTimeframe
 input bool isDrawLowTF = false; // Draw Zone LowTimeframe
+// định nghĩa get tick volume là loại nào. max volume 3 nến liền kề, hay chính volume của cây nến đó
+enum isTickVolume {isBar = 1, isMax3Bar = 2};
+input isTickVolume typeTickVolume = 1; // 1: is Bar; 2 : largest of 3 adjacent candles
 
 // End #region variale declaration
 
@@ -1294,7 +1297,11 @@ struct marketStructs{
          textGannHigh += "--->Gann: Find High: "+(string) bar2.high+" + Highest: "+ (string) tfData.highEst;
          // set Zone
          PoiZone zone2 = CreatePoiZone(bar2.high, bar2.low, bar2.open, bar2.close, bar2.time);
-         maxVolume = MathMax(MathMax(bar1.tick_volume, bar2.tick_volume), bar3.tick_volume);
+         if (typeTickVolume == 1) {
+            maxVolume = bar2.tick_volume;
+         } else {
+            maxVolume = MathMax(MathMax(bar1.tick_volume, bar2.tick_volume), bar3.tick_volume);
+         }         
 
          // gann finding high
          if (tfData.LastSwingMeter == 1 || tfData.LastSwingMeter == 0) {
@@ -1449,7 +1456,11 @@ struct marketStructs{
       if (bar3.low >= bar2.low && bar2.low <= bar1.low) { // tim thay dinh low
          textGannLow += "--->Gann: Find Low: +" +(string) bar2.low+ " + Lowest: "+(string) tfData.lowEst;
          PoiZone zone2 = CreatePoiZone(bar2.high, bar2.low, bar2.open, bar2.close, bar2.time);
-         maxVolume = MathMax(MathMax(bar1.tick_volume, bar2.tick_volume), bar3.tick_volume);
+         if (typeTickVolume == 1) {
+            maxVolume = bar2.tick_volume;
+         } else {
+            maxVolume = MathMax(MathMax(bar1.tick_volume, bar2.tick_volume), bar3.tick_volume);
+         }
          // gann finding low
          if (tfData.LastSwingMeter == -1 || tfData.LastSwingMeter == 0) {
             textGannHigh += "; Gann: LastSwingMeter == -1 or 0 => New Lows[0] = "+(string) bar2.low +"; LastSwingMeter = 1" ;
@@ -1694,7 +1705,11 @@ struct marketStructs{
          }
          
          if (bar3.high <= bar2.high && bar2.high >= bar1.high) { // tim thay dinh high 
-            maxVolume = MathMax(MathMax(bar1.tick_volume, bar2.tick_volume), bar3.tick_volume);
+            if (typeTickVolume == 1) {
+               maxVolume = bar2.tick_volume;
+            } else {
+               maxVolume = MathMax(MathMax(bar1.tick_volume, bar2.tick_volume), bar3.tick_volume);
+            }
             // continue BOS swing high
             if (tfData.LastSwingMajor == 1 && bar2.high > tfData.arrTop[0]) {
                text += "\n 1.2. swing high, sTrend == 1 && mTrend == 1 && LastSwingMajor == 1 && bar2.high > arrTop[0]";
@@ -1899,7 +1914,11 @@ struct marketStructs{
          }
          
          if (bar3.low >= bar2.low && bar2.low <= bar1.low) { // tim thay swing low 
-            maxVolume = MathMax(MathMax(bar1.tick_volume, bar2.tick_volume), bar3.tick_volume);
+            if (typeTickVolume == 1) {
+               maxVolume = bar2.tick_volume;
+            } else {
+               maxVolume = MathMax(MathMax(bar1.tick_volume, bar2.tick_volume), bar3.tick_volume);
+            }
             // continue BOS swing low
             if (tfData.LastSwingMajor == -1 && bar2.low < tfData.arrBot[0]) {
                text += "\n -3.2. swing low, sTrend == -1 && mTrend == -1 && LastSwingMajor == -1 && bar2.low < arrBot[0]";
