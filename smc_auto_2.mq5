@@ -41,10 +41,11 @@ int iWingding_internal_low = 226;
 int iWingding_internal_key_high = 225;
 int iWingding_internal_key_low = 226;
 
-input int _PointSpace = 1000; // space for draw with swing, line
-input int poi_limit = 30; // poi limit save to array
-int limit = 10; // size of array Swing High, Low
-int lookback = 100; // so luong bar tim kiem nguoc tinh tu thoi diem hien tai
+input group "=== Market Struct Inputs ==="   
+input int _PointSpace = 1000; // Khoảng cách để vẽ swing, line so với high và low 
+input int poi_limit = 30; // Số lượng mảng POI tối đa để lưu vào hệ thống
+int limit = 10; // Khối lượng tối đa để lưu trữ mảng của Swing High, Low
+int lookback = 100; // Số lượng thanh Bar được đếm ngược lại so với thời điểm chạy bot
 
 // định nghĩa riêng cặp khung thời gian trade
 enum pairTF {m1_m15 = 1, m5_h1 = 5, m15_h4 = 15, h1_d1 = 60};
@@ -54,9 +55,11 @@ int highPairTF;
 ENUM_TIMEFRAMES lowTimeFrame, highTimeFrame;
 input bool isDrawHighTF = true; // Draw Zone HighTimeframe
 input bool isDrawLowTF = false; // Draw Zone LowTimeframe
+input group "=== Trade with volume Inputs ==="   
 // định nghĩa get tick volume là loại nào. max volume 3 nến liền kề, hay chính volume của cây nến đó
 enum isTickVolume {isBar = 1, isMax3Bar = 2};
 input isTickVolume typeTickVolume = 1; // 1: is Bar; 2 : largest of 3 adjacent candles
+input int percentCompare = 80; // Số % Volume quyết định Breakout 1 swing. (70% - 90%)
 
 // End #region variale declaration
 
