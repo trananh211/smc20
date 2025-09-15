@@ -1207,8 +1207,8 @@ struct marketStructs{
       text += "\n "+inInfoBar(bar1, bar2, bar3);
       text += "\nFirst: "+getValueTrend(tfData);
       Print(text);
-      int resultStructure = drawStructureInternal(tfData, bar1, bar2, bar3, enabledComment);
-      updatePointTopBot(tfData, bar1, bar2, bar3, enabledComment);
+      int resultStructure = drawStructureInternal(tfData, bar1, bar2, bar3, disableComment);
+      updatePointTopBot(tfData, bar1, bar2, bar3, disableComment);
       
       //// POI
       getZoneValid(tfData);
@@ -1221,15 +1221,25 @@ struct marketStructs{
       Print(text); 
       
       Print("-----------------------------------> END "+EnumToString(timeframe)+" <------------------------------------ \n");
-        
+      // For develop
+      showPoiComment(tfData);
    }
    
    // Kiểm tra lần lượt zone đã mitigate hay chưa
    void checkMitigateZone(TimeFrameData& tfData, MqlRates& bar1) {
-      getIsMitigatedZone(tfData, bar1, tfData.zArrDecisionalHigh, -1);
-      getIsMitigatedZone(tfData, bar1, tfData.zArrDecisionalLow, 1);
-      getIsMitigatedZone(tfData, bar1, tfData.zArrPbHigh, -1);
-      getIsMitigatedZone(tfData, bar1, tfData.zArrPbLow, 1);
+      
+//      getIsMitigatedZone(tfData, bar1, tfData.zIntSHighs, -1);
+//      getIsMitigatedZone(tfData, bar1, tfData.zIntSLows, 1);
+//      
+//      getIsMitigatedZone(tfData, bar1, tfData.zArrDecisionalHigh, -1);
+//      getIsMitigatedZone(tfData, bar1, tfData.zArrDecisionalLow, 1);
+//      
+//      getIsMitigatedZone(tfData, bar1, tfData.zArrPbHigh, -1);
+//      getIsMitigatedZone(tfData, bar1, tfData.zArrPbLow, 1);
+      
+      getIsMitigatedZone(tfData, bar1, tfData.zPoiDecisionalHigh, -1);
+      getIsMitigatedZone(tfData, bar1, tfData.zPoiDecisionalLow, 1);
+      
       getIsMitigatedZone(tfData, bar1, tfData.zPoiExtremeHigh, -1);
       getIsMitigatedZone(tfData, bar1, tfData.zPoiExtremeLow, 1);
    }
@@ -1245,34 +1255,55 @@ struct marketStructs{
             
             // neu dang check bullish zone
             if (type == 1) {
+               if( bar1.low > zone[i].high) continue; 
                // Neu gia bat dau mitigate zone
-               if (bar1.low <= zone[i].high) {
-                  // neu gia van nam trong zone
-                  if ( bar1.low >= zone[i].low) {
-                     zone[i].mitigated = 1;
-                  }
-                  
-                  // neu gia vuot ra ngoai zone
-                  if (bar1.low < zone[i].low) {
-                     zone[i].mitigated = -1;
-                  }
-                  
+               // neu gia van nam trong zone
+               if (bar1.low <= zone[i].high && bar1.low >= zone[i].low) {
+                  zone[i].mitigated = 1;
+               }
+               // neu gia vuot ra ngoai zone
+               if (bar1.low < zone[i].low) {
+                  zone[i].mitigated = -1;
                }
             } else if (type == -1) { // neu dang check bearish zone
+               if (bar1.high < zone[i].low) continue;
                // Neu gia bat dau mitigate zone
-               if (bar1.high <= zone[i].low) {
-                  // neu gia van nam trong zone
-                  if ( bar1.high <= zone[i].high) {
-                     zone[i].mitigated = 1;
-                  }
-                  
-                  // neu gia vuot ra ngoai zone
-                  if (bar1.high > zone[i].high) {
-                     zone[i].mitigated = -1;
-                  }
+               
+               // neu gia van nam trong zone
+               if (bar1.high >= zone[i].low && bar1.high <= zone[i].high) {
+                  zone[i].mitigated = 1;
+               }
+               
+               // neu gia vuot ra ngoai zone
+               if (bar1.high > zone[i].high) {
+                  zone[i].mitigated = -1;
                }
             }
          }
+      }
+   }
+   
+   void showPoiComment(TimeFrameData& tfData) {
+      Print("Timeframe: "+ (string) tfData.isTimeframe);
+      if (tfData.sTrend == 1) {
+         
+         //Print(" zLows: "); ArrayPrint(tfData.zLows);
+         //Print(" zIntSLows: "); ArrayPrint(tfData.zIntSLows);
+         //Print(" zArrBot: "); ArrayPrint(tfData.zArrBot);
+         
+         //Print("zArrPbLow"); ArrayPrint(tfData.zArrPbLow);
+         Print("zPoiExtremeLow: "); ArrayPrint(tfData.zPoiExtremeLow);
+         Print("zPoiDecisionalLow: "); ArrayPrint(tfData.zPoiDecisionalLow);
+      }
+      if (tfData.sTrend == -1) {
+               
+         //Print(" zHighs: "); ArrayPrint(tfData.zHighs);
+         //Print(" zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
+         //Print(" zArrTop: "); ArrayPrint(tfData.zArrTop);
+         
+         //Print("zArrPbHigh"); ArrayPrint(tfData.zArrPbHigh); 
+         Print("zPoiExtremeHigh: "); ArrayPrint(tfData.zPoiExtremeHigh);
+         Print("zPoiDecisionalHigh: "); ArrayPrint(tfData.zPoiDecisionalHigh);
       }
    }
    
@@ -2171,17 +2202,17 @@ struct marketStructs{
       }
    }  
    
-   void getZoneValid(TimeFrameData& tfData) {
+   void getZoneValid(TimeFrameData& tfData, bool isComment = false) {
       //showComment();
       // Pre arr Decisional
-      getDecisionalValue(tfData, disableComment);
+      getDecisionalValue(tfData, isComment);
       
       //// Extreme Poi
-      setValueToZone(tfData, 1, tfData.zArrPbHigh, tfData.zPoiExtremeHigh, enabledComment, "Extreme");
-      setValueToZone(tfData, -1, tfData.zArrPbLow, tfData.zPoiExtremeLow, enabledComment, "Extreme");
+      setValueToZone(tfData, 1, tfData.zArrPbHigh, tfData.zPoiExtremeHigh, isComment, "Extreme");
+      setValueToZone(tfData, -1, tfData.zArrPbLow, tfData.zPoiExtremeLow, isComment, "Extreme");
       //// Decisional Poi
-      setValueToZone(tfData, 1, tfData.zArrDecisionalHigh, tfData.zPoiDecisionalHigh, enabledComment, "Decisional");
-      setValueToZone(tfData, -1, tfData.zArrDecisionalLow, tfData.zPoiDecisionalLow, enabledComment, "Decisional");
+      setValueToZone(tfData, 1, tfData.zArrDecisionalHigh, tfData.zPoiDecisionalHigh, isComment, "Decisional");
+      setValueToZone(tfData, -1, tfData.zArrDecisionalLow, tfData.zPoiDecisionalLow, isComment, "Decisional");
    }      
    
    // Todo: dang setup chua xong, can verify Decisinal POI moi khi chay. Luu gia tri High, Low vao 1 gia tri cố định để so sánh
