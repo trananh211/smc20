@@ -57,6 +57,7 @@ input bool isDrawHighTF = true; // Draw Zone HighTimeframe
 input bool isDrawLowTF = false; // Draw Zone LowTimeframe
 input group "=== Trade with volume Inputs ==="   
 // định nghĩa get tick volume là loại nào. max volume 3 nến liền kề, hay chính volume của cây nến đó
+input bool isCHoCHBOSVolume = true; // Bật chế độ CHoCH và BOS theo volume
 enum isTickVolume {isBar = 1, isMax3Bar = 2};
 input isTickVolume typeTickVolume = 1; // 1: is Bar; 2 : largest of 3 adjacent candles
 input int percentCompare = 80; // Số % Volume quyết định Breakout 1 swing. (70% - 90%)
@@ -102,6 +103,9 @@ public:
    
    int LastSwingMeter;
    int gTrend;
+   int vGTrend;
+   int waitingHighs; // Chờ nến phá vỡ đỉnh Highs. default = 0;
+   int waitingLows; //  Chờ nến phá vỡ đỉnh Lows.  default = 0;
 
    // Internal Structure
    double intSHighs[];
@@ -114,6 +118,8 @@ public:
    int LastSwingInternal;
    int iTrend;
    int vItrend;
+   int waitingIntSHighs; // Chờ nến phá vỡ đỉnh internal swing highs. default = 0
+   int waitingIntSLows;  // Chờ nến phá vỡ đỉnh internal swing lows.  default = 0
 
    // Array pullback
    double arrTop[];
@@ -229,12 +235,15 @@ public:
       hightime = 0;
       lowtime = 0;
       LastSwingMeter = 0;
-      gTrend = 0;
+      gTrend = 0; vGTrend = 0;
       LastSwingInternal = 0;
       iTrend = 0; vItrend = 0;
       mTrend = 0; vMTrend = 0;
       sTrend = 0; vSTrend = 0;
-      
+      waitingHighs = 0;
+      waitingLows = 0;
+      waitingIntSHighs = 0;
+      waitingIntSLows = 0;
       LastSwingMajor = 0;
       lastTimeH = 0;
       lastTimeL = 0;
@@ -1187,7 +1196,7 @@ struct marketStructs{
          
          int resultStructure = drawStructureInternal(tfData, bar1, bar2, bar3, enabledComment);
          updatePointTopBot(tfData, bar1, bar2, bar3, enabledComment);
-          
+         //getStructWithVolume(tfData, bar1, bar2, bar3, enabledComment);
          //// POI
          getZoneValid(tfData);
          drawZone(tfData, bar1);
@@ -1218,6 +1227,7 @@ struct marketStructs{
       Print(text);
       int resultStructure = drawStructureInternal(tfData, bar1, bar2, bar3, enabledComment);
       updatePointTopBot(tfData, bar1, bar2, bar3, enabledComment);
+      //getStructWithVolume(tfData, bar1, bar2, bar3, enabledComment);
       
       //// POI
       getZoneValid(tfData);
@@ -1231,7 +1241,7 @@ struct marketStructs{
       
       Print("-----------------------------------> END "+EnumToString(timeframe)+" <------------------------------------ \n");
       // For develop
-      showPoiComment(tfData);
+      //showPoiComment(tfData);
    }
    
    // Kiểm tra lần lượt zone đã mitigate hay chưa
@@ -1331,6 +1341,48 @@ struct marketStructs{
       string textBot = "";
 
       long maxVolume = 0;
+      // Gann wave
+      // BOS Highs
+      if (tfData.waitingHighs == 0 && bar1.high > tfData.Highs[0]) {
+         tfData.gTrend = 1;
+         tfData.vGTrend = tfData.gTrend;
+         tfData.waitingHighs = 1;
+         if (isCHoCHBOSVolume) {
+            tfData.vGTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volHighs[0])) ? 1: -1;
+         }
+      }
+      
+      // BOS Low
+      if (tfData.waitingLows == 0 && bar1.low < tfData.Lows[0]) {
+         tfData.gTrend = -1;
+         tfData.vGTrend = tfData.gTrend;
+         tfData.waitingLows = 1;
+         if (isCHoCHBOSVolume) {
+            tfData.vGTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volLows[0])) ? -1: 1;
+         }
+      }
+      // END Gann wave
+      
+      // Internal swing wave
+      // BOS intSHighs
+      if (tfData.waitingIntSHighs == 0 && bar1.high > tfData.intSHighs[0] && tfData.LastSwingInternal == 1) {
+         tfData.iTrend = 1;
+         tfData.vItrend = tfData.iTrend;
+         tfData.waitingIntSHighs = 1;
+         if (isCHoCHBOSVolume) {
+            tfData.vItrend = (checkVolumeBreak(bar1.tick_volume, tfData.volIntSHighs[0])) ? 1: -1;
+         }
+      }
+      
+      // BOS intSLows
+      if (tfData.waitingIntSLows == 0 && bar1.low < tfData.intSLows[0] && tfData.LastSwingInternal == -1) {
+         tfData.iTrend = -1;
+         tfData.vItrend = tfData.iTrend;
+         tfData.waitingIntSLows = 1;
+         if (isCHoCHBOSVolume) {
+            tfData.vItrend = (checkVolumeBreak(bar1.tick_volume, tfData.volIntSLows[0])) ? -1: 1;
+         }
+      }
       
    //    swing high
       if (bar3.high <= bar2.high && bar2.high >= bar1.high) { // tim thay dinh high
@@ -1355,7 +1407,8 @@ struct marketStructs{
             tfData.LastSwingMeter = -1;
             // cap nhat Zone. Khong xoa (updatePointZone)
             tfData.AddToPoiZoneArray(tfData.zHighs, zone2, poi_limit);
-            
+            // cap nhat waiting bos highs ve 0
+            tfData.waitingHighs = 0;
          }
          // gann finding low
          if (tfData.LastSwingMeter == -1) {
@@ -1373,7 +1426,8 @@ struct marketStructs{
                tfData.LastSwingMeter = -1;
                // cap nhat Zone. Xoa 0 (updatePointZone)
                tfData.UpdatePoiZoneArray(tfData.zHighs, 0, zone2);
-               
+               // cap nhat waiting bos highs ve 0
+               tfData.waitingHighs = 0;
             }
          }
          if (isComment) {
@@ -1404,6 +1458,8 @@ struct marketStructs{
             
             // them Zone
             tfData.AddToPoiZoneArray(tfData.zIntSHighs, zone2, poi_limit);
+            // cap nhat waiting bos intSHighs ve 0
+            tfData.waitingIntSHighs = 0;
          }
          
          // HH 2
@@ -1425,7 +1481,8 @@ struct marketStructs{
             
             // cap nhat Zone
             tfData.UpdatePoiZoneArray(tfData.zIntSHighs, 0, zone2);
-            
+            // cap nhat waiting bos intSHighs ve 0
+            tfData.waitingIntSHighs = 0;
          }
          
          // DONE 3
@@ -1444,6 +1501,8 @@ struct marketStructs{
             
             // them Zone
             tfData.AddToPoiZoneArray(tfData.zIntSHighs, zone2, poi_limit);
+            // cap nhat waiting bos intSHighs ve 0
+            tfData.waitingIntSHighs = 0;
          }
          
          // DONE 4 
@@ -1462,6 +1521,8 @@ struct marketStructs{
                         
             // them Zone
             tfData.AddToPoiZoneArray(tfData.zIntSHighs, zone2, poi_limit);
+            // cap nhat waiting bos intSHighs ve 0
+            tfData.waitingIntSHighs = 0;
          }
          
          // DONE 5
@@ -1483,6 +1544,8 @@ struct marketStructs{
             // cap nhat Zone
             tfData.UpdatePoiZoneArray(tfData.zIntSHighs, 0, zone2);
             textInternalHigh += ", (?) iTrend: "+(string) tfData.iTrend;
+            // cap nhat waiting bos intSHighs ve 0
+            tfData.waitingIntSHighs = 0;
          }
          if( isComment) {
             Print(textInternalHigh);
@@ -1513,6 +1576,8 @@ struct marketStructs{
             tfData.LastSwingMeter = 1;
             // Them Zone.
             tfData.AddToPoiZoneArray(tfData.zLows, zone2, poi_limit);
+            // cap nhat waiting bos lows ve 0
+            tfData.waitingLows = 0;
          }
          // gann finding high
          if (tfData.LastSwingMeter == 1) {
@@ -1530,6 +1595,8 @@ struct marketStructs{
                tfData.LastSwingMeter = 1;
                // cap nhat Zone
                tfData.UpdatePoiZoneArray(tfData.zLows, 0, zone2);
+               // cap nhat waiting bos lows ve 0
+               tfData.waitingLows = 0;
             }
          }
          if (isComment) {
@@ -1559,6 +1626,8 @@ struct marketStructs{
             
             // Them Zone
             tfData.AddToPoiZoneArray(tfData.zIntSLows, zone2, poi_limit);
+            // cap nhat waiting bos intSLows ve 0
+            tfData.waitingIntSLows = 0;
          }
          
          // LL
@@ -1580,6 +1649,8 @@ struct marketStructs{
             resultStructure = -2;
             // cap nhat Zone
             tfData.UpdatePoiZoneArray(tfData.zIntSLows, 0, zone2);
+            // cap nhat waiting bos intSLows ve 0
+            tfData.waitingIntSLows = 0;
          }
          
          // DONE 3
@@ -1598,6 +1669,8 @@ struct marketStructs{
             resultStructure = -3;
             // Them Zone
             tfData.AddToPoiZoneArray(tfData.zIntSLows, zone2, poi_limit);
+            // cap nhat waiting bos intSLows ve 0
+            tfData.waitingIntSLows = 0;
          }
          
          // DONE 4
@@ -1616,6 +1689,8 @@ struct marketStructs{
             resultStructure = -4;
             // Them Zone
             tfData.AddToPoiZoneArray(tfData.zIntSLows, zone2, poi_limit);
+            // cap nhat waiting bos intSLows ve 0
+            tfData.waitingIntSLows = 0;
          }
          
          // DONE 5
@@ -1637,6 +1712,8 @@ struct marketStructs{
             // cap nhat Zone
             tfData.UpdatePoiZoneArray(tfData.zIntSLows, 0, zone2);
             textInternalLow += ", (?) iTrend: "+(string) tfData.iTrend;
+            // cap nhat waiting bos intSLows ve 0
+            tfData.waitingIntSLows = 0;
          }
          if(isComment) {
             Print(textInternalLow);
@@ -1743,6 +1820,8 @@ struct marketStructs{
             tfData.sTrend = 1; tfData.mTrend = 1; tfData.LastSwingMajor = 1;
             tfData.findLow = 0; 
             tfData.idmHigh = tfData.Lows[0]; tfData.idmHighTime = tfData.LowsTime[0]; tfData.vol_idmHigh = tfData.volLows[0];
+            //// BOS by volume
+            //if (checkVolumeBreak(bar1.tick_volume, tfData.volArrTop[0]))
          }
          
          if (bar3.high <= bar2.high && bar2.high >= bar1.high) { // tim thay dinh high 
@@ -2223,8 +2302,18 @@ struct marketStructs{
          //Print("zPoiExtremeHigh: "); ArrayPrint(tfData.zPoiExtremeHigh);
          //Print("zPoiDecisionalHigh: "); ArrayPrint(tfData.zPoiDecisionalHigh);
       }
-   }  
+   } 
    
+   // Ham tra ve break out hay false break out
+   bool checkVolumeBreak(long& barBreak, long& swing) {
+      bool result = false;
+      int percent = percentCompare;
+      if (percentCompare < 80 || percentCompare > 100) percent = 82;
+      if (percent/100*barBreak >= swing) {
+         result = true;
+      }
+      return result;
+   }
    void getZoneValid(TimeFrameData& tfData, bool isComment = false) {
       //showComment();
       // Pre arr Decisional
@@ -2848,8 +2937,8 @@ string getValueTrend(TimeFrameData& tfData) {
    string text =  "| Struct trend = STrend: "+ (string) tfData.sTrend + " - marjor trend = mTrend: "+(string) tfData.mTrend+ " - LastSwingMajor: "+(string) tfData.LastSwingMajor+ 
                " findHigh: "+(string) tfData.findHigh+" - idmHigh: "+(string) tfData.idmHigh+ " - vol idmHigh: "+(string) tfData.vol_idmHigh+
                " findLow: "+(string) tfData.findLow+" - idmLow: "+(string) tfData.idmLow+ " - vol idmLow: "+(string) tfData.vol_idmLow+
-               " | \n | iTrend: "+(string) tfData.iTrend+ " - LastSwingInternal: "+(string) tfData.LastSwingInternal+
-               " | | gTrend: "+(string) tfData.gTrend+ " - LastSwingMeter: "+(string) tfData.LastSwingMeter+
+               " | \n | iTrend: "+(string) tfData.iTrend+ " vItrend: "+(string) tfData.vItrend+" - LastSwingInternal: "+(string) tfData.LastSwingInternal+
+               " | | gTrend: "+(string) tfData.gTrend+ " vGTrend: "+(string) tfData.vGTrend+ " - LastSwingMeter: "+(string) tfData.LastSwingMeter+
                " | | H: "+ (string) tfData.H +" - L: "+(string) tfData.L;  
    return text;
 }      
