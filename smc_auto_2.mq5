@@ -128,6 +128,8 @@ public:
    datetime arrBotTime[];
    long volArrTop[];
    long volArrBot[];
+   int waitingArrTop; // Chờ nến phá vỡ đỉnh Pullback marjor swing highs. default = 0
+   int waitingArrBot;  // Chờ nến phá vỡ đỉnh Publlback marjor swing lows.  default = 0
 
    int mTrend; // marjor Trend normal
    int sTrend; // struct Trend normal
@@ -139,6 +141,8 @@ public:
    double arrPbLow[];
    long volArrPbHigh[];
    long volArrPbLow[];
+   int waitingArrPbHigh; // Chờ nến phá vỡ đỉnh Pullback marjor swing highs. default = 0
+   int waitingArrPbLows;  // Chờ nến phá vỡ đỉnh Publlback marjor swing lows.  default = 0
 
    // Chopped and Breakout
    double arrChoHigh[];
@@ -259,6 +263,10 @@ public:
       L_lastHH = 0.0;
       H_lastLL = 0.0;
       L_lastL = 0.0;
+      waitingArrTop = 0;
+      waitingArrBot = 0;
+      waitingArrPbHigh = 0;
+      waitingArrPbLows = 0;
       motherHigh = 0.0;
       motherLow = 0.0;
       findHigh = 0.0;
@@ -528,6 +536,46 @@ public:
             return i;
       }
       return -1;
+   }
+   
+   // Phương thức sắp xếp mảng double sau khi xoa phần tử 
+   void SortDoubleArrayAfterDelete(double& array[]) {
+      if (ArraySize(array) > 2) {
+         // Sort value in array[]
+         for(int i = 0; i < ArraySize(array) - 1; i++) {
+            array[i] = array[i+1];   
+         }   
+      }
+   }
+   
+   // Phương thức sắp xếp mảng Datetime sau khi xoa phần tử 
+   void SortDateTimeArrayAfterDelete(datetime& array[]) {
+      if (ArraySize(array) > 2) {
+         // Sort value in array[]
+         for(int i = 0; i < ArraySize(array) - 1; i++) {
+            array[i] = array[i+1];   
+         }   
+      }
+   }
+   
+   // Phương thức sắp xếp mảng long sau khi xoa phần tử 
+   void SortLongArrayAfterDelete(long& array[]) {
+      if (ArraySize(array) > 2) {
+         // Sort value in array[]
+         for(int i = 0; i < ArraySize(array) - 1; i++) {
+            array[i] = array[i+1];   
+         }
+      }
+   }
+   
+   // Phương thức sắp xếp mảng long sau khi xoa phần tử 
+   void SortPoiZoneArrayAfterDelete(PoiZone& array[]) {
+      if (ArraySize(array) > 2) {
+         // Sort value in array[]
+         for(int i = 0; i < ArraySize(array) - 1; i++) {
+            array[i] = array[i+1];   
+         }
+      }
    }
    
    // Phương thức sắp xếp mảng double giảm dần
@@ -1363,27 +1411,114 @@ struct marketStructs{
       }
       // END Gann wave
       
-      // Internal swing wave
-      // BOS intSHighs
-      if (tfData.waitingIntSHighs == 0 && bar1.high > tfData.intSHighs[0] && tfData.LastSwingInternal == 1) {
-         tfData.iTrend = 1;
-         tfData.vItrend = tfData.iTrend;
-         tfData.waitingIntSHighs = 1;
-         if (isCHoCHBOSVolume) {
-            tfData.vItrend = (checkVolumeBreak(bar1.tick_volume, tfData.volIntSHighs[0])) ? 1: -1;
+      // Internal wave
+      // High
+      if (tfData.waitingIntSHighs == 0 
+            //|| tfData.waitingIntSHighs == 1
+            ) {
+         //1 continue bos 
+         if (tfData.iTrend == 1 && tfData.LastSwingInternal == 1 && bar1.high > tfData.intSHighs[0]) {
+            tfData.iTrend = 1;
+            tfData.vItrend = tfData.iTrend;
+            tfData.LastSwingInternal = 1;
+            tfData.waitingIntSHighs = 1;
+            if (isCHoCHBOSVolume) {
+               tfData.vItrend = (checkVolumeBreak(bar1.tick_volume, tfData.volIntSHighs[0])) ? 1: -1;
+            }
+            Print("++++++++++ 1 BOS high");
+         }
+         
+         //3 choch high
+         if (tfData.iTrend == -1 && tfData.LastSwingInternal == 1 && bar1.high > tfData.intSHighs[0]) {
+            tfData.iTrend = 1;
+            tfData.vItrend = tfData.iTrend;
+            tfData.LastSwingInternal = 1;
+            tfData.waitingIntSHighs = 1;
+            if (isCHoCHBOSVolume) {
+               tfData.vItrend = (checkVolumeBreak(bar1.tick_volume, tfData.volIntSHighs[0])) ? 1: -1;
+            }
+            Print("++++++++++ 3 Choch high");
+         }
+         
+         // 4 choch high
+         if (tfData.iTrend == -1 && tfData.LastSwingInternal == -1 && 
+                  ArraySize(tfData.intSHighs) > 1 && bar1.high > tfData.intSHighs[0] && bar1.high > tfData.intSHighs[1]) {
+            tfData.iTrend = 1;
+            tfData.vItrend = tfData.iTrend;
+            tfData.LastSwingInternal = 1;
+            tfData.waitingIntSHighs = 1;
+            if (isCHoCHBOSVolume) {
+               tfData.vItrend = (checkVolumeBreak(bar1.tick_volume, tfData.volIntSHighs[1])) ? 1: -1;
+            }
+            ArrayPrint(tfData.intSHighs);
+            Print("++++++++++ 4+5 Choch high. Delete intsHighs[0]"+(string) tfData.intSHighs[0]+". Sort intSHighs");
+            // Clear Draw intSHigh[0]
+            deleteObj(tfData.intSHighTime[0], tfData.intSHighs[0], iWingding_internal_high, "");
+            //// Delete intSHighs[0]
+            //tfData.RemoveFromDoubleArray(tfData.intSHighs, 0);
+            //tfData.RemoveFromDateTimeArray(tfData.intSHighTime, 0);
+            //tfData.RemoveFromLongArray(tfData.volIntSHighs, 0);
+            // Sort intSHighs
+            tfData.SortDoubleArrayAfterDelete(tfData.intSHighs);
+            tfData.SortDateTimeArrayAfterDelete(tfData.intSHighTime);
+            tfData.SortLongArrayAfterDelete(tfData.volIntSHighs);
+            tfData.SortPoiZoneArrayAfterDelete(tfData.zIntSHighs);
          }
       }
       
-      // BOS intSLows
-      if (tfData.waitingIntSLows == 0 && bar1.low < tfData.intSLows[0] && tfData.LastSwingInternal == -1) {
-         tfData.iTrend = -1;
-         tfData.vItrend = tfData.iTrend;
-         tfData.waitingIntSLows = 1;
-         if (isCHoCHBOSVolume) {
-            tfData.vItrend = (checkVolumeBreak(bar1.tick_volume, tfData.volIntSLows[0])) ? -1: 1;
+      // Low
+      if (tfData.waitingIntSLows == 0 
+         //|| tfData.waitingIntSLows == 1
+         ) {
+         //1 continue bos 
+         if (tfData.iTrend == -1 && tfData.LastSwingInternal == -1 && bar1.low < tfData.intSLows[0]) {
+            tfData.iTrend = -1;
+            tfData.vItrend = tfData.iTrend;
+            tfData.LastSwingInternal = -1;
+            tfData.waitingIntSLows = 1;
+            if (isCHoCHBOSVolume) {
+               tfData.vItrend = (checkVolumeBreak(bar1.tick_volume, tfData.volIntSLows[0])) ? -1: 1;
+            }
+            Print("++++++++++ -1 BOS low");
+         }
+         
+         //3 choch low
+         if (tfData.iTrend == 1 && tfData.LastSwingInternal == -1 && bar1.low < tfData.intSLows[0]) {
+            tfData.iTrend = -1;
+            tfData.vItrend = tfData.iTrend;
+            tfData.LastSwingInternal = -1;
+            tfData.waitingIntSLows = 1;
+            if (isCHoCHBOSVolume) {
+               tfData.vItrend = (checkVolumeBreak(bar1.tick_volume, tfData.volIntSLows[0])) ? -1: 1;
+            }
+            Print("++++++++++ -3 Choch low");
+         }
+         
+         // 4+5 choch low
+         if (tfData.iTrend == 1 && tfData.LastSwingInternal == 1 && 
+                ArraySize(tfData.intSLows) > 1 && bar1.low < tfData.intSLows[0] && bar1.low < tfData.intSLows[1]) {
+            tfData.iTrend = -1;
+            tfData.vItrend = tfData.iTrend;
+            tfData.LastSwingInternal = -1;
+            tfData.waitingIntSLows = 1;
+            if (isCHoCHBOSVolume) {
+               tfData.vItrend = (checkVolumeBreak(bar1.tick_volume, tfData.volIntSLows[1])) ? -1: 1;
+            }
+            ArrayPrint(tfData.intSLows);
+            Print("++++++++++ -4 -5 Choch low. Delete intSLows[0]"+(string) tfData.intSLows[0]+". Sort intSLows");
+            // Clear Draw intSHigh[0]
+            deleteObj(tfData.intSLowTime[0], tfData.intSLows[0], iWingding_internal_low, "");
+            //// Delete intSHighs[0]
+            //tfData.RemoveFromDoubleArray(tfData.intSLows, 0);
+            //tfData.RemoveFromDateTimeArray(tfData.intSLowTime, 0);
+            //tfData.RemoveFromLongArray(tfData.volIntSLows, 0);
+            // Sort intSHighs
+            tfData.SortDoubleArrayAfterDelete(tfData.intSLows);
+            tfData.SortDateTimeArrayAfterDelete(tfData.intSLowTime);
+            tfData.SortLongArrayAfterDelete(tfData.volIntSLows);
+            tfData.SortPoiZoneArrayAfterDelete(tfData.zIntSLows);
          }
       }
-      
    //    swing high
       if (bar3.high <= bar2.high && bar2.high >= bar1.high) { // tim thay dinh high
          textGannHigh += "--->Gann: Find High: "+(string) bar2.high+" + Highest: "+ (string) tfData.highEst;
@@ -1481,30 +1616,10 @@ struct marketStructs{
             
             // cap nhat Zone
             tfData.UpdatePoiZoneArray(tfData.zIntSHighs, 0, zone2);
-            // cap nhat waiting bos intSHighs ve 0
+            //// cap nhat waiting bos intSHighs ve 0
             tfData.waitingIntSHighs = 0;
          }
-         
-         // DONE 3
-         if (tfData.iTrend == -1 && tfData.LastSwingInternal == 1 && bar2.high > tfData.intSHighs[0]) {  // iCHoCH
-            textInternalHigh += "\n"+"## High 3 iCHoCH --> Update: "+ "iTrend: 1, LastSwingInternal: -1, New intSHighs[0]: "+(string) bar2.high;
-            // add new intSHighs
-            tfData.AddToDoubleArray(tfData.intSHighs, bar2.high);
-            tfData.AddToDateTimeArray(tfData.intSHighTime, bar2.time);
-            tfData.AddToLongArray(tfData.volIntSHighs, maxVolume);
-            
-            drawPointStructure(tfData, 1, bar2.high, bar2.time, INTERNAL_STRUCTURE, false, enabledDraw);
-            
-            tfData.iTrend = 1;
-            tfData.LastSwingInternal = -1;
-            resultStructure = 3;
-            
-            // them Zone
-            tfData.AddToPoiZoneArray(tfData.zIntSHighs, zone2, poi_limit);
-            // cap nhat waiting bos intSHighs ve 0
-            tfData.waitingIntSHighs = 0;
-         }
-         
+                  
          // DONE 4 
          // LH
          if (tfData.iTrend == -1 && tfData.LastSwingInternal == 1 && bar2.high < tfData.intSHighs[0]) { 
@@ -1544,7 +1659,7 @@ struct marketStructs{
             // cap nhat Zone
             tfData.UpdatePoiZoneArray(tfData.zIntSHighs, 0, zone2);
             textInternalHigh += ", (?) iTrend: "+(string) tfData.iTrend;
-            // cap nhat waiting bos intSHighs ve 0
+            //// cap nhat waiting bos intSHighs ve 0
             tfData.waitingIntSHighs = 0;
          }
          if( isComment) {
@@ -1649,27 +1764,7 @@ struct marketStructs{
             resultStructure = -2;
             // cap nhat Zone
             tfData.UpdatePoiZoneArray(tfData.zIntSLows, 0, zone2);
-            // cap nhat waiting bos intSLows ve 0
-            tfData.waitingIntSLows = 0;
-         }
-         
-         // DONE 3
-         if (tfData.iTrend == 1 && tfData.LastSwingInternal == -1 && bar2.low < tfData.intSLows[0]) { // iCHoCH
-            textInternalLow += "\n"+("## Low 3 iCHoCH --> Update: "+ "iTrend: -1, LastSwingInternal: 1, Update intSLows[0]: "+(string) bar2.low);
-            
-            // Add new intSLows
-            tfData.AddToDoubleArray(tfData.intSLows, bar2.low);
-            tfData.AddToDateTimeArray(tfData.intSLowTime, bar2.time);
-            tfData.AddToLongArray(tfData.volIntSLows, maxVolume);
-            
-            drawPointStructure(tfData, -1, bar2.low, bar2.time, INTERNAL_STRUCTURE, false, enabledDraw);
-            
-            tfData.iTrend = -1;
-            tfData.LastSwingInternal = 1;
-            resultStructure = -3;
-            // Them Zone
-            tfData.AddToPoiZoneArray(tfData.zIntSLows, zone2, poi_limit);
-            // cap nhat waiting bos intSLows ve 0
+            //// cap nhat waiting bos intSLows ve 0
             tfData.waitingIntSLows = 0;
          }
          
@@ -1712,7 +1807,7 @@ struct marketStructs{
             // cap nhat Zone
             tfData.UpdatePoiZoneArray(tfData.zIntSLows, 0, zone2);
             textInternalLow += ", (?) iTrend: "+(string) tfData.iTrend;
-            // cap nhat waiting bos intSLows ve 0
+            //// cap nhat waiting bos intSLows ve 0
             tfData.waitingIntSLows = 0;
          }
          if(isComment) {
@@ -1820,8 +1915,12 @@ struct marketStructs{
             tfData.sTrend = 1; tfData.mTrend = 1; tfData.LastSwingMajor = 1;
             tfData.findLow = 0; 
             tfData.idmHigh = tfData.Lows[0]; tfData.idmHighTime = tfData.LowsTime[0]; tfData.vol_idmHigh = tfData.volLows[0];
-            //// BOS by volume
-            //if (checkVolumeBreak(bar1.tick_volume, tfData.volArrTop[0]))
+            // BOS High by volume 
+            if (tfData.waitingArrTop == 0) {
+               tfData.vMTrend = tfData.mTrend;
+               tfData.waitingArrTop = 1;
+               if (isCHoCHBOSVolume) tfData.vMTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volArrTop[0])) ? 1: -1;
+            }
          }
          
          if (bar3.high <= bar2.high && bar2.high >= bar1.high) { // tim thay dinh high 
@@ -1843,9 +1942,12 @@ struct marketStructs{
                   
                   // add new Zone
                   tfData.AddToPoiZoneArray( tfData.zArrTop, zone2, poi_limit);
+                  // cap nhat waiting top
+                  tfData.waitingArrTop = 0;
                } 
                
                tfData.sTrend = 1; tfData.mTrend = 1; tfData.LastSwingMajor = -1;
+               
             }
             // HH > HH 
             if (tfData.LastSwingMajor == -1 && bar2.high > tfData.arrTop[0]) {
@@ -1860,6 +1962,8 @@ struct marketStructs{
                   tfData.UpdateLongArray(tfData.volArrTop, 0, maxVolume);
                   // cap nhat Zone
                   tfData.UpdatePoiZoneArray( tfData.zArrTop, 0, zone2);
+                  // cap nhat waiting top
+                  tfData.waitingArrTop = 0;
                }
                tfData.sTrend = 1; tfData.mTrend = 1; tfData.LastSwingMajor = -1;
             }
@@ -1878,6 +1982,8 @@ struct marketStructs{
                tfData.AddToLongArray( tfData.volArrPbHigh, tfData.volArrTop[0]);
                // add new zone
                tfData.AddToPoiZoneArray( tfData.zArrPbHigh, tfData.zArrTop[0], poi_limit); 
+               // cap nhat waiting pb high
+               tfData.waitingArrPbHigh = 0;
             }
             drawPointStructure(tfData, 1, tfData.arrPbHigh[0], tfData.arrPbHTime[0], MAJOR_STRUCTURE, false, enabledDraw);
             drawLine(IDM_TEXT, tfData.idmHighTime, tfData.idmHigh, bar1.time, tfData.idmHigh, 1, IDM_TEXT, tfData.tfColor, STYLE_DOT);
@@ -1913,6 +2019,16 @@ struct marketStructs{
             tfData.sTrend = -1; tfData.mTrend = -1; tfData.LastSwingMajor = -1;
             tfData.findHigh = 0; 
             tfData.idmLow = tfData.Highs[0]; tfData.idmLowTime = tfData.HighsTime[0]; tfData.vol_idmLow = tfData.volHighs[0];
+            // CHoCH with Volume
+            if (tfData.waitingArrPbLows == 0) {
+               tfData.vSTrend = tfData.sTrend;
+               tfData.vMTrend = tfData.mTrend;
+               tfData.waitingArrPbLows = 1;
+               if (isCHoCHBOSVolume) {
+                  tfData.vSTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volArrPbLow[0])) ? -1: 1;
+                  tfData.vMTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volArrPbLow[0])) ? -1: 1;
+               } 
+            }
             
          }
          
@@ -1939,6 +2055,8 @@ struct marketStructs{
                MqlRates bar_tmp = tfData.L_bar;
                PoiZone zone_tmp = CreatePoiZone(bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
                tfData.AddToPoiZoneArray( tfData.zArrPbLow, zone_tmp, poi_limit);
+               // update waiting arr pblow
+               tfData.waitingArrPbLows = 0;
             }
             
             drawPointStructure(tfData, -1, tfData.arrPbLow[0], tfData.arrPbLTime[0], MAJOR_STRUCTURE, false, enabledDraw);
@@ -1953,7 +2071,16 @@ struct marketStructs{
             tfData.idmHigh = tfData.Lows[0]; tfData.idmHighTime = tfData.LowsTime[0]; tfData.vol_idmHigh = tfData.volLows[0]; 
             tfData.L = 0; tfData.vol_L = 0;
             text += ", findLow = 0, idmHigh = "+(string) tfData.Lows[0]+", L = 0";
-            
+            // CHoCH High with Volume
+            if (tfData.waitingArrPbHigh == 0) {
+               tfData.vSTrend = tfData.sTrend;
+               tfData.vMTrend = tfData.mTrend;
+               tfData.waitingArrPbHigh = 1;
+               if (isCHoCHBOSVolume) {
+                  tfData.vSTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volArrPbHigh[0])) ? 1: -1;
+                  tfData.vMTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volArrPbHigh[0])) ? 1: -1;
+               } 
+            }
          }
       }
    
@@ -1977,7 +2104,8 @@ struct marketStructs{
                MqlRates bar_tmp = tfData.L_bar;
                PoiZone zone_tmp = CreatePoiZone(bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
                tfData.AddToPoiZoneArray( tfData.zArrPbLow, zone_tmp, poi_limit);
-               
+               // update waiting pb low
+               tfData.waitingArrPbLows = 0;
             }
             drawPointStructure(tfData, -1, tfData.arrPbLow[0], tfData.arrPbLTime[0], MAJOR_STRUCTURE, false, enabledDraw);
             drawLine(CHOCH_TEXT, tfData.arrPbHTime[0], tfData.arrPbHigh[0], bar1.time, tfData.arrPbHigh[0], -1, CHOCH_TEXT, tfData.tfColor, STYLE_SOLID);
@@ -1989,6 +2117,16 @@ struct marketStructs{
             tfData.findLow = 0; 
             tfData.idmHigh = tfData.Lows[0]; tfData.idmHighTime = tfData.LowsTime[0]; tfData.vol_idmHigh = tfData.volLows[0];
             tfData.L = 0; tfData.vol_L = 0;
+            // CHoCH High with Volume
+            if (tfData.waitingArrPbHigh == 0) {
+               tfData.vSTrend = tfData.sTrend;
+               tfData.vMTrend = tfData.mTrend;
+               tfData.waitingArrPbHigh = 1;
+               if (isCHoCHBOSVolume) {
+                  tfData.vSTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volArrPbHigh[0])) ? 1: -1;
+                  tfData.vMTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volArrPbHigh[0])) ? 1: -1;
+               } 
+            }
          }
          // CHoCH DOwn. 
          if (tfData.LastSwingMajor == -1 && bar1.low < tfData.arrPbLow[0] && tfData.arrPbLow[0] != tfData.arrChoLow[0]) {
@@ -2008,6 +2146,16 @@ struct marketStructs{
             tfData.sTrend = -1; tfData.mTrend = -1; tfData.LastSwingMajor = -1;
             tfData.findHigh = 0; 
             tfData.idmLow = tfData.Highs[0]; tfData.idmLowTime = tfData.HighsTime[0]; tfData.vol_idmLow = tfData.volHighs[0];
+            // CHoCH Low with Volume
+            if (tfData.waitingArrPbHigh == 0) {
+               tfData.vSTrend = tfData.sTrend;
+               tfData.vMTrend = tfData.mTrend;
+               tfData.waitingArrPbHigh = 1;
+               if (isCHoCHBOSVolume) {
+                  tfData.vSTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volArrPbHigh[0])) ? -1: 1;
+                  tfData.vMTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volArrPbHigh[0])) ? -1: 1;
+               } 
+            }
          }
       }
       
@@ -2038,6 +2186,17 @@ struct marketStructs{
             tfData.sTrend = -1; tfData.mTrend = -1; tfData.LastSwingMajor = -1;
             tfData.findHigh = 0; 
             tfData.idmLow = tfData.Highs[0]; tfData.idmLowTime = tfData.HighsTime[0]; tfData.vol_idmLow = tfData.volHighs[0];
+            
+            // update waiting arr top
+            tfData.waitingArrTop = 0;
+            // Bos Low with Volume
+            if (tfData.waitingArrBot == 0) {
+               tfData.vMTrend = tfData.mTrend;
+               tfData.waitingArrBot = 1;
+               if (isCHoCHBOSVolume) {
+                  tfData.vMTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volArrPbHigh[0])) ? -1: 1;
+               } 
+            }
          }
          
          if (bar3.low >= bar2.low && bar2.low <= bar1.low) { // tim thay swing low 
@@ -2059,6 +2218,8 @@ struct marketStructs{
                   tfData.AddToLongArray( tfData.volArrBot, maxVolume);
                   // Add new zone
                   tfData.AddToPoiZoneArray( tfData.zArrBot, zone2, poi_limit); 
+                  // cap nhat waiting arrBot
+                  tfData.waitingArrBot = 0;
                }
                tfData.sTrend = -1; tfData.mTrend = -1; tfData.LastSwingMajor = 1;
             }
@@ -2076,6 +2237,8 @@ struct marketStructs{
                   tfData.UpdateLongArray( tfData.volArrBot, 0, maxVolume);
                   // Update zone
                   tfData.UpdatePoiZoneArray( tfData.zArrBot, 0, zone2);
+                  // cap nhat waiting arrBot
+                  tfData.waitingArrBot = 0;
                }
                tfData.sTrend = -1; tfData.mTrend = -1; tfData.LastSwingMajor = 1;   
             }
@@ -2094,6 +2257,8 @@ struct marketStructs{
                tfData.AddToLongArray( tfData.volArrPbLow, tfData.volArrBot[0]);
                // Add new zone
                tfData.AddToPoiZoneArray( tfData.zArrPbLow, tfData.zArrBot[0], poi_limit);
+               // update waiting arr pb low
+               tfData.waitingArrPbLows = 0;
             } 
             drawPointStructure(tfData, -1, tfData.arrPbLow[0], tfData.arrPbLTime[0], MAJOR_STRUCTURE, false, enabledDraw);
             drawLine(IDM_TEXT, tfData.idmLowTime, tfData.idmLow, bar1.time, tfData.idmLow, -1, IDM_TEXT, tfData.tfColor, STYLE_DOT);
@@ -2129,6 +2294,17 @@ struct marketStructs{
             tfData.sTrend = 1; tfData.mTrend = 1; tfData.LastSwingMajor = 1;
             tfData.findHigh = 0; 
             tfData.idmHigh = tfData.Lows[0]; tfData.idmHighTime = tfData.LowsTime[0]; tfData.vol_idmHigh = tfData.volLows[0];
+            
+            // CHoCH High with Volume
+            if (tfData.waitingArrPbHigh == 0) {
+               tfData.vSTrend = tfData.sTrend;
+               tfData.vMTrend = tfData.mTrend;
+               tfData.waitingArrPbHigh = 1;
+               if (isCHoCHBOSVolume) {
+                  tfData.vSTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volArrPbHigh[0])) ? 1: -1;
+                  tfData.vMTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volArrPbHigh[0])) ? 1: -1;
+               } 
+            }
          }
          
          // continue Down, Continue BOS down
@@ -2155,6 +2331,9 @@ struct marketStructs{
                MqlRates bar_tmp = tfData.H_bar;
                PoiZone zone_tmp = CreatePoiZone(bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
                tfData.AddToPoiZoneArray( tfData.zArrPbHigh, zone_tmp, poi_limit);
+               
+               // update waiting arrPbHigh
+               tfData.waitingArrPbHigh = 0;
             }
             drawPointStructure(tfData, 1, tfData.arrPbHigh[0], tfData.arrPbHTime[0], MAJOR_STRUCTURE, false, enabledDraw);
             drawLine(BOS_TEXT, tfData.arrPbLTime[0], tfData.arrPbLow[0], bar1.time, tfData.arrPbLow[0], 1, BOS_TEXT, tfData.tfColor, STYLE_SOLID);
@@ -2168,6 +2347,17 @@ struct marketStructs{
             tfData.idmLow = tfData.Highs[0]; tfData.idmLowTime = tfData.HighsTime[0]; tfData.vol_idmLow = tfData.volHighs[0];
             tfData.H = 0; tfData.vol_H = 0; 
             text += ", findHigh = 0, idmLow = "+(string) tfData.Highs[0]+", H = 0";
+            
+            // CHoCH Low with Volume
+            if (tfData.waitingArrPbLows == 0) {
+               tfData.vSTrend = tfData.sTrend;
+               tfData.vMTrend = tfData.mTrend;
+               tfData.waitingArrPbLows = 1;
+               if (isCHoCHBOSVolume) {
+                  tfData.vSTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volArrPbLow[0])) ? -1: 1;
+                  tfData.vMTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volArrPbLow[0])) ? -1: 1;
+               } 
+            }
             
          }
          
@@ -2192,6 +2382,8 @@ struct marketStructs{
                MqlRates bar_tmp = tfData.H_bar;
                PoiZone zone_tmp = CreatePoiZone(bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
                tfData.AddToPoiZoneArray( tfData.zArrPbHigh, zone_tmp, poi_limit); 
+               // update waiting arrPbHigh
+               tfData.waitingArrPbHigh = 0;
             }
             drawPointStructure(tfData, 1, tfData.arrPbHigh[0], tfData.arrPbHTime[0], MAJOR_STRUCTURE, false, enabledDraw);
             drawLine(CHOCH_TEXT, tfData.arrPbLTime[0], tfData.arrPbLow[0], bar1.time, tfData.arrPbLow[0], 1, CHOCH_TEXT, tfData.tfColor, STYLE_SOLID);
@@ -2204,6 +2396,17 @@ struct marketStructs{
             tfData.findHigh = 0; 
             tfData.idmLow = tfData.Highs[0]; tfData.idmHighTime = tfData.LowsTime[0]; tfData.vol_idmLow = tfData.volHighs[0];
             tfData.H = 0; tfData.vol_H = 0;
+            
+            // CHoCH Low with Volume
+            if (tfData.waitingArrPbLows == 0) {
+               tfData.vSTrend = tfData.sTrend;
+               tfData.vMTrend = tfData.mTrend;
+               tfData.waitingArrPbLows = 1;
+               if (isCHoCHBOSVolume) {
+                  tfData.vSTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volArrPbLow[0])) ? -1: 1;
+                  tfData.vMTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volArrPbLow[0])) ? -1: 1;
+               } 
+            }
          }
          // CHoCH Up. 
          if (tfData.LastSwingMajor == 1 && bar1.high > tfData.arrPbHigh[0] && tfData.arrPbHigh[0] != tfData.arrChoHigh[0]) {
@@ -2226,6 +2429,17 @@ struct marketStructs{
             tfData.sTrend = 1; tfData.mTrend = 1; tfData.LastSwingMajor = 1;
             tfData.findLow = 0; 
             tfData.idmHigh = tfData.Lows[0]; tfData.idmHighTime = tfData.LowsTime[0]; tfData.vol_idmHigh = tfData.volLows[0];
+            
+            // CHoCH Low with Volume
+            if (tfData.waitingArrPbHigh == 0) {
+               tfData.vSTrend = tfData.sTrend;
+               tfData.vMTrend = tfData.mTrend;
+               tfData.waitingArrPbHigh = 1;
+               if (isCHoCHBOSVolume) {
+                  tfData.vSTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volArrPbHigh[0])) ? 1: -1;
+                  tfData.vMTrend = (checkVolumeBreak(bar1.tick_volume, tfData.volArrPbHigh[0])) ? 1: -1;
+               } 
+            }
          }
       }
       
@@ -2934,10 +3148,11 @@ void testData(ENUM_TIMEFRAMES timeframe) {
 }
 
 string getValueTrend(TimeFrameData& tfData) {
-   string text =  "| Struct trend = STrend: "+ (string) tfData.sTrend + " - marjor trend = mTrend: "+(string) tfData.mTrend+ " - LastSwingMajor: "+(string) tfData.LastSwingMajor+ 
-               " findHigh: "+(string) tfData.findHigh+" - idmHigh: "+(string) tfData.idmHigh+ " - vol idmHigh: "+(string) tfData.vol_idmHigh+
+   string text =  "| Struct trend = STrend: "+ (string) tfData.sTrend + " vSTrend: "+(string) tfData.vSTrend + " waitingStrend: pbHigh "+(string) tfData.waitingArrPbHigh + " pbLow " + (string) tfData.waitingArrPbLows +
+                     " - marjor trend = mTrend: "+(string) tfData.mTrend+ " vMTrend: "+(string) tfData.vMTrend+  " waitingMtrend: waitingArrTop "+(string) tfData.waitingArrTop + " waitingArrBot " + (string) tfData.waitingArrBot + " - LastSwingMajor: "+(string) tfData.LastSwingMajor+ 
+               "\n findHigh: "+(string) tfData.findHigh+" - idmHigh: "+(string) tfData.idmHigh+ " - vol idmHigh: "+(string) tfData.vol_idmHigh+
                " findLow: "+(string) tfData.findLow+" - idmLow: "+(string) tfData.idmLow+ " - vol idmLow: "+(string) tfData.vol_idmLow+
-               " | \n | iTrend: "+(string) tfData.iTrend+ " vItrend: "+(string) tfData.vItrend+" - LastSwingInternal: "+(string) tfData.LastSwingInternal+
+               " | \n | iTrend: "+(string) tfData.iTrend+ " vItrend: "+(string) tfData.vItrend+ " waitingItrend: IntSHighs "+(string) tfData.waitingIntSHighs + " IntSLows " + (string) tfData.waitingIntSLows +" - LastSwingInternal: "+(string) tfData.LastSwingInternal+
                " | | gTrend: "+(string) tfData.gTrend+ " vGTrend: "+(string) tfData.vGTrend+ " - LastSwingMeter: "+(string) tfData.LastSwingMeter+
                " | | H: "+ (string) tfData.H +" - L: "+(string) tfData.L;  
    return text;
