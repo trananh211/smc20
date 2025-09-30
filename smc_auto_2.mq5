@@ -1448,7 +1448,7 @@ struct marketStructs{
             tfData.vItrend = tfData.iTrend;
             tfData.LastSwingInternal = 1;
             tfData.waitingIntSHighs = 1;
-            textInternalHigh = "---> I2 CHoCH High => iTrend = -1 && LastSwingInternal = 1 && bar1.high > intSHighs[0] => iTrend = 1, LastSwingInternal = 1, waitingIntSHighs = 1";
+            textInternalHigh = "---> I3 CHoCH High => iTrend = -1 && LastSwingInternal = 1 && bar1.high > intSHighs[0] => iTrend = 1, LastSwingInternal = 1, waitingIntSHighs = 1";
             if (isComment) {
                Print(textInternalHigh);
             }
@@ -1471,19 +1471,23 @@ struct marketStructs{
             if (isCHoCHBOSVolume) {
                tfData.vItrend = (checkVolumeBreak(1, bar1, tfData.intSHighs[1], tfData.volIntSHighs[1])) ? 1: -1;
             }
-            //ArrayPrint(tfData.intSHighs);
-            //Print("++++++++++ 4+5 Choch high. Delete intsHighs[0]"+(string) tfData.intSHighs[0]+". Sort intSHighs");
-            // Clear Draw intSHigh[0]
-            deleteObj(tfData.intSHighTime[0], tfData.intSHighs[0], iWingding_internal_high, "");
-            //// Delete intSHighs[0]
-            //tfData.RemoveFromDoubleArray(tfData.intSHighs, 0);
-            //tfData.RemoveFromDateTimeArray(tfData.intSHighTime, 0);
-            //tfData.RemoveFromLongArray(tfData.volIntSHighs, 0);
-            // Sort intSHighs
-            tfData.SortDoubleArrayAfterDelete(tfData.intSHighs);
-            tfData.SortDateTimeArrayAfterDelete(tfData.intSHighTime);
-            tfData.SortLongArrayAfterDelete(tfData.volIntSHighs);
-            tfData.SortPoiZoneArrayAfterDelete(tfData.zIntSHighs);
+            if (tfData.intSHighs[0] < tfData.intSHighs[1]) {
+               // Clear Draw intSHigh[0]
+               deleteObj(tfData.intSHighTime[0], tfData.intSHighs[0], iWingding_internal_high, "");
+               // Sort intSHighs
+               tfData.SortDoubleArrayAfterDelete(tfData.intSHighs);
+               tfData.SortDateTimeArrayAfterDelete(tfData.intSHighTime);
+               tfData.SortLongArrayAfterDelete(tfData.volIntSHighs);
+               tfData.SortPoiZoneArrayAfterDelete(tfData.zIntSHighs);
+            } else if (tfData.intSHighs[0] > tfData.intSHighs[1]) {
+               tfData.AddToDoubleArray(tfData.intSLows, bar1.low);
+               tfData.AddToDateTimeArray(tfData.intSLowTime, bar1.time);
+               tfData.AddToLongArray(tfData.volIntSLows, bar1.tick_volume);
+               tfData.waitingIntSLows = 0 ;
+               // ve intslow moi
+               drawPointStructure(tfData, -1, bar1.low, bar1.time, INTERNAL_STRUCTURE, false, enabledDraw);
+            }
+            
          }
          //if (isComment && StringLen(textInternalHigh) > 0) {
          //   Print(textInternalHigh);
@@ -1491,9 +1495,7 @@ struct marketStructs{
       }
       
       // Low
-      if (tfData.waitingIntSLows == 0 
-         //|| tfData.waitingIntSLows == 1
-         ) {
+      if (tfData.waitingIntSLows == 0) {
          //1 continue bos 
          if (tfData.iTrend == -1 && tfData.LastSwingInternal == -1 && bar1.low < tfData.intSLows[0]) {
             tfData.iTrend = -1;
@@ -1539,19 +1541,23 @@ struct marketStructs{
             if (isCHoCHBOSVolume) {
                tfData.vItrend = (checkVolumeBreak(-1, bar1, tfData.intSLows[1], tfData.volIntSLows[1])) ? -1: 1;
             }
-            //ArrayPrint(tfData.intSLows);
-            //Print("++++++++++ -4 -5 Choch low. Delete intSLows[0]"+(string) tfData.intSLows[0]+". Sort intSLows");
-            // Clear Draw intSHigh[0]
-            deleteObj(tfData.intSLowTime[0], tfData.intSLows[0], iWingding_internal_low, "");
-            //// Delete intSHighs[0]
-            //tfData.RemoveFromDoubleArray(tfData.intSLows, 0);
-            //tfData.RemoveFromDateTimeArray(tfData.intSLowTime, 0);
-            //tfData.RemoveFromLongArray(tfData.volIntSLows, 0);
-            // Sort intSHighs
-            tfData.SortDoubleArrayAfterDelete(tfData.intSLows);
-            tfData.SortDateTimeArrayAfterDelete(tfData.intSLowTime);
-            tfData.SortLongArrayAfterDelete(tfData.volIntSLows);
-            tfData.SortPoiZoneArrayAfterDelete(tfData.zIntSLows);
+            
+            if (tfData.intSLows[0] > tfData.intSLows[1]) {
+               // Clear Draw intSHigh[0]
+               deleteObj(tfData.intSLowTime[0], tfData.intSLows[0], iWingding_internal_low, "");
+               // Sort intSHighs
+               tfData.SortDoubleArrayAfterDelete(tfData.intSLows);
+               tfData.SortDateTimeArrayAfterDelete(tfData.intSLowTime);
+               tfData.SortLongArrayAfterDelete(tfData.volIntSLows);
+               tfData.SortPoiZoneArrayAfterDelete(tfData.zIntSLows);
+            } else if (tfData.intSHighs[0] > tfData.intSHighs[1]) {
+               tfData.AddToDoubleArray(tfData.intSHighs, bar1.high);
+               tfData.AddToDateTimeArray(tfData.intSHighTime, bar1.time);
+               tfData.AddToLongArray(tfData.volIntSHighs, bar1.tick_volume);
+               tfData.waitingIntSHighs = 0;
+               // ve intslow moi
+               drawPointStructure(tfData, 1, bar1.low, bar1.time, INTERNAL_STRUCTURE, false, enabledDraw);
+            }
          }
          //if (isComment && StringLen(textInternalLow) > 0) {
          //   Print(textInternalLow);
@@ -1700,6 +1706,29 @@ struct marketStructs{
             //// cap nhat waiting bos intSHighs ve 0
             tfData.waitingIntSHighs = 0;
          }
+         
+         // DONE 6
+         if (tfData.iTrend == -1 && tfData.LastSwingInternal == 1 && bar2.high > tfData.intSHighs[0] 
+            //&& tfData.waitingIntSHighs == 1
+            ) { // iCHoCH
+            textInternalHigh += "\n"+"## High 6 iCHoCH --> Update: LastSwingInternal: -1, New intSHighs[0]: "+(string) bar2.high;
+            
+            // Add new intSHigh
+            tfData.AddToDoubleArray(tfData.intSHighs, bar2.high);
+            tfData.AddToDateTimeArray(tfData.intSHighTime, bar2.time);
+            tfData.AddToLongArray(tfData.volIntSHighs, maxVolume);
+            
+            drawPointStructure(tfData, 1, bar2.high, bar2.time, INTERNAL_STRUCTURE, false, enabledDraw);
+            tfData.iTrend = 1;
+            tfData.LastSwingInternal = -1;
+            resultStructure = 6;
+                        
+            // them Zone
+            tfData.AddToPoiZoneArray(tfData.zIntSHighs, zone2, poi_limit);
+            // cap nhat waiting bos intSHighs ve 0
+            tfData.waitingIntSHighs = 0;
+            
+         }
          if( isComment) {
             Print(textInternalHigh);
             //ArrayPrint(tfData.intSHighs);
@@ -1847,6 +1876,29 @@ struct marketStructs{
             textInternalLow += ", (?) iTrend: "+(string) tfData.iTrend;
             //// cap nhat waiting bos intSLows ve 0
             tfData.waitingIntSLows = 0;
+         }
+         
+         // DONE 6
+         if (tfData.iTrend == 1 && tfData.LastSwingInternal == -1 && bar2.high < tfData.intSLows[0] 
+               //&& tfData.waitingIntSLows == 1
+               ) { // iCHoCH
+            textInternalLow += "\n"+"## Low 6 iCHoCH --> Update: LastSwingInternal: 1, New intSLows[0]: "+(string) bar2.high;
+            
+            // Add new intSHigh
+            tfData.AddToDoubleArray(tfData.intSLows, bar2.low);
+            tfData.AddToDateTimeArray(tfData.intSLowTime, bar2.time);
+            tfData.AddToLongArray(tfData.volIntSLows, maxVolume);
+            
+            drawPointStructure(tfData, -1, bar2.low, bar2.time, INTERNAL_STRUCTURE, false, enabledDraw);
+            tfData.iTrend = -1;
+            tfData.LastSwingInternal = 1;
+            resultStructure = -6;
+                        
+            // them Zone
+            tfData.AddToPoiZoneArray(tfData.zIntSLows, zone2, poi_limit);
+            // cap nhat waiting bos intSHighs ve 0
+            tfData.waitingIntSLows = 0;
+            
          }
          if(isComment) {
             Print(textInternalLow);
@@ -2655,6 +2707,8 @@ struct marketStructs{
       
       // Check break with Body or Wick
       double double_bar_break = 0;
+      double isDojiBar = 0;
+      double highLowBar = 0, bodyBar = 0;
       if (isTypeBreak == 1) { // Phá bằng râu nến
          double_bar_break = (type_break == 1) ? barBreak.high : barBreak.low;
          text += ";"+((result_percent)? "[Success]": "[False]")+" Break with Wick Bar";
@@ -2667,14 +2721,15 @@ struct marketStructs{
             result = result_percent;
          } else { // Nếu râu nến phá qua
             // Kiểm tra xem thân nến có > 50% thanh nến hay không
-            double highLowBar = barBreak.high - barBreak.low;
-            double bodyBar = (barBreak.open < barBreak.close) ? (barBreak.close - barBreak.open) : (barBreak.open - barBreak.close);
-            bool isDojiBar = (bodyBar > percentIsDojiBar/100*highLowBar)? false : true;
-            if (isDojiBar) {
+            highLowBar = barBreak.high - barBreak.low;
+            bodyBar = (barBreak.open < barBreak.close) ? (barBreak.close - barBreak.open) : (barBreak.open - barBreak.close);
+            isDojiBar = bodyBar - highLowBar*percentIsDojiBar/100;
+            text += "; \nbodyBar("+(string)bodyBar+") - percent("+(string)percentIsDojiBar+")/100*highLowBar("+(string)highLowBar+") ("+(string)(highLowBar*percentIsDojiBar/100)+") = "+ (string)isDojiBar;
+            if (isDojiBar < 0) {
                text += "; [False] Break with Doji Bar";
                result = false;
             } else {
-               text += (result_percent)? "; [Success] Break with Bar Normal" : "; [False] Break with Bar Normal";
+               text += "; "+ ((result_percent)? "[Success]" : "[False]") + " Break with Normal Bar";
                result = result_percent;
             }
          }
