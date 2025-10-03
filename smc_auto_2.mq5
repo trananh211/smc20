@@ -1483,6 +1483,10 @@ struct marketStructs{
                tfData.AddToDoubleArray(tfData.intSLows, bar1.low);
                tfData.AddToDateTimeArray(tfData.intSLowTime, bar1.time);
                tfData.AddToLongArray(tfData.volIntSLows, bar1.tick_volume);
+               // set Zone
+               PoiZone zone1 = CreatePoiZone(bar1.high, bar1.low, bar1.open, bar1.close, bar1.time);
+               // them Zone
+               tfData.AddToPoiZoneArray(tfData.zIntSLows, zone1, poi_limit);
                tfData.waitingIntSLows = 0 ;
                // ve intslow moi
                drawPointStructure(tfData, -1, bar1.low, bar1.time, INTERNAL_STRUCTURE, false, enabledDraw);
@@ -1554,6 +1558,11 @@ struct marketStructs{
                tfData.AddToDoubleArray(tfData.intSHighs, bar1.high);
                tfData.AddToDateTimeArray(tfData.intSHighTime, bar1.time);
                tfData.AddToLongArray(tfData.volIntSHighs, bar1.tick_volume);
+               
+               // set Zone
+               PoiZone zone1 = CreatePoiZone(bar1.high, bar1.low, bar1.open, bar1.close, bar1.time);
+               // them Zone
+               tfData.AddToPoiZoneArray(tfData.zIntSHighs, zone1, poi_limit);
                tfData.waitingIntSHighs = 0;
                // ve intslow moi
                drawPointStructure(tfData, 1, bar1.low, bar1.time, INTERNAL_STRUCTURE, false, enabledDraw);
@@ -3092,7 +3101,7 @@ string getInfoStruct(ENUM_TIMEFRAMES timeframe) {
    text += " | Struct is : " + ((tfData.sTrend == 0) ? "Not defined" : ((tfData.sTrend == 1) ? "S UpTrend" : "S DownTrend")) + "( "+ (string) tfData.sTrend + " . "+ (string) tfData.vSTrend+ ")";
    text += " | Marjor Struct is : " + ((tfData.mTrend == 0) ? "Not defined" : ((tfData.mTrend == 1) ? "m UpTrend" : "m DownTrend")) + "( "+ (string) tfData.mTrend + " . "+ (string) tfData.vMTrend+ ")";
    text += " | Internal is : " + ((tfData.iTrend == 0) ? "Not defined" : ((tfData.iTrend == 1) ? "i UpTrend" : "i DownTrend"))+ "( "+ (string) tfData.iTrend + " . "+ (string) tfData.vItrend+ ")";
-   text += " | Gann wave is : " + ((tfData.gTrend == 0) ? "Not defined" : ((tfData.gTrend == -1) ? "g UpTrend" : " DownTrend"))+ "( "+ (string) tfData.gTrend + " . "+ (string) tfData.vGTrend+ ")";
+   text += " | Gann wave is : " + ((tfData.gTrend == 0) ? "Not defined" : ((tfData.gTrend == 1) ? "g UpTrend" : " DownTrend"))+ "( "+ (string) tfData.gTrend + " . "+ (string) tfData.vGTrend+ ")";
    return text;
 }
 
