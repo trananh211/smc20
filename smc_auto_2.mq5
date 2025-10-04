@@ -8,7 +8,6 @@
 #property version   "1.00"
 #property strict
 
-
 //#region variable declaration
 bool enabledComment = true;
 bool disableComment = false;
@@ -2163,7 +2162,8 @@ struct marketStructs{
                   tfData.vMTrend = tfData.vSTrend;
                } 
             }
-            
+            // ve line
+            DrawDirectionalSegment(-1, bar1.low, bar1.time, tfData.Highs[0], tfData.arrPbLow[0], tfData.tfColor, 1);
          }
          
          // continue Up, Continue BOS up
@@ -2218,6 +2218,8 @@ struct marketStructs{
                } 
                tfData.vMTrend = tfData.vSTrend;
             }
+            // Ve line
+            DrawDirectionalSegment(1, bar1.high, bar1.time, tfData.L, tfData.arrPbHigh[0], tfData.tfColor, 1);
          }
       }
    
@@ -2476,6 +2478,8 @@ struct marketStructs{
                   tfData.vMTrend = tfData.vSTrend;
                } 
             }
+            // Ve line
+            DrawDirectionalSegment(1, bar1.high, bar1.time, tfData.Lows[0], tfData.arrPbHigh[0], tfData.tfColor, 1);
          }
          
          // continue Down, Continue BOS down
@@ -2531,7 +2535,8 @@ struct marketStructs{
                } 
                tfData.vSTrend = tfData.vMTrend;
             }
-            
+            // Ve line
+            DrawDirectionalSegment(-1, bar1.low, bar1.time, tfData.H, tfData.arrPbLow[0], tfData.tfColor, 1);
          }
          
       }
@@ -3272,6 +3277,102 @@ void deleteLine(datetime time, double price, string name) {
      {
       ObjectDelete(0, objName);
      }
+}
+
+
+//+------------------------------------------------------------------+
+//| Hàm: Vẽ Đoạn Giá Có Mũi Tên Hướng                                |
+//| * Tên đối tượng được tạo dựa trên Thời gian (duy nhất cho mỗi nến) |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+//| Hàm: Vẽ Đoạn Giá Có Mũi Tên Hướng (Đã sửa lỗi)                   |
+//+------------------------------------------------------------------+
+bool DrawDirectionalSegment(
+    const int direction, // 1: Lên, -1: Xuống
+    double price_start_draw, // vị trí đặt nét vẽ
+    datetime time_coord,
+    double price_dinh, // đỉnh tam giác 
+    double price_day, // đáy tam giác
+    color color_val, 
+    int width_val = 1
+    )
+{
+    // Định nghĩa BASE_NAME
+    const string BASE_NAME = "DirSeg_";
+    
+    // TẠO TÊN DUY NHẤT: Kết hợp Tên Cơ Sở và Thời gian của nến
+    string unique_time_str = TimeToString(time_coord, TIME_DATE|TIME_SECONDS);
+    StringReplace(unique_time_str, ":", "_"); // Thay thế dấu : để tránh lỗi tên
+    string seg_name = BASE_NAME + "Seg_" + unique_time_str;
+    string arr_name = BASE_NAME + "Arr_" + unique_time_str;
+    
+    double start_price = price_start_draw; 
+    double high_of_line = (price_dinh > price_day) ? price_dinh - price_day : price_day - price_dinh;
+    double end_price;   
+    int arrow_code;     
+    
+    // 1. XÁC ĐỊNH HƯỚNG VÀ VỊ TRÍ MŨI TÊN
+    if (direction == 1) // MŨI TÊN HƯỚNG LÊN 
+    {
+        arrow_code = 241; // SỬA: SYMBOL_ARROW_UP → SYMBOL_ARROWUP
+        end_price   = price_start_draw + high_of_line; // SỬA: fmax → MathMax
+    }
+    else if (direction == -1) // MŨI TÊN HƯỚNG XUỐNG
+    {
+        arrow_code = 242; // SỬA: SYMBOL_ARROW_DOWN → SYMBOL_ARROWDOWN
+        end_price   = price_start_draw = high_of_line; // SỬA: fmin → MathMin
+    }
+    else
+    {
+        Print("Lỗi: Tham số 'direction' không hợp lệ. Chỉ chấp nhận 1 (Lên) hoặc -1 (Xuống).");
+        return false;
+    }
+
+    // 2. KIỂM TRA GIÁ TRỊ HỢP LỆ (SỬA LẠI HOÀN TOÀN)
+    if (price_dinh <= 0.0 || price_day <= 0.0 || 
+        !MathIsValidNumber(price_dinh) || !MathIsValidNumber(price_day) ||
+        time_coord <= 0)
+    {
+        Print("Lỗi: Giá trị đầu vào không hợp lệ. Price đỉnh: ", price_dinh, ", Price đáy: ", price_day, ", Time: ", time_coord);
+        return false;
+    }
+
+    // 3. XÓA ĐỐI TƯỢNG CŨ (NẾU TỒN TẠI)
+    ObjectDelete(0, seg_name);
+    ObjectDelete(0, arr_name);
+
+    // 4. VẼ ĐOẠN THẲNG (OBJ_TREND) - SỬA: OBJ_FIBOSEG → OBJ_TREND
+    if (!ObjectCreate(0, seg_name, OBJ_TREND, 0, time_coord, start_price, time_coord, end_price))
+    {
+        Print("Lỗi tạo đoạn thẳng: ", GetLastError());
+        return false;
+    }
+    
+    // Thiết lập thuộc tính cho đoạn thẳng
+    ObjectSetInteger(0, seg_name, OBJPROP_COLOR, color_val);
+    ObjectSetInteger(0, seg_name, OBJPROP_WIDTH, width_val);
+    ObjectSetInteger(0, seg_name, OBJPROP_STYLE, STYLE_SOLID);
+    ObjectSetInteger(0, seg_name, OBJPROP_RAY, false);
+    ObjectSetInteger(0, seg_name, OBJPROP_SELECTABLE, false);
+
+    // 5. VẼ MŨI TÊN (OBJ_ARROW_CHECK) - SỬA: OBJ_ARROW → OBJ_ARROW_CHECK
+    if (!ObjectCreate(0, arr_name, OBJ_ARROW_CHECK, 0, time_coord, end_price))
+    {
+        Print("Lỗi tạo mũi tên: ", GetLastError());
+        // Xóa đoạn thẳng đã tạo nếu mũi tên thất bại
+        ObjectDelete(0, seg_name);
+        return false;
+    }
+    
+    // Thiết lập thuộc tính cho mũi tên
+    ObjectSetInteger(0, arr_name, OBJPROP_COLOR, color_val);
+    ObjectSetInteger(0, arr_name, OBJPROP_ARROWCODE, arrow_code);
+    ObjectSetInteger(0, arr_name, OBJPROP_WIDTH, width_val + 2); 
+    ObjectSetInteger(0, arr_name, OBJPROP_SELECTABLE, false);
+
+    // 6. VẼ LẠI BIỂU ĐỒ
+    ChartRedraw();
+    return true;
 }
 
 //+------------------------------------------------------------------+
