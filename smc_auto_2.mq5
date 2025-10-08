@@ -1391,6 +1391,12 @@ struct marketStructs{
       string textBot = "";
 
       long maxVolume = 0;
+      
+      // dinh nghia huong ve line target
+      int line_target = 0;
+      double line_dinh = 0;
+      double line_day = 0;
+      double place_start_line_draw = 0;
       // Gann wave
       // BOS Highs
       if (tfData.waitingHighs == 0 && bar1.high > tfData.Highs[0]) {
@@ -1439,6 +1445,33 @@ struct marketStructs{
             if (isCHoCHBOSVolume) {
                tfData.vItrend = (checkVolumeBreak(1, bar1, tfData.intSHighs[0], tfData.volIntSHighs[0])) ? 1: -1;
             }
+            //// CHoCH High with Volume
+            //if (tfData.waitingArrPbHigh == 0) {
+            //   tfData.vMTrend = tfData.mTrend;
+            //   tfData.waitingArrPbHigh = 1;
+            //   line_target = tfData.vMTrend;
+            //   line_dinh = tfData.arrPbLow[0];
+            //   line_day = tfData.arrPbHigh[0];
+            //   place_start_line_draw = bar1.high;
+            //   if (isCHoCHBOSVolume) {
+            //      // is breakout ?
+            //      if (checkVolumeBreak(1, bar1, tfData.arrPbHigh[0], tfData.volArrPbHigh[0])) {
+            //         tfData.vMTrend = 1;
+            //         line_dinh = tfData.arrPbLow[0];
+            //         line_day = tfData.arrPbHigh[0];
+            //         place_start_line_draw = bar1.high;
+            //      } else { // false breakout
+            //         tfData.vMTrend = -1;
+            //         line_dinh = tfData.arrPbHigh[0];
+            //         line_day = tfData.arrPbLow[0];
+            //         place_start_line_draw = tfData.arrPbLow[0];
+            //      }
+            //      tfData.vSTrend = tfData.vMTrend;
+            //      line_target = tfData.vMTrend;
+            //   } 
+            //}
+            //// ve line
+            //DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 3);
          }
          
          //3 choch high
@@ -1921,6 +1954,11 @@ struct marketStructs{
    //--- Ham cap nhat cau truc thi truong
    //---
    void updatePointTopBot(TimeFrameData& tfData, MqlRates& bar1, MqlRates& bar2, MqlRates& bar3, bool isComment = false){
+      // dinh nghia huong ve line target
+      int line_target = 0;
+      double line_dinh = 0;
+      double line_day = 0;
+      double place_start_line_draw = 0;
       //string textall = "----- updatePointTopBot -----";
       string textall = "";
       string text = "";
@@ -2152,18 +2190,35 @@ struct marketStructs{
             if (isComment && StringLen(text) > 0) {
                Print(text);
             }
+            
             // CHoCH with Volume
             if (tfData.waitingArrPbLows == 0) {
                tfData.vSTrend = tfData.sTrend;
                tfData.vMTrend = tfData.mTrend;
                tfData.waitingArrPbLows = 1;
+               line_target = tfData.sTrend;
+               line_dinh = tfData.arrPbHigh[0];
+               line_day = tfData.arrPbLow[0];
+               place_start_line_draw = bar1.low;
                if (isCHoCHBOSVolume) {
-                  tfData.vSTrend = (checkVolumeBreak(-1, bar1, tfData.arrPbLow[0], tfData.volArrPbLow[0])) ? -1: 1;
+                  // is breakout ?
+                  if (checkVolumeBreak(-1, bar1, tfData.arrPbLow[0], tfData.volArrPbLow[0])) {
+                     tfData.vSTrend = -1;
+                     line_dinh = tfData.arrPbHigh[0];
+                     line_day = tfData.arrPbLow[0];
+                     place_start_line_draw = bar1.low;
+                  } else { // false breakout
+                     tfData.vSTrend = 1;
+                     line_dinh = tfData.arrPbLow[0];
+                     line_day = tfData.arrPbHigh[0];
+                     place_start_line_draw = tfData.arrPbHigh[0];
+                  }
                   tfData.vMTrend = tfData.vSTrend;
+                  line_target = tfData.vSTrend;
                } 
             }
             // ve line
-            DrawDirectionalSegment(-1, bar1.low, bar1.time, tfData.Highs[0], tfData.arrPbLow[0], tfData.tfColor, 1);
+            DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1);
          }
          
          // continue Up, Continue BOS up
@@ -2211,15 +2266,31 @@ struct marketStructs{
             }
             // CHoCH High with Volume
             if (tfData.waitingArrPbHigh == 0) {
-               tfData.vSTrend = tfData.sTrend;
+               tfData.vMTrend = tfData.mTrend;
                tfData.waitingArrPbHigh = 1;
+               line_target = tfData.vMTrend;
+               line_dinh = tfData.arrPbLow[0];
+               line_day = tfData.arrPbHigh[0];
+               place_start_line_draw = bar1.high;
                if (isCHoCHBOSVolume) {
-                  tfData.vSTrend = (checkVolumeBreak(1, bar1, tfData.arrPbHigh[0], tfData.volArrPbHigh[0])) ? 1: -1;
+                  // is breakout ?
+                  if (checkVolumeBreak(1, bar1, tfData.arrPbHigh[0], tfData.volArrPbHigh[0])) {
+                     tfData.vMTrend = 1;
+                     line_dinh = tfData.arrPbLow[0];
+                     line_day = tfData.arrPbHigh[0];
+                     place_start_line_draw = bar1.high;
+                  } else { // false breakout
+                     tfData.vMTrend = -1;
+                     line_dinh = tfData.arrPbHigh[0];
+                     line_day = tfData.arrPbLow[0];
+                     place_start_line_draw = tfData.arrPbLow[0];
+                  }
+                  tfData.vSTrend = tfData.vMTrend;
+                  line_target = tfData.vMTrend;
                } 
-               tfData.vMTrend = tfData.vSTrend;
             }
-            // Ve line
-            DrawDirectionalSegment(1, bar1.high, bar1.time, tfData.L, tfData.arrPbHigh[0], tfData.tfColor, 1);
+            // ve line
+            DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 3);
          }
       }
    
@@ -2468,18 +2539,35 @@ struct marketStructs{
             if (isComment && StringLen(text) > 0) {
                Print(text);
             }
+            
             // CHoCH High with Volume
             if (tfData.waitingArrPbHigh == 0) {
                tfData.vSTrend = tfData.sTrend;
                tfData.vMTrend = tfData.mTrend;
                tfData.waitingArrPbHigh = 1;
+               line_target = tfData.sTrend;
+               line_dinh = tfData.arrPbLow[0];
+               line_day = tfData.arrPbHigh[0];
+               place_start_line_draw = bar1.high;
                if (isCHoCHBOSVolume) {
-                  tfData.vSTrend = (checkVolumeBreak(1, bar1, tfData.arrPbHigh[0], tfData.volArrPbHigh[0])) ? 1: -1;
+                  // is breakout ?
+                  if (checkVolumeBreak(1, bar1, tfData.arrPbHigh[0], tfData.volArrPbHigh[0])) {
+                     tfData.vSTrend = 1;
+                     line_dinh = tfData.arrPbLow[0];
+                     line_day = tfData.arrPbHigh[0];
+                     place_start_line_draw = bar1.high;
+                  } else { // false breakout
+                     tfData.vSTrend = -1;
+                     line_dinh = tfData.arrPbHigh[0];
+                     line_day = tfData.arrPbLow[0];
+                     place_start_line_draw = tfData.arrPbLow[0];
+                  }
                   tfData.vMTrend = tfData.vSTrend;
+                  line_target = tfData.vSTrend;
                } 
             }
-            // Ve line
-            DrawDirectionalSegment(1, bar1.high, bar1.time, tfData.Lows[0], tfData.arrPbHigh[0], tfData.tfColor, 1);
+            // ve line
+            DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1);
          }
          
          // continue Down, Continue BOS down
@@ -2526,17 +2614,34 @@ struct marketStructs{
             if (isComment && StringLen(text) > 0) {
                Print(text);
             }
-            // CHoCH Low with Volume
+            
+            // CHoCH with Volume
             if (tfData.waitingArrPbLows == 0) {
                tfData.vMTrend = tfData.mTrend;
                tfData.waitingArrPbLows = 1;
+               line_target = tfData.vMTrend;
+               line_dinh = tfData.arrPbHigh[0];
+               line_day = tfData.arrPbLow[0];
+               place_start_line_draw = bar1.low;
                if (isCHoCHBOSVolume) {
-                  tfData.vMTrend = (checkVolumeBreak(-1, bar1, tfData.arrPbLow[0], tfData.volArrPbLow[0])) ? -1: 1;
+                  // is breakout ?
+                  if (checkVolumeBreak(-1, bar1, tfData.arrPbLow[0], tfData.volArrPbLow[0])) {
+                     tfData.vMTrend = -1;
+                     line_dinh = tfData.arrPbHigh[0];
+                     line_day = tfData.arrPbLow[0];
+                     place_start_line_draw = bar1.low;
+                  } else { // false breakout
+                     tfData.vMTrend = 1;
+                     line_dinh = tfData.arrPbLow[0];
+                     line_day = tfData.arrPbHigh[0];
+                     place_start_line_draw = tfData.arrPbHigh[0];
+                  }
+                  tfData.vSTrend = tfData.vMTrend;
+                  line_target = tfData.vMTrend;
                } 
-               tfData.vSTrend = tfData.vMTrend;
             }
-            // Ve line
-            DrawDirectionalSegment(-1, bar1.low, bar1.time, tfData.H, tfData.arrPbLow[0], tfData.tfColor, 1);
+            // ve line
+            DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 3);
          }
          
       }
@@ -3294,9 +3399,11 @@ bool DrawDirectionalSegment(
     double price_dinh, // đỉnh tam giác 
     double price_day, // đáy tam giác
     color color_val, 
-    int width_val = 1
+    int width_val = 1,
+    int style = 1 // style cua duong ke
     )
 {
+    
     // Định nghĩa BASE_NAME
     const string BASE_NAME = "DirSeg_";
     
@@ -3314,20 +3421,20 @@ bool DrawDirectionalSegment(
     // 1. XÁC ĐỊNH HƯỚNG VÀ VỊ TRÍ MŨI TÊN
     if (direction == 1) // MŨI TÊN HƯỚNG LÊN 
     {
-        arrow_code = 241; // SỬA: SYMBOL_ARROW_UP → SYMBOL_ARROWUP
+        arrow_code = 233; // SỬA: SYMBOL_ARROW_UP → SYMBOL_ARROWUP
         end_price   = price_start_draw + high_of_line; // SỬA: fmax → MathMax
     }
     else if (direction == -1) // MŨI TÊN HƯỚNG XUỐNG
     {
-        arrow_code = 242; // SỬA: SYMBOL_ARROW_DOWN → SYMBOL_ARROWDOWN
-        end_price   = price_start_draw = high_of_line; // SỬA: fmin → MathMin
+        arrow_code = 234; // SỬA: SYMBOL_ARROW_DOWN → SYMBOL_ARROWDOWN
+        end_price   = price_start_draw - high_of_line; // SỬA: fmin → MathMin
     }
     else
     {
         Print("Lỗi: Tham số 'direction' không hợp lệ. Chỉ chấp nhận 1 (Lên) hoặc -1 (Xuống).");
         return false;
     }
-
+      //arrow_code = 32;
     // 2. KIỂM TRA GIÁ TRỊ HỢP LỆ (SỬA LẠI HOÀN TOÀN)
     if (price_dinh <= 0.0 || price_day <= 0.0 || 
         !MathIsValidNumber(price_dinh) || !MathIsValidNumber(price_day) ||
@@ -3348,27 +3455,43 @@ bool DrawDirectionalSegment(
         return false;
     }
     
+    
     // Thiết lập thuộc tính cho đoạn thẳng
     ObjectSetInteger(0, seg_name, OBJPROP_COLOR, color_val);
     ObjectSetInteger(0, seg_name, OBJPROP_WIDTH, width_val);
-    ObjectSetInteger(0, seg_name, OBJPROP_STYLE, STYLE_SOLID);
     ObjectSetInteger(0, seg_name, OBJPROP_RAY, false);
     ObjectSetInteger(0, seg_name, OBJPROP_SELECTABLE, false);
+    // thiet lap kieu ve style cua doan thang
+    switch(style)
+      {
+       case  2: // Dot
+         ObjectSetInteger(0, seg_name, OBJPROP_STYLE, STYLE_DOT);
+         break;
+       case  3: // Dash
+         ObjectSetInteger(0, seg_name, OBJPROP_STYLE, STYLE_DASH);
+         break;
+       case  4: // Dash + dot
+         ObjectSetInteger(0, seg_name, OBJPROP_STYLE, STYLE_DASHDOT);
+         break;
+       default:
+         ObjectSetInteger(0, seg_name, OBJPROP_STYLE, STYLE_SOLID);
+         break;
+      }
 
-    // 5. VẼ MŨI TÊN (OBJ_ARROW_CHECK) - SỬA: OBJ_ARROW → OBJ_ARROW_CHECK
-    if (!ObjectCreate(0, arr_name, OBJ_ARROW_CHECK, 0, time_coord, end_price))
-    {
-        Print("Lỗi tạo mũi tên: ", GetLastError());
-        // Xóa đoạn thẳng đã tạo nếu mũi tên thất bại
-        ObjectDelete(0, seg_name);
-        return false;
-    }
-    
-    // Thiết lập thuộc tính cho mũi tên
-    ObjectSetInteger(0, arr_name, OBJPROP_COLOR, color_val);
-    ObjectSetInteger(0, arr_name, OBJPROP_ARROWCODE, arrow_code);
-    ObjectSetInteger(0, arr_name, OBJPROP_WIDTH, width_val + 2); 
-    ObjectSetInteger(0, arr_name, OBJPROP_SELECTABLE, false);
+//    // 5. VẼ MŨI TÊN (OBJ_ARROW_CHECK) - SỬA: OBJ_ARROW → OBJ_ARROW_CHECK
+//    if (!ObjectCreate(0, arr_name, OBJ_ARROW_CHECK, 0, time_coord, end_price))
+//    {
+//        Print("Lỗi tạo mũi tên: ", GetLastError());
+//        // Xóa đoạn thẳng đã tạo nếu mũi tên thất bại
+//        ObjectDelete(0, seg_name);
+//        return false;
+//    }
+//    
+//    // Thiết lập thuộc tính cho mũi tên
+//    ObjectSetInteger(0, arr_name, OBJPROP_COLOR, color_val);
+//    ObjectSetInteger(0, arr_name, OBJPROP_ARROWCODE, arrow_code);
+//    ObjectSetInteger(0, arr_name, OBJPROP_WIDTH, width_val + 2); 
+//    ObjectSetInteger(0, arr_name, OBJPROP_SELECTABLE, false);
 
     // 6. VẼ LẠI BIỂU ĐỒ
     ChartRedraw();
