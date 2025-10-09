@@ -64,6 +64,8 @@ enum isTickVolume {isBar = 1, isMax3Bar = 2};
 input isTickVolume typeTickVolume = 1; // 1: is Bar; 2 : largest of 3 adjacent candles
 input int percentCompare = 85; // Số % Volume quyết định Breakout 1 swing. (70% - 90%)
 input group "=== Draw target ==="
+input bool showTargetHighTF = true; // Hien thi target line o High Timeframe
+input bool showTargetLowTF = true; // Hien thi target line o Low Timeframe
 input bool isDrawMarjor = true; // Draw target with Marjor Swing
 input bool isDrawInteral = true; // Draw target with Internal Swing   
 // End #region variale declaration
@@ -1558,12 +1560,15 @@ struct marketStructs{
             }
             isDrawTarget = true;
          }
-         
-         if (isDrawInteral == true && isDrawTarget == true) {
-            isDrawTarget = false;
-            // ve line
-            DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 4);
+         // show draw target line
+         if ((showTargetHighTF == true && tfData.isTimeframe == highPairTF) || (showTargetLowTF == true && tfData.isTimeframe == lowPairTF)) {
+            if (isDrawInteral == true && isDrawTarget == true) {
+               isDrawTarget = false;
+               // ve line
+               DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 4);
+            }
          }
+         
          //if (isComment && StringLen(textInternalHigh) > 0) {
          //   Print(textInternalHigh);
          //}
@@ -1697,11 +1702,15 @@ struct marketStructs{
             }
             isDrawTarget = true;
          }
-         if (isDrawInteral == true && isDrawTarget == true) {
-            isDrawTarget = false;
-            // ve line
-            DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 4);
+         // Show draw target line
+         if ((showTargetHighTF == true && tfData.isTimeframe == highPairTF) || (showTargetLowTF == true && tfData.isTimeframe == lowPairTF)) {
+            if (isDrawInteral == true && isDrawTarget == true) {
+               isDrawTarget = false;
+               // ve line
+               DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 4);
+            }
          }
+         
          //if (isComment && StringLen(textInternalLow) > 0) {
          //   Print(textInternalLow);
          //}
@@ -2833,11 +2842,16 @@ struct marketStructs{
             }
          }
       }
-      // Ve Target Marjog
-      if (isDrawMarjor == true && isDrawTarget == true) {
-         // ve line
-         DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 3);
+      // Show draw target line
+      if ((showTargetHighTF == true && tfData.isTimeframe == highPairTF) || (showTargetLowTF == true && tfData.isTimeframe == lowPairTF)) {
+         // Ve Target Marjog
+         if (isDrawMarjor == true && isDrawTarget == true) {
+            isDrawTarget = false;
+            // ve line
+            DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 3);
+         }
       }
+      
       if(isComment && StringLen(text) > 0) {
          //textall += text;
          //text +=  "\n Last: "+getValueTrend(tfData);
