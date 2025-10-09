@@ -62,8 +62,10 @@ input typeBreak isTypeBreak = 1; // định nghĩa phá cấu trúc bằng Râu 
 input int percentIsDojiBar = 40; // định nghĩa số % tối đa thân nến để nến đó không phải là Doji Bar  
 enum isTickVolume {isBar = 1, isMax3Bar = 2};
 input isTickVolume typeTickVolume = 1; // 1: is Bar; 2 : largest of 3 adjacent candles
-input int percentCompare = 80; // Số % Volume quyết định Breakout 1 swing. (70% - 90%)
-
+input int percentCompare = 85; // Số % Volume quyết định Breakout 1 swing. (70% - 90%)
+input group "=== Draw target ==="
+input bool isDrawMarjor = true; // Draw target with Marjor Swing
+input bool isDrawInteral = true; // Draw target with Internal Swing   
 // End #region variale declaration
 
 //+------------------------------------------------------------------+
@@ -1393,10 +1395,12 @@ struct marketStructs{
       long maxVolume = 0;
       
       // dinh nghia huong ve line target
+      bool isDrawTarget = false;
       int line_target = 0;
       double line_dinh = 0;
       double line_day = 0;
       double place_start_line_draw = 0;
+      
       // Gann wave
       // BOS Highs
       if (tfData.waitingHighs == 0 && bar1.high > tfData.Highs[0]) {
@@ -1442,36 +1446,28 @@ struct marketStructs{
             if (isComment) {
                Print(textInternalHigh);
             }
+            
+            // CHoCH BoS with volume
+            line_target = tfData.vItrend;
+            line_dinh = tfData.intSLows[0];
+            line_day = tfData.intSHighs[0];
+            place_start_line_draw = bar1.high;
             if (isCHoCHBOSVolume) {
-               tfData.vItrend = (checkVolumeBreak(1, bar1, tfData.intSHighs[0], tfData.volIntSHighs[0])) ? 1: -1;
+               if (checkVolumeBreak(1, bar1, tfData.intSHighs[0], tfData.volIntSHighs[0])) { // break out
+                  tfData.vItrend = 1;
+                  line_dinh = tfData.intSLows[0];
+                  line_day = tfData.intSHighs[0];
+                  place_start_line_draw = bar1.high;
+               } else { // false break out
+                  tfData.vItrend = -1;
+                  line_dinh = tfData.intSHighs[0];
+                  line_day = tfData.intSLows[0];
+                  place_start_line_draw = tfData.intSLows[0];
+               }
+               line_target = tfData.vItrend;
             }
-            //// CHoCH High with Volume
-            //if (tfData.waitingArrPbHigh == 0) {
-            //   tfData.vMTrend = tfData.mTrend;
-            //   tfData.waitingArrPbHigh = 1;
-            //   line_target = tfData.vMTrend;
-            //   line_dinh = tfData.arrPbLow[0];
-            //   line_day = tfData.arrPbHigh[0];
-            //   place_start_line_draw = bar1.high;
-            //   if (isCHoCHBOSVolume) {
-            //      // is breakout ?
-            //      if (checkVolumeBreak(1, bar1, tfData.arrPbHigh[0], tfData.volArrPbHigh[0])) {
-            //         tfData.vMTrend = 1;
-            //         line_dinh = tfData.arrPbLow[0];
-            //         line_day = tfData.arrPbHigh[0];
-            //         place_start_line_draw = bar1.high;
-            //      } else { // false breakout
-            //         tfData.vMTrend = -1;
-            //         line_dinh = tfData.arrPbHigh[0];
-            //         line_day = tfData.arrPbLow[0];
-            //         place_start_line_draw = tfData.arrPbLow[0];
-            //      }
-            //      tfData.vSTrend = tfData.vMTrend;
-            //      line_target = tfData.vMTrend;
-            //   } 
-            //}
-            //// ve line
-            //DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 3);
+            isDrawTarget = true;
+            
          }
          
          //3 choch high
@@ -1484,9 +1480,27 @@ struct marketStructs{
             if (isComment) {
                Print(textInternalHigh);
             }
+            
+            // CHoCH BoS with volume
+            line_target = tfData.vItrend;
+            line_dinh = tfData.intSLows[0];
+            line_day = tfData.intSHighs[0];
+            place_start_line_draw = bar1.high;
             if (isCHoCHBOSVolume) {
-               tfData.vItrend = (checkVolumeBreak(1, bar1, tfData.intSHighs[0], tfData.volIntSHighs[0])) ? 1: -1;
+               if (checkVolumeBreak(1, bar1, tfData.intSHighs[0], tfData.volIntSHighs[0])) { // break out
+                  tfData.vItrend = 1;
+                  line_dinh = tfData.intSLows[0];
+                  line_day = tfData.intSHighs[0];
+                  place_start_line_draw = bar1.high;
+               } else { // false break out
+                  tfData.vItrend = -1;
+                  line_dinh = tfData.intSHighs[0];
+                  line_day = tfData.intSLows[0];
+                  place_start_line_draw = tfData.intSLows[0];
+               }
+               line_target = tfData.vItrend;
             }
+            isDrawTarget = true;
          }
          
          // 4 choch high
@@ -1500,9 +1514,8 @@ struct marketStructs{
             if (isComment) {
                Print(textInternalHigh);
             }
-            if (isCHoCHBOSVolume) {
-               tfData.vItrend = (checkVolumeBreak(1, bar1, tfData.intSHighs[1], tfData.volIntSHighs[1])) ? 1: -1;
-            }
+            
+            
             if (tfData.intSHighs[0] < tfData.intSHighs[1]) {
                // Clear Draw intSHigh[0]
                deleteObj(tfData.intSHighTime[0], tfData.intSHighs[0], iWingding_internal_high, "");
@@ -1524,6 +1537,32 @@ struct marketStructs{
                drawPointStructure(tfData, -1, bar1.low, bar1.time, INTERNAL_STRUCTURE, false, enabledDraw);
             }
             
+            // CHoCH BoS with volume
+            line_target = tfData.vItrend;
+            line_dinh = tfData.intSLows[0];
+            line_day = tfData.intSHighs[0];
+            place_start_line_draw = bar1.high;
+            if (isCHoCHBOSVolume) {
+               if (checkVolumeBreak(1, bar1, tfData.intSHighs[0], tfData.volIntSHighs[0])) { // break out
+                  tfData.vItrend = 1;
+                  line_dinh = tfData.intSLows[0];
+                  line_day = tfData.intSHighs[0];
+                  place_start_line_draw = bar1.high;
+               } else { // false break out
+                  tfData.vItrend = -1;
+                  line_dinh = tfData.intSHighs[0];
+                  line_day = tfData.intSLows[0];
+                  place_start_line_draw = tfData.intSLows[0];
+               }
+               line_target = tfData.vItrend;
+            }
+            isDrawTarget = true;
+         }
+         
+         if (isDrawInteral == true && isDrawTarget == true) {
+            isDrawTarget = false;
+            // ve line
+            DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 4);
          }
          //if (isComment && StringLen(textInternalHigh) > 0) {
          //   Print(textInternalHigh);
@@ -1542,10 +1581,29 @@ struct marketStructs{
             if (isComment) {
                Print(textInternalLow);
             }
+            //if (isCHoCHBOSVolume) {
+            //   tfData.vItrend = (checkVolumeBreak(-1, bar1, tfData.intSLows[0], tfData.volIntSLows[0])) ? -1: 1;
+            //}
+            // CHoCH BoS with volume
+            line_target = tfData.vItrend;
+            line_dinh = tfData.intSHighs[0];
+            line_day = tfData.intSLows[0];
+            place_start_line_draw = bar1.low;
             if (isCHoCHBOSVolume) {
-               tfData.vItrend = (checkVolumeBreak(-1, bar1, tfData.intSLows[0], tfData.volIntSLows[0])) ? -1: 1;
+               if (checkVolumeBreak(-1, bar1, tfData.intSLows[0], tfData.volIntSLows[0])) { // break out
+                  tfData.vItrend = -1;
+                  line_dinh = tfData.intSHighs[0];
+                  line_day = tfData.intSLows[0];
+                  place_start_line_draw = bar1.low;
+               } else { // false break out
+                  tfData.vItrend = 1;
+                  line_dinh = tfData.intSLows[0];
+                  line_day = tfData.intSHighs[0];
+                  place_start_line_draw = tfData.intSHighs[0];
+               }
+               line_target = tfData.vItrend;
             }
-            //Print("++++++++++ -1 BOS low");
+            isDrawTarget = true;
          }
          
          //3 choch low
@@ -1558,9 +1616,30 @@ struct marketStructs{
             if (isComment) {
                Print(textInternalLow);
             }
+            //if (isCHoCHBOSVolume) {
+            //   tfData.vItrend = (checkVolumeBreak(-1, bar1, tfData.intSLows[0], tfData.volIntSLows[0])) ? -1: 1;
+            //}
+            
+            // CHoCH BoS with volume
+            line_target = tfData.vItrend;
+            line_dinh = tfData.intSHighs[0];
+            line_day = tfData.intSLows[0];
+            place_start_line_draw = bar1.low;
             if (isCHoCHBOSVolume) {
-               tfData.vItrend = (checkVolumeBreak(-1, bar1, tfData.intSLows[0], tfData.volIntSLows[0])) ? -1: 1;
+               if (checkVolumeBreak(-1, bar1, tfData.intSLows[0], tfData.volIntSLows[0])) { // break out
+                  tfData.vItrend = -1;
+                  line_dinh = tfData.intSHighs[0];
+                  line_day = tfData.intSLows[0];
+                  place_start_line_draw = bar1.low;
+               } else { // false break out
+                  tfData.vItrend = 1;
+                  line_dinh = tfData.intSLows[0];
+                  line_day = tfData.intSHighs[0];
+                  place_start_line_draw = tfData.intSHighs[0];
+               }
+               line_target = tfData.vItrend;
             }
+            isDrawTarget = true;
          }
          
          // 4+5 choch low
@@ -1574,9 +1653,7 @@ struct marketStructs{
             if (isComment) {
                Print(textInternalLow);
             }
-            if (isCHoCHBOSVolume) {
-               tfData.vItrend = (checkVolumeBreak(-1, bar1, tfData.intSLows[1], tfData.volIntSLows[1])) ? -1: 1;
-            }
+            
             
             if (tfData.intSLows[0] > tfData.intSLows[1]) {
                // Clear Draw intSHigh[0]
@@ -1599,6 +1676,31 @@ struct marketStructs{
                // ve intslow moi
                drawPointStructure(tfData, 1, bar1.low, bar1.time, INTERNAL_STRUCTURE, false, enabledDraw);
             }
+            // CHoCH BoS with volume
+            line_target = tfData.vItrend;
+            line_dinh = tfData.intSHighs[0];
+            line_day = tfData.intSLows[0];
+            place_start_line_draw = bar1.low;
+            if (isCHoCHBOSVolume) {
+               if (checkVolumeBreak(-1, bar1, tfData.intSLows[0], tfData.volIntSLows[0])) { // break out
+                  tfData.vItrend = -1;
+                  line_dinh = tfData.intSHighs[0];
+                  line_day = tfData.intSLows[0];
+                  place_start_line_draw = bar1.low;
+               } else { // false break out
+                  tfData.vItrend = 1;
+                  line_dinh = tfData.intSLows[0];
+                  line_day = tfData.intSHighs[0];
+                  place_start_line_draw = tfData.intSHighs[0];
+               }
+               line_target = tfData.vItrend;
+            }
+            isDrawTarget = true;
+         }
+         if (isDrawInteral == true && isDrawTarget == true) {
+            isDrawTarget = false;
+            // ve line
+            DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 4);
          }
          //if (isComment && StringLen(textInternalLow) > 0) {
          //   Print(textInternalLow);
@@ -1946,7 +2048,10 @@ struct marketStructs{
             //ArrayPrint(tfData.intSLows);
             //ArrayPrint(tfData.volIntSLows);
          }
+         
       }
+      //ArrayPrint(tfData.intSHighs);
+      //ArrayPrint(tfData.intSLows);
       return resultStructure;
    } //--- End Ham cap nhat cau truc song Gann
    
@@ -1955,6 +2060,7 @@ struct marketStructs{
    //---
    void updatePointTopBot(TimeFrameData& tfData, MqlRates& bar1, MqlRates& bar2, MqlRates& bar3, bool isComment = false){
       // dinh nghia huong ve line target
+      bool isDrawTarget = false;
       int line_target = 0;
       double line_dinh = 0;
       double line_day = 0;
@@ -2217,8 +2323,7 @@ struct marketStructs{
                   line_target = tfData.vSTrend;
                } 
             }
-            // ve line
-            DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1);
+            isDrawTarget = true;
          }
          
          // continue Up, Continue BOS up
@@ -2289,8 +2394,7 @@ struct marketStructs{
                   line_target = tfData.vMTrend;
                } 
             }
-            // ve line
-            DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 3);
+            isDrawTarget = true;
          }
       }
    
@@ -2566,8 +2670,7 @@ struct marketStructs{
                   line_target = tfData.vSTrend;
                } 
             }
-            // ve line
-            DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1);
+            isDrawTarget = true;
          }
          
          // continue Down, Continue BOS down
@@ -2640,8 +2743,7 @@ struct marketStructs{
                   line_target = tfData.vMTrend;
                } 
             }
-            // ve line
-            DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 3);
+            isDrawTarget = true;
          }
          
       }
@@ -2731,7 +2833,11 @@ struct marketStructs{
             }
          }
       }
-      
+      // Ve Target Marjog
+      if (isDrawMarjor == true && isDrawTarget == true) {
+         // ve line
+         DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 3);
+      }
       if(isComment && StringLen(text) > 0) {
          //textall += text;
          //text +=  "\n Last: "+getValueTrend(tfData);
@@ -3417,7 +3523,7 @@ bool DrawDirectionalSegment(
     double high_of_line = (price_dinh > price_day) ? price_dinh - price_day : price_day - price_dinh;
     double end_price;   
     int arrow_code;     
-    
+    Print("=> Target Line: Huong "+((direction > 0)? "Tang" : "Giam")+". Tu (dinh)="+ (string)price_dinh + " den (day)="+ (string)price_day);
     // 1. XÁC ĐỊNH HƯỚNG VÀ VỊ TRÍ MŨI TÊN
     if (direction == 1) // MŨI TÊN HƯỚNG LÊN 
     {
