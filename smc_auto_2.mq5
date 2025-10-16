@@ -1196,21 +1196,16 @@ struct marketStructs{
       // Color and wingdings
       if (typeStructure == GANN_STRUCTURE) {
          iWingding  = (itype == 1)? iWingding_gann_high : iWingding_gann_low;
-         //iColor   = (itype == 1)? clrDeepSkyBlue : clrYellow;
       } else if (typeStructure == INTERNAL_STRUCTURE) {
          iWingding  = (itype == 1)? iWingding_internal_high : iWingding_internal_low;
-         //iColor   = (itype == 1)? clrRoyalBlue : clrLightSalmon;
       } else if (typeStructure == INTERNAL_STRUCTURE_KEY){
          iWingding  = (itype == 1)? iWingding_internal_high : iWingding_internal_low;
-         //iColor   = (itype == 1)? clrGreen : clrRed;
       }else if (typeStructure == MAJOR_STRUCTURE) {
          iWingding  = (itype == 1)? 116 : 116;
-         //iColor   = (itype == 1)? clrForestGreen : clrRed;
       }
       
       string text    = (itype == 1)? "Update High" : "Update Low";
       int iDirection = (itype == 1)? -1 : 1;
-      //Print(text +" Type: "+ itype + " , Xoa swing: "+ (string) del);
       
       if (isDraw) {
          createObj(timeNew, priceNew, iWingding, iDirection, iColor, "");
@@ -1250,7 +1245,6 @@ struct marketStructs{
          
          int resultStructure = drawStructureInternal(tfData, bar1, bar2, bar3, enabledComment);
          updatePointTopBot(tfData, bar1, bar2, bar3, enabledComment);
-         //getStructWithVolume(tfData, bar1, bar2, bar3, enabledComment);
          //// POI
          getZoneValid(tfData);
          drawZone(tfData, bar1);
@@ -1281,7 +1275,6 @@ struct marketStructs{
       Print(text);
       int resultStructure = drawStructureInternal(tfData, bar1, bar2, bar3, enabledComment);
       updatePointTopBot(tfData, bar1, bar2, bar3, enabledComment);
-      //getStructWithVolume(tfData, bar1, bar2, bar3, enabledComment);
       
       //// POI
       getZoneValid(tfData);
@@ -2864,67 +2857,60 @@ struct marketStructs{
    
    void showComment(TimeFrameData& tfData) {
       Print("Timeframe: "+ (string) tfData.isTimeframe);
-      if (tfData.sTrend == 1 || tfData.sTrend == -1) {
       
-         //Print("Lows: "); ArrayPrint(tfData.Lows); 
-         //Print("Vol Lows: "); ArrayPrint(tfData.volLows); 
-         
-         //Print("intSLows: "); ArrayPrint(tfData.intSLows); 
-         //Print("Vol intSLows: "); ArrayPrint(tfData.volIntSLows); 
-         
-         //Print("arrBot: "); ArrayPrint(tfData.arrBot); 
-         //Print("Vol arrBot: "); ArrayPrint(tfData.volArrBot);
-         
-         Print("arrPbLow: "); ArrayPrint(tfData.arrPbLow); 
-         Print("Vol arrPbLow: "); ArrayPrint(tfData.volArrPbLow);
-         
-         //Print("arrDecisionalLow: "); ArrayPrint(tfData.arrDecisionalLow);
-         //Print("Vol arrDecisionalLow: "); ArrayPrint(tfData.volArrDecisionalLow);
-         
-//         Print("arrBoLow: "+(string) tfData.arrBoLow[0]);
-//         Print("Vol arrBoLow: "); ArrayPrint(tfData.volArrBoLow);
-//         
-//         Print("arrChoLow: "+(string) tfData.arrChoLow[0]);
-//         Print("Vol arrChoLow: "); ArrayPrint(tfData.volArrChoLow);
-         
-         //Print(" zLows: "); ArrayPrint(tfData.zLows);
-         //Print(" zIntSLows: "); ArrayPrint(tfData.zIntSLows);
-         //Print(" zArrBot: "); ArrayPrint(tfData.zArrBot);
-         
-         //Print("zArrPbLow"); ArrayPrint(tfData.zArrPbLow);
-         //Print("zPoiExtremeLow: "); ArrayPrint(tfData.zPoiExtremeLow);
-         //Print("zPoiDecisionalLow: "); ArrayPrint(tfData.zPoiDecisionalLow);
-      }
-      if (tfData.sTrend == -1 || tfData.sTrend == 1) {
          //Print("Highs: "); ArrayPrint(tfData.Highs);
          //Print("Vol Highs: "); ArrayPrint(tfData.volHighs);
+         //Print("Lows: "); ArrayPrint(tfData.Lows); 
+         //Print("Vol Lows: "); ArrayPrint(tfData.volLows); 
+         //Print(" zHighs: "); ArrayPrint(tfData.zHighs);
+         //Print(" zLows: "); ArrayPrint(tfData.zLows);
          
          //Print("intSHighs: "); ArrayPrint(tfData.intSHighs);
          //Print("Vol intSHighs: "); ArrayPrint(tfData.volIntSHighs);
+         //Print("intSLows: "); ArrayPrint(tfData.intSLows); 
+         //Print("Vol intSLows: "); ArrayPrint(tfData.volIntSLows); 
+         //Print(" zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
+         //Print(" zIntSLows: "); ArrayPrint(tfData.zIntSLows);
+         
          
          //Print("arrTop: "); ArrayPrint(tfData.arrTop); 
          //Print("Vol arrTop: "); ArrayPrint(tfData.volArrTop);
+         //Print("arrBot: "); ArrayPrint(tfData.arrBot); 
+         //Print("Vol arrBot: "); ArrayPrint(tfData.volArrBot);
+         //Print(" zArrTop: "); ArrayPrint(tfData.zArrTop);
+         //Print(" zArrBot: "); ArrayPrint(tfData.zArrBot);
          
-         Print("arrPbHigh: "); ArrayPrint(tfData.arrPbHigh); 
-         Print("Vol arrPbHigh: "); ArrayPrint(tfData.volArrPbHigh);
+         
+         //Print("arrPbHigh: "); ArrayPrint(tfData.arrPbHigh); 
+         //Print("Vol arrPbHigh: "); ArrayPrint(tfData.volArrPbHigh);
+         //Print("arrPbLow: "); ArrayPrint(tfData.arrPbLow); 
+         //Print("Vol arrPbLow: "); ArrayPrint(tfData.volArrPbLow);
+         //Print("zArrPbHigh"); ArrayPrint(tfData.zArrPbHigh); 
+         //Print("zArrPbLow"); ArrayPrint(tfData.zArrPbLow);
+         
          
          //Print("arrDecisionalHigh: "); ArrayPrint(tfData.arrDecisionalHigh);
          //Print("Vol arrDecisionalHigh: "); ArrayPrint(tfData.volArrDecisionalHigh);
-         
-//         Print("arrBoHigh: "+(string) tfData.arrBoHigh[0]);
-//         Print("Vol arrBoHigh: "); ArrayPrint(tfData.volArrBoHigh);
-//         
-//         Print("arrChoHigh: "+(string) tfData.arrChoHigh[0]);
-//         Print("Vol arrChoHigh: "); ArrayPrint(tfData.volArrChoHigh);
-               
-         //Print(" zHighs: "); ArrayPrint(tfData.zHighs);
-         //Print(" zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
-         //Print(" zArrTop: "); ArrayPrint(tfData.zArrTop);
-         
-         //Print("zArrPbHigh"); ArrayPrint(tfData.zArrPbHigh); 
-         //Print("zPoiExtremeHigh: "); ArrayPrint(tfData.zPoiExtremeHigh);
+         //Print("arrDecisionalLow: "); ArrayPrint(tfData.arrDecisionalLow);
+         //Print("Vol arrDecisionalLow: "); ArrayPrint(tfData.volArrDecisionalLow);
+         //Print("zPoiDecisionalLow: "); ArrayPrint(tfData.zPoiDecisionalLow);
          //Print("zPoiDecisionalHigh: "); ArrayPrint(tfData.zPoiDecisionalHigh);
-      }
+         
+         
+         Print("arrBoHigh: "+(string) tfData.arrBoHigh[0] + " "+ (string) tfData.arrBoHighTime[0]);
+//         Print("Vol arrBoHigh: "); ArrayPrint(tfData.volArrBoHigh);
+         Print("arrBoLow: "+(string) tfData.arrBoLow[0] + " "+ (string) tfData.arrBoLowTime[0]);
+//         Print("Vol arrBoLow: "); ArrayPrint(tfData.volArrBoLow);
+
+         
+         Print("arrChoHigh: "+(string) tfData.arrChoHigh[0] + " "+ (string) tfData.arrChoHighTime[0]);
+//         Print("Vol arrChoHigh: "); ArrayPrint(tfData.volArrChoHigh);
+         Print("arrChoLow: "+(string) tfData.arrChoLow[0]  + " "+ (string) tfData.arrChoLowTime[0]);
+//         Print("Vol arrChoLow: "); ArrayPrint(tfData.volArrChoLow);
+         
+         //Print("zPoiExtremeHigh: "); ArrayPrint(tfData.zPoiExtremeHigh);
+         //Print("zPoiExtremeLow: "); ArrayPrint(tfData.zPoiExtremeLow);
+         
    } 
    
    // Ham tra ve break out hay false break out
@@ -2979,7 +2965,8 @@ struct marketStructs{
    }
    
    void getZoneValid(TimeFrameData& tfData, bool isComment = false) {
-      //showComment();
+      isComment = true;
+      showComment(tfData);
       // Pre arr Decisional
       getDecisionalValue(tfData, isComment);
       
@@ -2994,7 +2981,7 @@ struct marketStructs{
    // Todo: dang setup chua xong, can verify Decisinal POI moi khi chay. Luu gia tri High, Low vao 1 gia tri cố định để so sánh
    // 
    void getDecisionalValue(TimeFrameData& tfData, bool isComment = false) {
-      string text = "Function getDecisionalValue:";
+      string text = "==> Function getDecisionalValue:";
       // High
       if (ArraySize(tfData.intSHighs) > 1 && tfData.arrDecisionalHigh[0] != tfData.intSHighs[1]) {
          text += "\n Checking intSHighs[1]: "+ (string) tfData.intSHighs[1];
