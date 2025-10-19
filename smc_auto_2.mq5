@@ -120,6 +120,10 @@ public:
    datetime intSLowTime[];
    long volIntSHighs[];
    long volIntSLows[];
+   int iFindTarget;
+   double iTarget;
+   double iFullTarget;
+   double iStoploss;
    
    int LastSwingInternal;
    int iTrend;
@@ -149,6 +153,10 @@ public:
    long volArrPbLow[];
    int waitingArrPbHigh; // Chờ nến phá vỡ đỉnh Pullback marjor swing highs. default = 0
    int waitingArrPbLows;  // Chờ nến phá vỡ đỉnh Publlback marjor swing lows.  default = 0
+   int mFindTarget;
+   double mTarget;
+   double mFullTarget;
+   double mStoploss;
 
    // Chopped and Breakout
    double arrChoHigh[];
