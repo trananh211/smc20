@@ -1416,369 +1416,7 @@ struct marketStructs{
       double line_day = 0;
       double place_start_line_draw = 0;
       
-      // Gann wave
-      // BOS Highs
-      if (tfData.waitingHighs == 0 && bar1.high > tfData.Highs[0]) {
-         tfData.gTrend = 1;
-         tfData.vGTrend = tfData.gTrend;
-         tfData.waitingHighs = 1;
-         textGannHigh += "---> G1 Gann. bar1.high ("+(string) bar1.high+") > Highs[0] ("+(string)tfData.Highs[0]+"). => Cap nhat: gTrend = 1, waitingHighs = 1";
-         if (isComment && StringLen(textGannHigh) > 0) {
-            Print(textGannHigh);
-         }
-         if (isCHoCHBOSVolume) {
-            tfData.vGTrend = (checkVolumeBreak(1, bar1, tfData.Highs[0], tfData.volHighs[0])) ? 1: -1;
-         }
-         
-      }
       
-      // BOS Low
-      if (tfData.waitingLows == 0 && bar1.low < tfData.Lows[0]) {
-         tfData.gTrend = -1;
-         tfData.vGTrend = tfData.gTrend;
-         tfData.waitingLows = 1;
-         textGannLow += "---> -G1 Gann. bar1.low ("+(string) bar1.low+") > Lows[0] ("+(string)tfData.Lows[0]+"). => Cap nhat: gTrend = -1, waitingHighs = 1";
-         if (isComment && StringLen(textGannLow) > 0) {
-            Print(textGannLow);
-         }
-         if (isCHoCHBOSVolume) {
-            tfData.vGTrend = (checkVolumeBreak(-1, bar1, tfData.Lows[0], tfData.volLows[0])) ? -1: 1;
-         }
-         
-      }
-      // END Gann wave
-      
-      // Internal wave
-      // High
-      if (tfData.waitingIntSHighs == 0) {
-         //1 continue bos 
-         if (tfData.iTrend == 1 && tfData.LastSwingInternal == 1 && bar1.high > tfData.intSHighs[0]) {
-            tfData.iTrend = 1;
-            tfData.vItrend = tfData.iTrend;
-            tfData.LastSwingInternal = 1;
-            tfData.waitingIntSHighs = 1;
-                        
-            textInternalHigh = "---> I1 Bos High => iTrend = 1 && LastSwingInternal = 1 && bar1.high > tfData.intSHighs[0] => iTrend = 1, LastSwingInternal = 1, waitingIntSHighs = 1";
-            if (isComment) {
-               Print(textInternalHigh);
-            }
-            
-            if (tfData.iFindTarget != 1) {
-               tfData.iFindTarget = 1;
-               tfData.iStoploss = tfData.intSLows[0];
-               tfData.iStoplossTime = tfData.intSLowTime[0];
-               tfData.iTarget = 0;
-               tfData.iTargetTime = 0;
-               Print("Vao I1");
-            }
-            
-            // CHoCH BoS with volume
-            line_target = tfData.vItrend;
-            line_dinh = tfData.intSLows[0];
-            line_day = tfData.intSHighs[0];
-            place_start_line_draw = bar1.high;
-            if (isCHoCHBOSVolume) {
-               if (checkVolumeBreak(1, bar1, tfData.intSHighs[0], tfData.volIntSHighs[0])) { // break out
-                  tfData.vItrend = 1;
-                  line_dinh = tfData.intSLows[0];
-                  line_day = tfData.intSHighs[0];
-                  place_start_line_draw = bar1.high;
-               } else { // false break out
-                  tfData.vItrend = -1;
-                  line_dinh = tfData.intSHighs[0];
-                  line_day = tfData.intSLows[0];
-                  place_start_line_draw = tfData.intSLows[0];
-               }
-               line_target = tfData.vItrend;
-            }
-            isDrawTarget = true;
-            
-         }
-         
-         //3 choch high
-         if (tfData.iTrend == -1 && tfData.LastSwingInternal == 1 && bar1.high > tfData.intSHighs[0]) {
-            tfData.iTrend = 1;
-            tfData.vItrend = tfData.iTrend;
-            tfData.LastSwingInternal = 1;
-            tfData.waitingIntSHighs = 1;
-                        
-            textInternalHigh = "---> I3 CHoCH High => iTrend = -1 && LastSwingInternal = 1 && bar1.high > intSHighs[0] => iTrend = 1, LastSwingInternal = 1, waitingIntSHighs = 1";
-            if (isComment) {
-               Print(textInternalHigh);
-            }
-            
-            if (tfData.iFindTarget != 1) {
-               tfData.iFindTarget = 1;
-               tfData.iStoploss = tfData.intSLows[0];
-               tfData.iStoplossTime = tfData.intSLowTime[0];
-               tfData.iTarget = 0;
-               tfData.iTargetTime = 0;
-               Print("Vao I3");
-            }
-            
-            // CHoCH BoS with volume
-            line_target = tfData.vItrend;
-            line_dinh = tfData.intSLows[0];
-            line_day = tfData.intSHighs[0];
-            place_start_line_draw = bar1.high;
-            if (isCHoCHBOSVolume) {
-               if (checkVolumeBreak(1, bar1, tfData.intSHighs[0], tfData.volIntSHighs[0])) { // break out
-                  tfData.vItrend = 1;
-                  line_dinh = tfData.intSLows[0];
-                  line_day = tfData.intSHighs[0];
-                  place_start_line_draw = bar1.high;
-               } else { // false break out
-                  tfData.vItrend = -1;
-                  line_dinh = tfData.intSHighs[0];
-                  line_day = tfData.intSLows[0];
-                  place_start_line_draw = tfData.intSLows[0];
-               }
-               line_target = tfData.vItrend;
-            }
-            isDrawTarget = true;
-         }
-         
-         // 4 choch high
-         if (tfData.iTrend == -1 && tfData.LastSwingInternal == -1 && 
-                  ArraySize(tfData.intSHighs) > 1 && bar1.high > tfData.intSHighs[0] && bar1.high > tfData.intSHighs[1]) {
-            tfData.iTrend = 1;
-            tfData.vItrend = tfData.iTrend;
-            tfData.LastSwingInternal = 1;
-            tfData.waitingIntSHighs = 1;
-                        
-            textInternalHigh = "---> I45 CHoCH High => iTrend = -1 && LastSwingInternal = -1 && bar1.high > intSHighs[0], intSHighs[1]  => iTrend = 1, LastSwingInternal = 1, waitingIntSHighs = 1";
-            if (isComment) {
-               Print(textInternalHigh);
-            }
-                        
-            if (tfData.intSHighs[0] < tfData.intSHighs[1]) {
-               // Clear Draw intSHigh[0]
-               deleteObj(tfData.intSHighTime[0], tfData.intSHighs[0], iWingding_internal_high, "");
-               // Sort intSHighs
-               tfData.SortDoubleArrayAfterDelete(tfData.intSHighs);
-               tfData.SortDateTimeArrayAfterDelete(tfData.intSHighTime);
-               tfData.SortLongArrayAfterDelete(tfData.volIntSHighs);
-               tfData.SortPoiZoneArrayAfterDelete(tfData.zIntSHighs);
-            } else if (tfData.intSHighs[0] > tfData.intSHighs[1]) {
-               tfData.AddToDoubleArray(tfData.intSLows, bar1.low);
-               tfData.AddToDateTimeArray(tfData.intSLowTime, bar1.time);
-               tfData.AddToLongArray(tfData.volIntSLows, bar1.tick_volume);
-               // set Zone
-               PoiZone zone1 = CreatePoiZone(bar1.high, bar1.low, bar1.open, bar1.close, bar1.time);
-               // them Zone
-               tfData.AddToPoiZoneArray(tfData.zIntSLows, zone1, poi_limit);
-               tfData.waitingIntSLows = 0 ;
-               // ve intslow moi
-               drawPointStructure(tfData, -1, bar1.low, bar1.time, INTERNAL_STRUCTURE, false, enabledDraw);
-            }
-            
-            if (tfData.iFindTarget != 1) {
-               tfData.iFindTarget = 1;
-               tfData.iStoploss = tfData.intSLows[0];
-               tfData.iStoplossTime = tfData.intSLowTime[0];
-               tfData.iTarget = 0;
-               tfData.iTargetTime = 0;
-               Print("Vao I45");
-            }
-            // CHoCH BoS with volume
-            line_target = tfData.vItrend;
-            line_dinh = tfData.intSLows[0];
-            line_day = tfData.intSHighs[0];
-            place_start_line_draw = bar1.high;
-            if (isCHoCHBOSVolume) {
-               if (checkVolumeBreak(1, bar1, tfData.intSHighs[0], tfData.volIntSHighs[0])) { // break out
-                  tfData.vItrend = 1;
-                  line_dinh = tfData.intSLows[0];
-                  line_day = tfData.intSHighs[0];
-                  place_start_line_draw = bar1.high;
-               } else { // false break out
-                  tfData.vItrend = -1;
-                  line_dinh = tfData.intSHighs[0];
-                  line_day = tfData.intSLows[0];
-                  place_start_line_draw = tfData.intSLows[0];
-               }
-               line_target = tfData.vItrend;
-            }
-            isDrawTarget = true;
-         }
-         // show draw target line
-         if ((showTargetHighTF == true && tfData.isTimeframe == highPairTF) || (showTargetLowTF == true && tfData.isTimeframe == lowPairTF)) {
-            if (isDrawInteral == true && isDrawTarget == true) {
-               isDrawTarget = false;
-               // ve line
-               DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 4);
-            }
-         }
-         
-         //if (isComment && StringLen(textInternalHigh) > 0) {
-         //   Print(textInternalHigh);
-         //}
-      }
-      
-      // Low
-      if (tfData.waitingIntSLows == 0) {
-         //1 continue bos 
-         if (tfData.iTrend == -1 && tfData.LastSwingInternal == -1 && bar1.low < tfData.intSLows[0]) {
-            tfData.iTrend = -1;
-            tfData.vItrend = tfData.iTrend;
-            tfData.LastSwingInternal = -1;
-            tfData.waitingIntSLows = 1;
-            
-            textInternalLow = "---> -I1 Bos Low => iTrend = -1 && LastSwingInternal = -1 && bar1.low < intSLows[0]  => iTrend = -1, LastSwingInternal = -1, waitingIntSLows = 1";
-            if (isComment) {
-               Print(textInternalLow);
-            }
-            
-            if (tfData.iFindTarget != -1) {
-               tfData.iFindTarget = -1;
-               tfData.iStoploss = tfData.intSHighs[0];
-               tfData.iTarget = 0;
-               tfData.iTargetTime = 0;
-               Print("Vao -I1");
-            }
-                        
-            // CHoCH BoS with volume
-            line_target = tfData.vItrend;
-            line_dinh = tfData.intSHighs[0];
-            line_day = tfData.intSLows[0];
-            place_start_line_draw = bar1.low;
-            if (isCHoCHBOSVolume) {
-               if (checkVolumeBreak(-1, bar1, tfData.intSLows[0], tfData.volIntSLows[0])) { // break out
-                  tfData.vItrend = -1;
-                  line_dinh = tfData.intSHighs[0];
-                  line_day = tfData.intSLows[0];
-                  place_start_line_draw = bar1.low;
-               } else { // false break out
-                  tfData.vItrend = 1;
-                  line_dinh = tfData.intSLows[0];
-                  line_day = tfData.intSHighs[0];
-                  place_start_line_draw = tfData.intSHighs[0];
-               }
-               line_target = tfData.vItrend;
-            }
-            isDrawTarget = true;
-         }
-         
-         //3 choch low
-         if (tfData.iTrend == 1 && tfData.LastSwingInternal == -1 && bar1.low < tfData.intSLows[0]) {
-            tfData.iTrend = -1;
-            tfData.vItrend = tfData.iTrend;
-            tfData.LastSwingInternal = -1;
-            tfData.waitingIntSLows = 1;
-                        
-            textInternalLow += "---> -I3 CHoCH Low => iTrend = 1 && LastSwingInternal = -1 && bar1.low < intSLows[0]  => iTrend = -1, LastSwingInternal = -1, waitingIntSLows = 1";
-            if (isComment) {
-               Print(textInternalLow);
-            }
-            
-            if (tfData.iFindTarget != -1) {
-               tfData.iFindTarget = -1;
-               tfData.iStoploss = tfData.intSHighs[0];
-               tfData.iTarget = 0;
-               tfData.iTargetTime = 0;
-               Print("Vao -I3");
-            }
-            
-            // CHoCH BoS with volume
-            line_target = tfData.vItrend;
-            line_dinh = tfData.intSHighs[0];
-            line_day = tfData.intSLows[0];
-            place_start_line_draw = bar1.low;
-            if (isCHoCHBOSVolume) {
-               if (checkVolumeBreak(-1, bar1, tfData.intSLows[0], tfData.volIntSLows[0])) { // break out
-                  tfData.vItrend = -1;
-                  line_dinh = tfData.intSHighs[0];
-                  line_day = tfData.intSLows[0];
-                  place_start_line_draw = bar1.low;
-               } else { // false break out
-                  tfData.vItrend = 1;
-                  line_dinh = tfData.intSLows[0];
-                  line_day = tfData.intSHighs[0];
-                  place_start_line_draw = tfData.intSHighs[0];
-               }
-               line_target = tfData.vItrend;
-            }
-            isDrawTarget = true;
-         }
-         
-         // 4+5 choch low
-         if (tfData.iTrend == 1 && tfData.LastSwingInternal == 1 && 
-                ArraySize(tfData.intSLows) > 1 && bar1.low < tfData.intSLows[0] && bar1.low < tfData.intSLows[1]) {
-            tfData.iTrend = -1;
-            tfData.vItrend = tfData.iTrend;
-            tfData.LastSwingInternal = -1;
-            tfData.waitingIntSLows = 1;
-                        
-            textInternalLow += "---> -I45 CHoCH Low => iTrend = 1 && LastSwingInternal = 1 && bar1.low < intSLows[0], intSLows[1]  => iTrend = -1, LastSwingInternal = -1, waitingIntSLows = 1";
-            if (isComment) {
-               Print(textInternalLow);
-            }
-            
-            
-            if (tfData.intSLows[0] > tfData.intSLows[1]) {
-               // Clear Draw intSHigh[0]
-               deleteObj(tfData.intSLowTime[0], tfData.intSLows[0], iWingding_internal_low, "");
-               // Sort intSHighs
-               tfData.SortDoubleArrayAfterDelete(tfData.intSLows);
-               tfData.SortDateTimeArrayAfterDelete(tfData.intSLowTime);
-               tfData.SortLongArrayAfterDelete(tfData.volIntSLows);
-               tfData.SortPoiZoneArrayAfterDelete(tfData.zIntSLows);
-            } else if (tfData.intSHighs[0] > tfData.intSHighs[1]) {
-               tfData.AddToDoubleArray(tfData.intSHighs, bar1.high);
-               tfData.AddToDateTimeArray(tfData.intSHighTime, bar1.time);
-               tfData.AddToLongArray(tfData.volIntSHighs, bar1.tick_volume);
-               
-               // set Zone
-               PoiZone zone1 = CreatePoiZone(bar1.high, bar1.low, bar1.open, bar1.close, bar1.time);
-               // them Zone
-               tfData.AddToPoiZoneArray(tfData.zIntSHighs, zone1, poi_limit);
-               tfData.waitingIntSHighs = 0;
-               // ve intslow moi
-               drawPointStructure(tfData, 1, bar1.low, bar1.time, INTERNAL_STRUCTURE, false, enabledDraw);
-            }
-            
-            if (tfData.iFindTarget != -1) {
-               tfData.iFindTarget = -1;
-               tfData.iStoploss = tfData.intSHighs[0];
-               tfData.iTarget = 0;
-               tfData.iTargetTime = 0;
-               Print("Vao -I45");
-            }
-            
-            // CHoCH BoS with volume
-            line_target = tfData.vItrend;
-            line_dinh = tfData.intSHighs[0];
-            line_day = tfData.intSLows[0];
-            place_start_line_draw = bar1.low;
-            if (isCHoCHBOSVolume) {
-               if (checkVolumeBreak(-1, bar1, tfData.intSLows[0], tfData.volIntSLows[0])) { // break out
-                  tfData.vItrend = -1;
-                  line_dinh = tfData.intSHighs[0];
-                  line_day = tfData.intSLows[0];
-                  place_start_line_draw = bar1.low;
-               } else { // false break out
-                  tfData.vItrend = 1;
-                  line_dinh = tfData.intSLows[0];
-                  line_day = tfData.intSHighs[0];
-                  place_start_line_draw = tfData.intSHighs[0];
-               }
-               line_target = tfData.vItrend;
-            }
-            isDrawTarget = true;
-         }
-         // Show draw target line
-         if ((showTargetHighTF == true && tfData.isTimeframe == highPairTF) || (showTargetLowTF == true && tfData.isTimeframe == lowPairTF)) {
-            if (isDrawInteral == true && isDrawTarget == true) {
-               isDrawTarget = false;
-               // ve line
-               DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 4);
-            }
-         }
-         
-         //if (isComment && StringLen(textInternalLow) > 0) {
-         //   Print(textInternalLow);
-         //}
-      }
    //    swing high
       if (bar3.high <= bar2.high && bar2.high >= bar1.high) { // tim thay dinh high
          textGannHigh += "---> Gann: Find High: "+(string) bar2.high+" + Highest: "+ (string) tfData.highEst;
@@ -2195,6 +1833,374 @@ struct marketStructs{
          }
          
       }
+      
+      // CHOCH or BOS
+      //reset log
+      textInternalLow = "";
+      textInternalHigh = "";
+      // Gann wave
+      // BOS Highs
+      if (tfData.waitingHighs == 0 && bar1.high > tfData.Highs[0]) {
+         tfData.gTrend = 1;
+         tfData.vGTrend = tfData.gTrend;
+         tfData.waitingHighs = 1;
+         textGannHigh += "---> G1 Gann. bar1.high ("+(string) bar1.high+") > Highs[0] ("+(string)tfData.Highs[0]+"). => Cap nhat: gTrend = 1, waitingHighs = 1";
+         if (isComment && StringLen(textGannHigh) > 0) {
+            Print(textGannHigh);
+         }
+         if (isCHoCHBOSVolume) {
+            tfData.vGTrend = (checkVolumeBreak(1, bar1, tfData.Highs[0], tfData.volHighs[0])) ? 1: -1;
+         }
+         
+      }
+      
+      // BOS Low
+      if (tfData.waitingLows == 0 && bar1.low < tfData.Lows[0]) {
+         tfData.gTrend = -1;
+         tfData.vGTrend = tfData.gTrend;
+         tfData.waitingLows = 1;
+         textGannLow += "---> -G1 Gann. bar1.low ("+(string) bar1.low+") > Lows[0] ("+(string)tfData.Lows[0]+"). => Cap nhat: gTrend = -1, waitingHighs = 1";
+         if (isComment && StringLen(textGannLow) > 0) {
+            Print(textGannLow);
+         }
+         if (isCHoCHBOSVolume) {
+            tfData.vGTrend = (checkVolumeBreak(-1, bar1, tfData.Lows[0], tfData.volLows[0])) ? -1: 1;
+         }
+         
+      }
+      // END Gann wave
+      
+      // Internal wave
+      // High
+      if (tfData.waitingIntSHighs == 0) {
+         //1 continue bos 
+         if (tfData.iTrend == 1 && tfData.LastSwingInternal == 1 && bar1.high > tfData.intSHighs[0]) {
+            tfData.iTrend = 1;
+            tfData.vItrend = tfData.iTrend;
+            tfData.LastSwingInternal = 1;
+            tfData.waitingIntSHighs = 1;
+                        
+            textInternalHigh = "---> I1 Bos High => iTrend = 1 && LastSwingInternal = 1 && bar1.high > tfData.intSHighs[0] => iTrend = 1, LastSwingInternal = 1, waitingIntSHighs = 1";
+            if (isComment) {
+               Print(textInternalHigh);
+            }
+            
+            if (tfData.iFindTarget != 1) {
+               tfData.iFindTarget = 1;
+               tfData.iStoploss = tfData.intSLows[0];
+               tfData.iStoplossTime = tfData.intSLowTime[0];
+               tfData.iTarget = 0;
+               tfData.iTargetTime = 0;
+               Print("Vao I1");
+            }
+            
+            // CHoCH BoS with volume
+            line_target = tfData.vItrend;
+            line_dinh = tfData.intSLows[0];
+            line_day = tfData.intSHighs[0];
+            place_start_line_draw = bar1.high;
+            if (isCHoCHBOSVolume) {
+               if (checkVolumeBreak(1, bar1, tfData.intSHighs[0], tfData.volIntSHighs[0])) { // break out
+                  tfData.vItrend = 1;
+                  line_dinh = tfData.intSLows[0];
+                  line_day = tfData.intSHighs[0];
+                  place_start_line_draw = bar1.high;
+               } else { // false break out
+                  tfData.vItrend = -1;
+                  line_dinh = tfData.intSHighs[0];
+                  line_day = tfData.intSLows[0];
+                  place_start_line_draw = tfData.intSLows[0];
+               }
+               line_target = tfData.vItrend;
+            }
+            isDrawTarget = true;
+            
+         }
+         
+         //3 choch high
+         if (tfData.iTrend == -1 && tfData.LastSwingInternal == 1 && bar1.high > tfData.intSHighs[0]) {
+            tfData.iTrend = 1;
+            tfData.vItrend = tfData.iTrend;
+            tfData.LastSwingInternal = 1;
+            tfData.waitingIntSHighs = 1;
+                        
+            textInternalHigh = "---> I3 CHoCH High => iTrend = -1 && LastSwingInternal = 1 && bar1.high > intSHighs[0] => iTrend = 1, LastSwingInternal = 1, waitingIntSHighs = 1";
+            if (isComment) {
+               Print(textInternalHigh);
+            }
+            
+            if (tfData.iFindTarget != 1) {
+               tfData.iFindTarget = 1;
+               tfData.iStoploss = tfData.intSLows[0];
+               tfData.iStoplossTime = tfData.intSLowTime[0];
+               tfData.iTarget = 0;
+               tfData.iTargetTime = 0;
+               Print("Vao I3");
+            }
+            
+            // CHoCH BoS with volume
+            line_target = tfData.vItrend;
+            line_dinh = tfData.intSLows[0];
+            line_day = tfData.intSHighs[0];
+            place_start_line_draw = bar1.high;
+            if (isCHoCHBOSVolume) {
+               if (checkVolumeBreak(1, bar1, tfData.intSHighs[0], tfData.volIntSHighs[0])) { // break out
+                  tfData.vItrend = 1;
+                  line_dinh = tfData.intSLows[0];
+                  line_day = tfData.intSHighs[0];
+                  place_start_line_draw = bar1.high;
+               } else { // false break out
+                  tfData.vItrend = -1;
+                  line_dinh = tfData.intSHighs[0];
+                  line_day = tfData.intSLows[0];
+                  place_start_line_draw = tfData.intSLows[0];
+               }
+               line_target = tfData.vItrend;
+            }
+            isDrawTarget = true;
+         }
+         
+         // 4 choch high
+         if (tfData.iTrend == -1 && tfData.LastSwingInternal == -1 && 
+                  ArraySize(tfData.intSHighs) > 1 && bar1.high > tfData.intSHighs[0] && bar1.high > tfData.intSHighs[1]) {
+            tfData.iTrend = 1;
+            tfData.vItrend = tfData.iTrend;
+            tfData.LastSwingInternal = 1;
+            tfData.waitingIntSHighs = 1;
+                        
+            textInternalHigh = "---> I45 CHoCH High => iTrend = -1 && LastSwingInternal = -1 && bar1.high > intSHighs[0], intSHighs[1]  => iTrend = 1, LastSwingInternal = 1, waitingIntSHighs = 1";
+            if (isComment) {
+               Print(textInternalHigh);
+            }
+                        
+            if (tfData.intSHighs[0] < tfData.intSHighs[1]) {
+               // Clear Draw intSHigh[0]
+               deleteObj(tfData.intSHighTime[0], tfData.intSHighs[0], iWingding_internal_high, "");
+               // Sort intSHighs
+               tfData.SortDoubleArrayAfterDelete(tfData.intSHighs);
+               tfData.SortDateTimeArrayAfterDelete(tfData.intSHighTime);
+               tfData.SortLongArrayAfterDelete(tfData.volIntSHighs);
+               tfData.SortPoiZoneArrayAfterDelete(tfData.zIntSHighs);
+            } else if (tfData.intSHighs[0] > tfData.intSHighs[1]) {
+               tfData.AddToDoubleArray(tfData.intSLows, bar1.low);
+               tfData.AddToDateTimeArray(tfData.intSLowTime, bar1.time);
+               tfData.AddToLongArray(tfData.volIntSLows, bar1.tick_volume);
+               // set Zone
+               PoiZone zone1 = CreatePoiZone(bar1.high, bar1.low, bar1.open, bar1.close, bar1.time);
+               // them Zone
+               tfData.AddToPoiZoneArray(tfData.zIntSLows, zone1, poi_limit);
+               tfData.waitingIntSLows = 0 ;
+               // ve intslow moi
+               drawPointStructure(tfData, -1, bar1.low, bar1.time, INTERNAL_STRUCTURE, false, enabledDraw);
+            }
+            
+            if (tfData.iFindTarget != 1) {
+               tfData.iFindTarget = 1;
+               tfData.iStoploss = tfData.intSLows[0];
+               tfData.iStoplossTime = tfData.intSLowTime[0];
+               tfData.iTarget = 0;
+               tfData.iTargetTime = 0;
+               Print("Vao I45");
+            }
+            // CHoCH BoS with volume
+            line_target = tfData.vItrend;
+            line_dinh = tfData.intSLows[0];
+            line_day = tfData.intSHighs[0];
+            place_start_line_draw = bar1.high;
+            if (isCHoCHBOSVolume) {
+               if (checkVolumeBreak(1, bar1, tfData.intSHighs[0], tfData.volIntSHighs[0])) { // break out
+                  tfData.vItrend = 1;
+                  line_dinh = tfData.intSLows[0];
+                  line_day = tfData.intSHighs[0];
+                  place_start_line_draw = bar1.high;
+               } else { // false break out
+                  tfData.vItrend = -1;
+                  line_dinh = tfData.intSHighs[0];
+                  line_day = tfData.intSLows[0];
+                  place_start_line_draw = tfData.intSLows[0];
+               }
+               line_target = tfData.vItrend;
+            }
+            isDrawTarget = true;
+         }
+         // show draw target line
+         if ((showTargetHighTF == true && tfData.isTimeframe == highPairTF) || (showTargetLowTF == true && tfData.isTimeframe == lowPairTF)) {
+            if (isDrawInteral == true && isDrawTarget == true) {
+               isDrawTarget = false;
+               // ve line
+               DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 4);
+            }
+         }
+         
+         //if (isComment && StringLen(textInternalHigh) > 0) {
+         //   Print(textInternalHigh);
+         //}
+      }
+      
+      // Low
+      if (tfData.waitingIntSLows == 0) {
+         //1 continue bos 
+         if (tfData.iTrend == -1 && tfData.LastSwingInternal == -1 && bar1.low < tfData.intSLows[0]) {
+            tfData.iTrend = -1;
+            tfData.vItrend = tfData.iTrend;
+            tfData.LastSwingInternal = -1;
+            tfData.waitingIntSLows = 1;
+            
+            textInternalLow = "---> -I1 Bos Low => iTrend = -1 && LastSwingInternal = -1 && bar1.low < intSLows[0]  => iTrend = -1, LastSwingInternal = -1, waitingIntSLows = 1";
+            if (isComment) {
+               Print(textInternalLow);
+            }
+            
+            if (tfData.iFindTarget != -1) {
+               tfData.iFindTarget = -1;
+               tfData.iStoploss = tfData.intSHighs[0];
+               tfData.iTarget = 0;
+               tfData.iTargetTime = 0;
+               Print("Vao -I1");
+            }
+                        
+            // CHoCH BoS with volume
+            line_target = tfData.vItrend;
+            line_dinh = tfData.intSHighs[0];
+            line_day = tfData.intSLows[0];
+            place_start_line_draw = bar1.low;
+            if (isCHoCHBOSVolume) {
+               if (checkVolumeBreak(-1, bar1, tfData.intSLows[0], tfData.volIntSLows[0])) { // break out
+                  tfData.vItrend = -1;
+                  line_dinh = tfData.intSHighs[0];
+                  line_day = tfData.intSLows[0];
+                  place_start_line_draw = bar1.low;
+               } else { // false break out
+                  tfData.vItrend = 1;
+                  line_dinh = tfData.intSLows[0];
+                  line_day = tfData.intSHighs[0];
+                  place_start_line_draw = tfData.intSHighs[0];
+               }
+               line_target = tfData.vItrend;
+            }
+            isDrawTarget = true;
+         }
+         
+         //3 choch low
+         if (tfData.iTrend == 1 && tfData.LastSwingInternal == -1 && bar1.low < tfData.intSLows[0]) {
+            tfData.iTrend = -1;
+            tfData.vItrend = tfData.iTrend;
+            tfData.LastSwingInternal = -1;
+            tfData.waitingIntSLows = 1;
+                        
+            textInternalLow += "---> -I3 CHoCH Low => iTrend = 1 && LastSwingInternal = -1 && bar1.low < intSLows[0]  => iTrend = -1, LastSwingInternal = -1, waitingIntSLows = 1";
+            if (isComment) {
+               Print(textInternalLow);
+            }
+            
+            if (tfData.iFindTarget != -1) {
+               tfData.iFindTarget = -1;
+               tfData.iStoploss = tfData.intSHighs[0];
+               tfData.iTarget = 0;
+               tfData.iTargetTime = 0;
+               Print("Vao -I3");
+            }
+            
+            // CHoCH BoS with volume
+            line_target = tfData.vItrend;
+            line_dinh = tfData.intSHighs[0];
+            line_day = tfData.intSLows[0];
+            place_start_line_draw = bar1.low;
+            if (isCHoCHBOSVolume) {
+               if (checkVolumeBreak(-1, bar1, tfData.intSLows[0], tfData.volIntSLows[0])) { // break out
+                  tfData.vItrend = -1;
+                  line_dinh = tfData.intSHighs[0];
+                  line_day = tfData.intSLows[0];
+                  place_start_line_draw = bar1.low;
+               } else { // false break out
+                  tfData.vItrend = 1;
+                  line_dinh = tfData.intSLows[0];
+                  line_day = tfData.intSHighs[0];
+                  place_start_line_draw = tfData.intSHighs[0];
+               }
+               line_target = tfData.vItrend;
+            }
+            isDrawTarget = true;
+         }
+         
+         // 4+5 choch low
+         if (tfData.iTrend == 1 && tfData.LastSwingInternal == 1 && 
+                ArraySize(tfData.intSLows) > 1 && bar1.low < tfData.intSLows[0] && bar1.low < tfData.intSLows[1]) {
+            tfData.iTrend = -1;
+            tfData.vItrend = tfData.iTrend;
+            tfData.LastSwingInternal = -1;
+            tfData.waitingIntSLows = 1;
+                        
+            textInternalLow += "---> -I45 CHoCH Low => iTrend = 1 && LastSwingInternal = 1 && bar1.low < intSLows[0], intSLows[1]  => iTrend = -1, LastSwingInternal = -1, waitingIntSLows = 1";
+            if (isComment) {
+               Print(textInternalLow);
+            }
+            
+            
+            if (tfData.intSLows[0] > tfData.intSLows[1]) {
+               // Clear Draw intSHigh[0]
+               deleteObj(tfData.intSLowTime[0], tfData.intSLows[0], iWingding_internal_low, "");
+               // Sort intSHighs
+               tfData.SortDoubleArrayAfterDelete(tfData.intSLows);
+               tfData.SortDateTimeArrayAfterDelete(tfData.intSLowTime);
+               tfData.SortLongArrayAfterDelete(tfData.volIntSLows);
+               tfData.SortPoiZoneArrayAfterDelete(tfData.zIntSLows);
+            } else if (tfData.intSHighs[0] > tfData.intSHighs[1]) {
+               tfData.AddToDoubleArray(tfData.intSHighs, bar1.high);
+               tfData.AddToDateTimeArray(tfData.intSHighTime, bar1.time);
+               tfData.AddToLongArray(tfData.volIntSHighs, bar1.tick_volume);
+               
+               // set Zone
+               PoiZone zone1 = CreatePoiZone(bar1.high, bar1.low, bar1.open, bar1.close, bar1.time);
+               // them Zone
+               tfData.AddToPoiZoneArray(tfData.zIntSHighs, zone1, poi_limit);
+               tfData.waitingIntSHighs = 0;
+               // ve intslow moi
+               drawPointStructure(tfData, 1, bar1.low, bar1.time, INTERNAL_STRUCTURE, false, enabledDraw);
+            }
+            
+            if (tfData.iFindTarget != -1) {
+               tfData.iFindTarget = -1;
+               tfData.iStoploss = tfData.intSHighs[0];
+               tfData.iTarget = 0;
+               tfData.iTargetTime = 0;
+               Print("Vao -I45");
+            }
+            
+            // CHoCH BoS with volume
+            line_target = tfData.vItrend;
+            line_dinh = tfData.intSHighs[0];
+            line_day = tfData.intSLows[0];
+            place_start_line_draw = bar1.low;
+            if (isCHoCHBOSVolume) {
+               if (checkVolumeBreak(-1, bar1, tfData.intSLows[0], tfData.volIntSLows[0])) { // break out
+                  tfData.vItrend = -1;
+                  line_dinh = tfData.intSHighs[0];
+                  line_day = tfData.intSLows[0];
+                  place_start_line_draw = bar1.low;
+               } else { // false break out
+                  tfData.vItrend = 1;
+                  line_dinh = tfData.intSLows[0];
+                  line_day = tfData.intSHighs[0];
+                  place_start_line_draw = tfData.intSHighs[0];
+               }
+               line_target = tfData.vItrend;
+            }
+            isDrawTarget = true;
+         }
+         // Show draw target line
+         if ((showTargetHighTF == true && tfData.isTimeframe == highPairTF) || (showTargetLowTF == true && tfData.isTimeframe == lowPairTF)) {
+            if (isDrawInteral == true && isDrawTarget == true) {
+               isDrawTarget = false;
+               // ve line
+               DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 4);
+            }
+         }
+         
+         //if (isComment && StringLen(textInternalLow) > 0) {
+         //   Print(textInternalLow);
+         //}
+      }
 //      if (tfData.iFindTarget == 0 && tfData.iTarget == 0) {
 //         Print(" -------------------------- Reset xoa sach ban do");
 //      }
@@ -2204,6 +2210,18 @@ struct marketStructs{
 //         }
 //         
 //      }
+      if(isComment) {
+         if(StringLen(textInternalLow) > 0) {
+            Print(textInternalLow);
+            //ArrayPrint(tfData.intSLows);
+            //ArrayPrint(tfData.volIntSLows);
+         }
+         if(StringLen(textInternalHigh) > 0) {
+            Print(textInternalHigh);
+            //ArrayPrint(tfData.intSHighs);
+            //ArrayPrint(tfData.volIntSHighs);
+         }
+      }
       //ArrayPrint(tfData.intSHighs);
       //ArrayPrint(tfData.intSLows);
       return resultStructure;
