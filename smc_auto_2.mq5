@@ -1302,7 +1302,7 @@ struct marketStructs{
       
       checkMitigateZone(tfData, bar1);
       
-      text = "Final: "+getValueTrend(tfData);
+      text = "\nFinal: "+getValueTrend(tfData);
       text += "\n------------ End Real Gann wave---------------";
       Print(text); 
       
@@ -1493,14 +1493,14 @@ struct marketStructs{
                tfData.iTarget = tfData.intSHighs[0];
                tfData.iTargetTime = tfData.intSHighTime[0];
                tfData.iFindTarget = 0;
-               Print("Vao High 1.2");
+               textInternalHigh += " | Update High 1.2";
             }
             
             if (tfData.iFindTarget == 1) {
                tfData.iTarget = tfData.intSHighs[0];
                tfData.iTargetTime = tfData.intSHighTime[0];
                tfData.iFindTarget = 0;
-               Print("Vao High 1.1");
+               textInternalHigh += " | New High 1.1";
             }
             
             // them Zone
@@ -1530,14 +1530,14 @@ struct marketStructs{
                tfData.iTarget = tfData.intSHighs[0];
                tfData.iTargetTime = tfData.intSHighTime[0];
                tfData.iFindTarget = 0;
-               Print("Vao High 2.2");
+               textInternalHigh += " | Update High 2.2";
             }
             
             if (tfData.iFindTarget == 1) {
                tfData.iTarget = tfData.intSHighs[0];
                tfData.iTargetTime = tfData.intSHighTime[0];
                tfData.iFindTarget = 0;
-               Print("Vao High 2.1");
+               textInternalHigh += " | New High 2.1";
             }
             
             
@@ -1610,7 +1610,7 @@ struct marketStructs{
                tfData.iTarget = tfData.intSHighs[0];
                tfData.iTargetTime = tfData.intSHighTime[0];
                tfData.iFindTarget = 0;
-               Print("Vao High 6");
+               textInternalHigh += " | New High 6";
             }
                                     
             // them Zone
@@ -1638,7 +1638,7 @@ struct marketStructs{
          }
          // gann finding low
          if (tfData.LastSwingMeter == -1 || tfData.LastSwingMeter == 0) {
-            textGannHigh += "; Gann: LastSwingMeter == -1 or 0 => New Lows[0] = "+(string) bar2.low +"; LastSwingMeter = 1" ;
+            textGannLow += "; Gann: LastSwingMeter == -1 or 0 => New Lows[0] = "+(string) bar2.low +"; LastSwingMeter = 1" ;
             // cap nhat low moi, khong xoa Lows 0
             tfData.AddToDoubleArray(tfData.Lows, bar2.low);
             tfData.AddToDateTimeArray(tfData.LowsTime, bar2.time);
@@ -1655,7 +1655,7 @@ struct marketStructs{
          if (tfData.LastSwingMeter == 1) {
             // xoa low cu. viet high moi
             if (bar2.low < tfData.lowEst) {
-               textGannHigh += "; Gann: LastSwingMeter == 1 => Delete Lows[0] = "+(string)tfData.Lows[0]+" ,New Lows= "+(string) bar2.low +"; LastSwingMeter = 1" ;
+               textGannLow += "; Gann: LastSwingMeter == 1 => Delete Lows[0] = "+(string)tfData.Lows[0]+" ,New Lows= "+(string) bar2.low +"; LastSwingMeter = 1" ;
                // xoa low cu
                if (ArraySize(tfData.Lows) > 1) deleteObj(tfData.LowsTime[0], tfData.Lows[0], iWingding_gann_low, "");
                // cap nhat low moi.
@@ -1700,14 +1700,14 @@ struct marketStructs{
                tfData.iTarget = tfData.intSLows[0];
                tfData.iTargetTime = tfData.intSLowTime[0];
                tfData.iFindTarget = 0;
-               Print("Vao Low -1.2");
+               textInternalLow += " | Update Low -1.2";
             }
             
             if (tfData.iFindTarget == -1) {
                tfData.iTarget = tfData.intSLows[0];
                tfData.iTargetTime = tfData.intSLowTime[0];
                tfData.iFindTarget = 0;
-               Print("Vao Low -1.1");
+               textInternalLow += " |New Low -1.1";
             }
             
             // Them Zone
@@ -1738,14 +1738,14 @@ struct marketStructs{
                tfData.iTarget = tfData.intSLows[0];
                tfData.iTargetTime = tfData.intSLowTime[0];
                tfData.iFindTarget = 0;
-               Print("Vao Low -2.2");
+               textInternalLow += " | Update Low -2.2";
             }
             
             if (tfData.iFindTarget == -1) {
                tfData.iTarget = tfData.intSLows[0];
                tfData.iTargetTime = tfData.intSLowTime[0];
                tfData.iFindTarget = 0;
-               Print("Vao Low -2.1");
+               textInternalLow += " | New Low -2.1";
             }
             
             // cap nhat Zone
@@ -1817,7 +1817,7 @@ struct marketStructs{
                tfData.iTarget = tfData.intSLows[0];
                tfData.iTargetTime = tfData.intSLowTime[0];
                tfData.iFindTarget = 0;
-               Print("Vao Low 6");
+               textInternalLow += " | New Low 6";
             }
             
             // them Zone
@@ -1880,18 +1880,15 @@ struct marketStructs{
             tfData.LastSwingInternal = 1;
             tfData.waitingIntSHighs = 1;
                         
-            textInternalHigh = "---> I1 Bos High => iTrend = 1 && LastSwingInternal = 1 && bar1.high > tfData.intSHighs[0] => iTrend = 1, LastSwingInternal = 1, waitingIntSHighs = 1";
-            if (isComment) {
-               Print(textInternalHigh);
-            }
-            
+            textInternalHigh += "---> I1 Bos High => iTrend = 1 && LastSwingInternal = 1 && bar1.high > tfData.intSHighs[0] => iTrend = 1, LastSwingInternal = 1, waitingIntSHighs = 1";
+                        
             if (tfData.iFindTarget != 1) {
                tfData.iFindTarget = 1;
                tfData.iStoploss = tfData.intSLows[0];
                tfData.iStoplossTime = tfData.intSLowTime[0];
                tfData.iTarget = 0;
                tfData.iTargetTime = 0;
-               Print("Vao I1");
+               textInternalHigh += " | Bos I1";
             }
             
             // CHoCH BoS with volume
@@ -1924,18 +1921,15 @@ struct marketStructs{
             tfData.LastSwingInternal = 1;
             tfData.waitingIntSHighs = 1;
                         
-            textInternalHigh = "---> I3 CHoCH High => iTrend = -1 && LastSwingInternal = 1 && bar1.high > intSHighs[0] => iTrend = 1, LastSwingInternal = 1, waitingIntSHighs = 1";
-            if (isComment) {
-               Print(textInternalHigh);
-            }
-            
+            textInternalHigh += "\n---> I3 CHoCH High => iTrend = -1 && LastSwingInternal = 1 && bar1.high > intSHighs[0] => iTrend = 1, LastSwingInternal = 1, waitingIntSHighs = 1";
+                        
             if (tfData.iFindTarget != 1) {
                tfData.iFindTarget = 1;
                tfData.iStoploss = tfData.intSLows[0];
                tfData.iStoplossTime = tfData.intSLowTime[0];
                tfData.iTarget = 0;
                tfData.iTargetTime = 0;
-               Print("Vao I3");
+               textInternalHigh += " | CHoCH I3";
             }
             
             // CHoCH BoS with volume
@@ -1968,11 +1962,8 @@ struct marketStructs{
             tfData.LastSwingInternal = 1;
             tfData.waitingIntSHighs = 1;
                         
-            textInternalHigh = "---> I45 CHoCH High => iTrend = -1 && LastSwingInternal = -1 && bar1.high > intSHighs[0], intSHighs[1]  => iTrend = 1, LastSwingInternal = 1, waitingIntSHighs = 1";
-            if (isComment) {
-               Print(textInternalHigh);
-            }
-                        
+            textInternalHigh += "\n---> I45 CHoCH High => iTrend = -1 && LastSwingInternal = -1 && bar1.high > intSHighs[0], intSHighs[1]  => iTrend = 1, LastSwingInternal = 1, waitingIntSHighs = 1";
+                                    
             if (tfData.intSHighs[0] < tfData.intSHighs[1]) {
                // Clear Draw intSHigh[0]
                deleteObj(tfData.intSHighTime[0], tfData.intSHighs[0], iWingding_internal_high, "");
@@ -2000,7 +1991,7 @@ struct marketStructs{
                tfData.iStoplossTime = tfData.intSLowTime[0];
                tfData.iTarget = 0;
                tfData.iTargetTime = 0;
-               Print("Vao I45");
+               textInternalHigh += " | CHoCH I45";
             }
             // CHoCH BoS with volume
             line_target = tfData.vItrend;
@@ -2032,9 +2023,9 @@ struct marketStructs{
             }
          }
          
-         //if (isComment && StringLen(textInternalHigh) > 0) {
-         //   Print(textInternalHigh);
-         //}
+         if (isComment && StringLen(textInternalHigh) > 0) {
+            Print(textInternalHigh);
+         }
       }
       
       // Low
@@ -2046,17 +2037,14 @@ struct marketStructs{
             tfData.LastSwingInternal = -1;
             tfData.waitingIntSLows = 1;
             
-            textInternalLow = "---> -I1 Bos Low => iTrend = -1 && LastSwingInternal = -1 && bar1.low < intSLows[0]  => iTrend = -1, LastSwingInternal = -1, waitingIntSLows = 1";
-            if (isComment) {
-               Print(textInternalLow);
-            }
-            
+            textInternalLow += "---> -I1 Bos Low => iTrend = -1 && LastSwingInternal = -1 && bar1.low < intSLows[0]  => iTrend = -1, LastSwingInternal = -1, waitingIntSLows = 1";
+                        
             if (tfData.iFindTarget != -1) {
                tfData.iFindTarget = -1;
                tfData.iStoploss = tfData.intSHighs[0];
                tfData.iTarget = 0;
                tfData.iTargetTime = 0;
-               Print("Vao -I1");
+               textInternalLow += " | Bos -I1";
             }
                         
             // CHoCH BoS with volume
@@ -2088,17 +2076,14 @@ struct marketStructs{
             tfData.LastSwingInternal = -1;
             tfData.waitingIntSLows = 1;
                         
-            textInternalLow += "---> -I3 CHoCH Low => iTrend = 1 && LastSwingInternal = -1 && bar1.low < intSLows[0]  => iTrend = -1, LastSwingInternal = -1, waitingIntSLows = 1";
-            if (isComment) {
-               Print(textInternalLow);
-            }
+            textInternalLow += "\n---> -I3 CHoCH Low => iTrend = 1 && LastSwingInternal = -1 && bar1.low < intSLows[0]  => iTrend = -1, LastSwingInternal = -1, waitingIntSLows = 1";
             
             if (tfData.iFindTarget != -1) {
                tfData.iFindTarget = -1;
                tfData.iStoploss = tfData.intSHighs[0];
                tfData.iTarget = 0;
                tfData.iTargetTime = 0;
-               Print("Vao -I3");
+               textInternalLow += " | CHoCH -I3";
             }
             
             // CHoCH BoS with volume
@@ -2132,11 +2117,7 @@ struct marketStructs{
             tfData.waitingIntSLows = 1;
                         
             textInternalLow += "---> -I45 CHoCH Low => iTrend = 1 && LastSwingInternal = 1 && bar1.low < intSLows[0], intSLows[1]  => iTrend = -1, LastSwingInternal = -1, waitingIntSLows = 1";
-            if (isComment) {
-               Print(textInternalLow);
-            }
-            
-            
+
             if (tfData.intSLows[0] > tfData.intSLows[1]) {
                // Clear Draw intSHigh[0]
                deleteObj(tfData.intSLowTime[0], tfData.intSLows[0], iWingding_internal_low, "");
@@ -2164,7 +2145,7 @@ struct marketStructs{
                tfData.iStoploss = tfData.intSHighs[0];
                tfData.iTarget = 0;
                tfData.iTargetTime = 0;
-               Print("Vao -I45");
+               textInternalLow += " | CHoCH -I45";
             }
             
             // CHoCH BoS with volume
@@ -2197,33 +2178,10 @@ struct marketStructs{
             }
          }
          
-         //if (isComment && StringLen(textInternalLow) > 0) {
-         //   Print(textInternalLow);
-         //}
-      }
-//      if (tfData.iFindTarget == 0 && tfData.iTarget == 0) {
-//         Print(" -------------------------- Reset xoa sach ban do");
-//      }
-//      if (tfData.iTarget != 0 && tfData.iStoploss != 0) {
-//         if (tfData.iFindTarget != 0) {
-//            Print("================> "+((tfData.iFindTarget == 1)? "iBullish" : "iBearish")+"; iTarget = "+ (string) tfData.iTarget + " has time = "+(string) tfData.iTargetTime+" && iStoploss = "+ (string) tfData.iStoploss + " has time = "+ (string) tfData.iStoplossTime);
-//         }
-//         
-//      }
-      if(isComment) {
-         if(StringLen(textInternalLow) > 0) {
+         if (isComment && StringLen(textInternalLow) > 0) {
             Print(textInternalLow);
-            //ArrayPrint(tfData.intSLows);
-            //ArrayPrint(tfData.volIntSLows);
-         }
-         if(StringLen(textInternalHigh) > 0) {
-            Print(textInternalHigh);
-            //ArrayPrint(tfData.intSHighs);
-            //ArrayPrint(tfData.volIntSHighs);
          }
       }
-      //ArrayPrint(tfData.intSHighs);
-      //ArrayPrint(tfData.intSLows);
       return resultStructure;
    } //--- End Ham cap nhat cau truc song Gann
    
@@ -3130,7 +3088,7 @@ struct marketStructs{
          }
       }
       // End Check break with Body or Wick
-      Print(text);
+      //Print(text);
       return result;
    }
    
@@ -3871,12 +3829,13 @@ void testData(ENUM_TIMEFRAMES timeframe) {
 }
 
 string getValueTrend(TimeFrameData& tfData) {
-   string text =  "| Struct trend = STrend: "+ (string) tfData.sTrend + " vSTrend: "+(string) tfData.vSTrend + " waitingStrend: pbHigh "+(string) tfData.waitingArrPbHigh + " pbLow " + (string) tfData.waitingArrPbLows +
-                     " - marjor trend = mTrend: "+(string) tfData.mTrend+ " vMTrend: "+(string) tfData.vMTrend+  " waitingMtrend: waitingArrTop "+(string) tfData.waitingArrTop + " waitingArrBot " + (string) tfData.waitingArrBot + " - LastSwingMajor: "+(string) tfData.LastSwingMajor+ 
-               "\n findHigh: "+(string) tfData.findHigh+" - idmHigh: "+(string) tfData.idmHigh+ " - vol idmHigh: "+(string) tfData.vol_idmHigh+
+   string text =  "| Struct Trend = STrend: "+ (string) tfData.sTrend + " vSTrend: "+(string) tfData.vSTrend + ". waitingStrend: pbHigh "+(string) tfData.waitingArrPbHigh + " pbLow " + (string) tfData.waitingArrPbLows +
+                     " _ Marjor Trend = mTrend: "+(string) tfData.mTrend+ " vMTrend: "+(string) tfData.vMTrend+  ". waitingMtrend: waitingArrTop "+(string) tfData.waitingArrTop + " waitingArrBot " + (string) tfData.waitingArrBot + " - LastSwingMajor: "+(string) tfData.LastSwingMajor+ 
+               "\nfindHigh: "+(string) tfData.findHigh+" - idmHigh: "+(string) tfData.idmHigh+ " - vol idmHigh: "+(string) tfData.vol_idmHigh+
                " findLow: "+(string) tfData.findLow+" - idmLow: "+(string) tfData.idmLow+ " - vol idmLow: "+(string) tfData.vol_idmLow+
-               " | \n | iTrend: "+(string) tfData.iTrend+ " vItrend: "+(string) tfData.vItrend+ " waitingItrend: IntSHighs "+(string) tfData.waitingIntSHighs + " IntSLows " + (string) tfData.waitingIntSLows +" - LastSwingInternal: "+(string) tfData.LastSwingInternal+
-               " | | gTrend: "+(string) tfData.gTrend+ " vGTrend: "+(string) tfData.vGTrend+ " - LastSwingMeter: "+(string) tfData.LastSwingMeter+
-               " | | H: "+ (string) tfData.H +" - L: "+(string) tfData.L;  
+               "_ mFindtarget: "+(string) tfData.mFindTarget + " iStoploss: " + DoubleToString(tfData.mStoploss,5) + " iTarget: "+ DoubleToString(tfData.mTarget,5) + " mFullTarget: "+ DoubleToString(tfData.mFullTarget,5) +
+               "\nInternal Trend: iTrend: "+(string) tfData.iTrend+ " vItrend: "+(string) tfData.vItrend+ " waitingItrend: IntSHighs "+(string) tfData.waitingIntSHighs + " IntSLows " + (string) tfData.waitingIntSLows +" - LastSwingInternal: "+(string) tfData.LastSwingInternal+
+               "_ iFindtarget: "+(string) tfData.iFindTarget + " iStoploss: " + DoubleToString(tfData.iStoploss,5) + " iTarget: "+ DoubleToString(tfData.iTarget,5) + " iFullTarget: "+ DoubleToString(tfData.iFullTarget,5) +
+               "\nGann Trend: gTrend: "+(string) tfData.gTrend+ " vGTrend: "+(string) tfData.vGTrend+ " - LastSwingMeter: "+(string) tfData.LastSwingMeter+ " | | H: "+ (string) tfData.H +" - L: "+(string) tfData.L;  
    return text;
 }      
