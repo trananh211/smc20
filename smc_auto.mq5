@@ -1493,7 +1493,7 @@ struct marketStructs{
             tfData.LastSwingInternal = -1;
             resultStructure = 1;
             
-            if (tfData.iFindTarget == 0 && tfData.intSHighs[0] > tfData.iFindTarget) {
+            if (tfData.iFindTarget == 0 && tfData.intSHighs[0] > tfData.iTarget) {
                tfData.iTarget = tfData.intSHighs[0];
                tfData.iTargetTime = tfData.intSHighTime[0];
                tfData.iFindTarget = 0;
@@ -1530,7 +1530,7 @@ struct marketStructs{
             tfData.LastSwingInternal = -1;
             resultStructure = 2;
             
-            if (tfData.iFindTarget == 0 && tfData.intSHighs[0] > tfData.iFindTarget) {
+            if (tfData.iFindTarget == 0 && tfData.intSHighs[0] > tfData.iTarget) {
                tfData.iTarget = tfData.intSHighs[0];
                tfData.iTargetTime = tfData.intSHighTime[0];
                tfData.iFindTarget = 0;
@@ -1700,7 +1700,7 @@ struct marketStructs{
             tfData.LastSwingInternal = 1;
             resultStructure = -1;
             
-            if (tfData.iFindTarget == 0 && tfData.intSLows[0] < tfData.iFindTarget) {
+            if (tfData.iFindTarget == 0 && tfData.intSLows[0] < tfData.iTarget) {
                tfData.iTarget = tfData.intSLows[0];
                tfData.iTargetTime = tfData.intSLowTime[0];
                tfData.iFindTarget = 0;
@@ -1738,7 +1738,7 @@ struct marketStructs{
             tfData.LastSwingInternal = 1;
             resultStructure = -2;
             
-            if (tfData.iFindTarget == 0 && tfData.intSLows[0] < tfData.iFindTarget) {
+            if (tfData.iFindTarget == 0 && tfData.intSLows[0] < tfData.iTarget) {
                tfData.iTarget = tfData.intSLows[0];
                tfData.iTargetTime = tfData.intSLowTime[0];
                tfData.iFindTarget = 0;
