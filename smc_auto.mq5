@@ -1475,7 +1475,7 @@ struct marketStructs{
          
          // Internal Structure
          textInternalHigh += "--->Swing High: "+DoubleToString(bar2.high,digits) +".#SS iTrend: " +(string) tfData.iTrend+", LastSwingInternal: "+(string) tfData.LastSwingInternal;
-         textInternalHigh += "| lastTimeH: "+(string) tfData.lastTimeH+" lastH: "+ DoubleToString(tfData.lastH,digits) +"<->"+" intSHighTime[0] "+DoubleToString(tfData.intSHighTime[0], digits)+" intSHighs[0] "+ DoubleToString(tfData.intSHighs[0], digits);
+         textInternalHigh += "| lastTimeH: "+(string) tfData.lastTimeH+" lastH: "+ DoubleToString(tfData.lastH,digits) +"<->"+" intSHighTime[0] "+(string) tfData.intSHighTime[0]+" intSHighs[0] "+ DoubleToString(tfData.intSHighs[0], digits);
          // finding High
          
          // DONE 1
@@ -1683,7 +1683,7 @@ struct marketStructs{
          
          // Internal Structure 
          textInternalLow += "--->Swing Low: "+ DoubleToString(bar2.low, digits) +".#SS iTrend: " +(string) tfData.iTrend+", LastSwingInternal: "+(string) tfData.LastSwingInternal;
-         textInternalLow += "| lastTimeL: "+(string) tfData.lastTimeL+" lastL: "+DoubleToString(tfData.lastL,digits) +"<->"+"intSLowTime[0] "+DoubleToString(tfData.intSLowTime[0],digits)+" intSLows[0] "+ DoubleToString(tfData.intSLows[0], digits);
+         textInternalLow += "| lastTimeL: "+(string) tfData.lastTimeL+" lastL: "+DoubleToString(tfData.lastL,digits) +"<->"+"intSLowTime[0] "+(string) tfData.intSLowTime[0]+" intSLows[0] "+ DoubleToString(tfData.intSLows[0], digits);
          // finding Low
          // DONE 1
          // LL
