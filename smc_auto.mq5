@@ -1497,14 +1497,14 @@ struct marketStructs{
                tfData.iTarget = tfData.intSHighs[0];
                tfData.iTargetTime = tfData.intSHighTime[0];
                tfData.iFindTarget = 0;
-               textInternalHigh += " | Update High 1.2";
+               textInternalHigh += " | Update High 1,2";
             }
             
             if (tfData.iFindTarget == 1) {
                tfData.iTarget = tfData.intSHighs[0];
                tfData.iTargetTime = tfData.intSHighTime[0];
                tfData.iFindTarget = 0;
-               textInternalHigh += " | New High 1.1";
+               textInternalHigh += " | New High 1,1";
             }
             
             // them Zone
@@ -1534,14 +1534,14 @@ struct marketStructs{
                tfData.iTarget = tfData.intSHighs[0];
                tfData.iTargetTime = tfData.intSHighTime[0];
                tfData.iFindTarget = 0;
-               textInternalHigh += " | Update High 2.2";
+               textInternalHigh += " | Update High 2,2";
             }
             
             if (tfData.iFindTarget == 1) {
                tfData.iTarget = tfData.intSHighs[0];
                tfData.iTargetTime = tfData.intSHighTime[0];
                tfData.iFindTarget = 0;
-               textInternalHigh += " | New High 2.1";
+               textInternalHigh += " | New High 2,1";
             }
             
             
@@ -1704,14 +1704,14 @@ struct marketStructs{
                tfData.iTarget = tfData.intSLows[0];
                tfData.iTargetTime = tfData.intSLowTime[0];
                tfData.iFindTarget = 0;
-               textInternalLow += " | Update Low -1.2";
+               textInternalLow += " | Update Low -1,2";
             }
             
             if (tfData.iFindTarget == -1) {
                tfData.iTarget = tfData.intSLows[0];
                tfData.iTargetTime = tfData.intSLowTime[0];
                tfData.iFindTarget = 0;
-               textInternalLow += " |New Low -1.1";
+               textInternalLow += " |New Low -1,1";
             }
             
             // Them Zone
@@ -1742,14 +1742,14 @@ struct marketStructs{
                tfData.iTarget = tfData.intSLows[0];
                tfData.iTargetTime = tfData.intSLowTime[0];
                tfData.iFindTarget = 0;
-               textInternalLow += " | Update Low -2.2";
+               textInternalLow += " | Update Low -2,2";
             }
             
             if (tfData.iFindTarget == -1) {
                tfData.iTarget = tfData.intSLows[0];
                tfData.iTargetTime = tfData.intSLowTime[0];
                tfData.iFindTarget = 0;
-               textInternalLow += " | New Low -2.1";
+               textInternalLow += " | New Low -2,1";
             }
             
             // cap nhat Zone
@@ -2397,6 +2397,14 @@ struct marketStructs{
             tfData.L = bar1.low; tfData.LTime = bar1.time; tfData.vol_L = bar1.tick_volume;
             tfData.L_bar = bar1; 
             tfData.findHigh = 0; tfData.H = 0; tfData.vol_H = 0;
+            
+            if (tfData.mFindTarget == 1) {
+               tfData.mTarget = tfData.arrPbHigh[0];
+               tfData.mTargetTime = tfData.arrPbHTime[0];
+               tfData.mFindTarget = 0;
+               text += " | Cross IDM Uptrend M1.4";
+            }
+            
             if (isComment && StringLen(text) > 0) {
                Print(str_marjor+text);
             }
@@ -2428,6 +2436,16 @@ struct marketStructs{
             tfData.findHigh = 0; 
             tfData.findLow = 0;
             tfData.idmLow = tfData.Highs[0]; tfData.idmLowTime = tfData.HighsTime[0]; tfData.vol_idmLow = tfData.volHighs[0];
+            
+            if (tfData.mFindTarget != -1) {
+               tfData.mFindTarget = -1;
+               tfData.mStoploss = tfData.arrPbHigh[0];
+               tfData.mStoplossTime = tfData.arrPbHTime[0];
+               tfData.mTarget = 0;
+               tfData.mTargetTime = 0;
+               text += " | CHoCH Low M1.5";
+            }
+            
             if (isComment && StringLen(text) > 0) {
                Print(str_marjor+text);
             }
@@ -2501,6 +2519,15 @@ struct marketStructs{
             tfData.L = 0; tfData.vol_L = 0;
             text += ", findLow = 0, idmHigh = "+DoubleToString(tfData.Lows[0], digits)+", L = 0";
             
+            if (tfData.mFindTarget != 1) {
+               tfData.mFindTarget = 1;
+               tfData.mStoploss = tfData.arrPbLow[0];
+               tfData.mStoplossTime = tfData.arrPbLTime[0];
+               tfData.mTarget = 0;
+               tfData.mTargetTime = 0;
+               text += " | Continue BOS High M1.6";
+            }
+            
             if (isComment && StringLen(text) > 0) {
                Print(str_marjor+text);
             }
@@ -2567,6 +2594,15 @@ struct marketStructs{
             tfData.idmHigh = tfData.Lows[0]; tfData.idmHighTime = tfData.LowsTime[0]; tfData.vol_idmHigh = tfData.volLows[0];
             tfData.L = 0; tfData.vol_L = 0;
             
+            if (tfData.mFindTarget != 1) {
+               tfData.mFindTarget = 1;
+               tfData.mStoploss = tfData.arrPbLow[0];
+               tfData.mStoplossTime = tfData.arrPbLTime[0];
+               tfData.mTarget = 0;
+               tfData.mTargetTime = 0;
+               text += " | CHoCH up M2.1";
+            }
+            
             if (isComment && StringLen(text) > 0) {
                Print(str_marjor+text);
             }
@@ -2580,10 +2616,12 @@ struct marketStructs{
                } 
             }
          }
+           
          // CHoCH DOwn. 
          if (tfData.LastSwingMajor == -1 && bar1.low < tfData.arrPbLow[0] && tfData.arrPbLow[0] != tfData.arrChoLow[0]) {
             text = "2.2 sTrend == 1 && mTrend == -1 && LastSwingMajor == -1 && bar1.low < arrPbLow[0] : " + DoubleToString(bar1.low, digits) + "<" + DoubleToString(tfData.arrPbLow[0], digits);
-            text += "\n => Cap nhat => POI Low. sTrend = -1; mTrend = -1; LastSwingMajor = -1; findHigh = 0; idmLow = Highs[0] = "+DoubleToString( tfData.Highs[0], digits);
+            text += "\n => Cap nhat => sTrend = -1; mTrend = -1; LastSwingMajor = -1; findHigh = 0; idmLow = Highs[0] = "+DoubleToString(tfData.Highs[0], digits);
+            text += "\n => Cap nhat => POI Bearish = arrPbHigh[0] : "+ DoubleToString(tfData.arrPbHigh[0], digits);
             
             // Add new point
             tfData.AddToDoubleArray( tfData.arrChoLow, tfData.arrPbLow[0]);
@@ -2598,6 +2636,15 @@ struct marketStructs{
             tfData.sTrend = -1; tfData.mTrend = -1; tfData.LastSwingMajor = -1;
             tfData.findHigh = 0; 
             tfData.idmLow = tfData.Highs[0]; tfData.idmLowTime = tfData.HighsTime[0]; tfData.vol_idmLow = tfData.volHighs[0];
+            
+            if (tfData.mFindTarget != -1) {
+               tfData.mFindTarget = -1;
+               tfData.mStoploss = tfData.arrPbHigh[0];
+               tfData.mStoplossTime = tfData.arrPbHTime[0];
+               tfData.mTarget = 0;
+               tfData.mTargetTime = 0;
+               text += " | CHoCH Down M2.2";
+            }
             
             if (isComment && StringLen(text) > 0) {
                Print(str_marjor+text);
@@ -2745,6 +2792,13 @@ struct marketStructs{
             tfData.H_bar = bar1;
             tfData.findLow = 0; tfData.L = 0; tfData.vol_L = 0;
             
+            if (tfData.mFindTarget == -1) {
+               tfData.mTarget = tfData.arrPbLow[0];
+               tfData.mTargetTime = tfData.arrPbLTime[0];
+               tfData.mFindTarget = 0;
+               text += " | Cross IDM Uptrend M-3.4";
+            }
+            
             if (isComment && StringLen(text) > 0) {
                Print(str_marjor+text);
             }
@@ -2774,6 +2828,15 @@ struct marketStructs{
             tfData.findLow = 0;
             tfData.findHigh = 0; 
             tfData.idmHigh = tfData.Lows[0]; tfData.idmHighTime = tfData.LowsTime[0]; tfData.vol_idmHigh = tfData.volLows[0];
+            
+            if (tfData.mFindTarget != 1) {
+               tfData.mFindTarget = 1;
+               tfData.mStoploss = tfData.arrPbLow[0];
+               tfData.mStoplossTime = tfData.arrPbLTime[0];
+               tfData.mTarget = 0;
+               tfData.mTargetTime = 0;
+               text += " | CHoCH High M-3.5";
+            }
             
             if (isComment && StringLen(text) > 0) {
                Print(str_marjor+text);
@@ -2849,6 +2912,15 @@ struct marketStructs{
             tfData.H = 0; tfData.vol_H = 0; 
             text += ", findHigh = 0, idmLow = "+DoubleToString( tfData.Highs[0], digits)+", H = 0";
             
+            if (tfData.mFindTarget != -1) {
+               tfData.mFindTarget = -1;
+               tfData.mStoploss = tfData.arrPbHigh[0];
+               tfData.mStoplossTime = tfData.arrPbHTime[0];
+               tfData.mTarget = 0;
+               tfData.mTargetTime = 0;
+               text += " | Continue BOS Low M-3.6";
+            }
+            
             if (isComment && StringLen(text) > 0) {
                Print(str_marjor+text);
             }
@@ -2885,7 +2957,7 @@ struct marketStructs{
       if (tfData.sTrend == -1 && tfData.mTrend == 1) {
          // continue Down, COntinue Choch down
          if (tfData.LastSwingMajor == 1 && bar1.low < tfData.arrPbLow[0] && tfData.arrPbLow[0] != tfData.arrChoLow[0]) {
-            text = "-4.1 sTrend == -1 && mTrend == 1 && LastSwingMajor == 1 && bar1.low < arPbLow[0]";
+            text = "-4.1 CHoCH Down sTrend == -1 && mTrend == 1 && LastSwingMajor == 1 && bar1.low < arPbLow[0]";
                           
             // Add new point
             tfData.AddToDoubleArray( tfData.arrChoLow, tfData.arrPbLow[0]);
@@ -2916,6 +2988,15 @@ struct marketStructs{
             tfData.findHigh = 0; 
             tfData.idmLow = tfData.Highs[0]; tfData.idmHighTime = tfData.LowsTime[0]; tfData.vol_idmLow = tfData.volHighs[0];
             tfData.H = 0; tfData.vol_H = 0;
+            
+            if (tfData.mFindTarget != -1) {
+               tfData.mFindTarget = -1;
+               tfData.mStoploss = tfData.arrPbHigh[0];
+               tfData.mStoplossTime = tfData.arrPbHTime[0];
+               tfData.mTarget = 0;
+               tfData.mTargetTime = 0;
+               text += " | CHoCH Low M-4.1";
+            }
             
             if (isComment && StringLen(text) > 0) {
                Print(str_marjor+text);
@@ -2952,6 +3033,15 @@ struct marketStructs{
             tfData.sTrend = 1; tfData.mTrend = 1; tfData.LastSwingMajor = 1;
             tfData.findLow = 0; 
             tfData.idmHigh = tfData.Lows[0]; tfData.idmHighTime = tfData.LowsTime[0]; tfData.vol_idmHigh = tfData.volLows[0];
+            
+            if (tfData.mFindTarget != 1) {
+               tfData.mFindTarget = 1;
+               tfData.mStoploss = tfData.arrPbLow[0];
+               tfData.mStoplossTime = tfData.arrPbLTime[0];
+               tfData.mTarget = 0;
+               tfData.mTargetTime = 0;
+               text += " | CHoCH up M-4.2";
+            }
             
             if (isComment && StringLen(text) > 0) {
                Print(str_marjor+text);
