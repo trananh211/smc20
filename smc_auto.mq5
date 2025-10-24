@@ -2572,7 +2572,7 @@ struct marketStructs{
                tfData.waitingArrPbHigh = 1;
                if (isCHoCHBOSVolume) {
                   tfData.vSTrend = (checkVolumeBreak(1, bar1, tfData.arrPbHigh[0], tfData.volArrPbHigh[0])) ? 1: -1;
-                  tfData.vMTrend = (checkVolumeBreak(1, bar1, tfData.arrPbHigh[0], tfData.volArrPbHigh[0])) ? 1: -1;
+                  tfData.vMTrend = tfData.vSTrend;
                } 
             }
          }
@@ -2605,7 +2605,7 @@ struct marketStructs{
                tfData.waitingArrPbHigh = 1;
                if (isCHoCHBOSVolume) {
                   tfData.vSTrend = (checkVolumeBreak(1, bar1, tfData.arrPbHigh[0], tfData.volArrPbHigh[0])) ? -1: 1;
-                  tfData.vMTrend = (checkVolumeBreak(1, bar1, tfData.arrPbHigh[0], tfData.volArrPbHigh[0])) ? -1: 1;
+                  tfData.vMTrend = tfData.vSTrend;
                } 
             }
          }
@@ -2923,7 +2923,7 @@ struct marketStructs{
                tfData.waitingArrPbLows = 1;
                if (isCHoCHBOSVolume) {
                   tfData.vSTrend = (checkVolumeBreak(-1, bar1, tfData.arrPbLow[0], tfData.volArrPbLow[0])) ? -1: 1;
-                  tfData.vMTrend = (checkVolumeBreak(-1, bar1, tfData.arrPbLow[0], tfData.volArrPbLow[0])) ? -1: 1;
+                  tfData.vMTrend = tfData.vSTrend;
                } 
             }
          }
@@ -2959,7 +2959,7 @@ struct marketStructs{
                tfData.waitingArrPbHigh = 1;
                if (isCHoCHBOSVolume) {
                   tfData.vSTrend = (checkVolumeBreak(1, bar1, tfData.arrPbHigh[0], tfData.volArrPbHigh[0])) ? 1: -1;
-                  tfData.vMTrend = (checkVolumeBreak(1, bar1, tfData.arrPbHigh[0], tfData.volArrPbHigh[0])) ? 1: -1;
+                  tfData.vMTrend = tfData.vSTrend;
                } 
             }
          }
@@ -3110,7 +3110,8 @@ struct marketStructs{
    // Todo: dang setup chua xong, can verify Decisinal POI moi khi chay. Luu gia tri High, Low vao 1 gia tri cố định để so sánh
    // 
    void getDecisionalValue(TimeFrameData& tfData, bool isComment = false) {
-      string text = "==> Function getDecisionalValue:";
+      string str_zone = "==> Function getDecisionalValue: ";
+      string text = "";
       // High
       if (ArraySize(tfData.intSHighs) > 1 && tfData.arrDecisionalHigh[0] != tfData.intSHighs[1]) {
          text += "\n Checking intSHighs[1]: "+ DoubleToString( tfData.intSHighs[1],5);
@@ -3118,7 +3119,7 @@ struct marketStructs{
          int isExist = -1;
          if (ArraySize(tfData.arrPbHigh) > 0) {
             isExist = checkExist(tfData.intSHighs[1], tfData.arrPbHigh);
-            text += ": Tim thay vi tri "+(string) isExist+" trong arrPbHigh. (Extreme)";
+            text += ": Tim thay vi tri "+(string) isExist+" trong arrPbHigh.";
          }
          // Neu khong phai la extreme POI. update if isExist == -1
          if (isExist == -1) {
@@ -3147,7 +3148,7 @@ struct marketStructs{
          int isExist = -1;
          if (ArraySize(tfData.arrPbLow) > 0) {
             isExist = checkExist(tfData.intSLows[1], tfData.arrPbLow);
-            text += ": Tim thay vi tri "+(string) isExist+" trong arrPbLow. (Extreme)";
+            text += ": Tim thay vi tri "+(string) isExist+" trong arrPbLow.";
          }
          // Neu khong phai la extreme POI. update if isExist == -1
          if (isExist == -1) {
@@ -3168,7 +3169,7 @@ struct marketStructs{
             text += "\n Da ton tai o vi tri : "+(string) isExist+" trong arrPbLow. Bo qua.";
          }
       }
-      if (isComment) Print(text);
+      if (isComment) Print(str_zone+text);
    }
    
    int checkExist(double value, double& array[]){
@@ -3187,11 +3188,11 @@ struct marketStructs{
    void setValueToZone(TimeFrameData& tfData, int _type,PoiZone& zoneDefault[], PoiZone& zoneTarget[], bool isComment = false, string str_poi = ""){
       string text = "";
       // type = 1 is High, -1 is Low
-      double priceKey = (_type == 1) ? zoneDefault[0].high : zoneDefault[0].low;
+      double priceKey = (_type == 1) ? zoneDefault[0].high : zoneDefault[0].low; // Price key => Lấy giá theo loại (1 or -1) để so sánh với zone[0] xem đã tồn tại hay chưa
       datetime timeKey = zoneDefault[0].time;
-      // check default has new value?? 
+      // check default has new value?? => Kiểm tra xem phần tử đầu tiên có phải là phần tử cần thêm vào hay không
       if (ArraySize(zoneDefault) > 1 && priceKey != zoneTarget[0].priceKey && timeKey != zoneTarget[0].timeKey && priceKey != 0) {
-         text += ( "--> "+ str_poi +" "+ (( _type == 1)? "High" : "Low") +". Xuat hien value: "+DoubleToString(priceKey,5)+" co time: "+(string)timeKey+" moi. them vao Extreme Zone");
+         text += ( "--> "+ str_poi +" "+ (( _type == 1)? "High" : "Low") +". Xuat hien value: "+DoubleToString(priceKey,5)+" co time: "+(string)timeKey+" moi. them vao "+str_poi+" "+ (( _type == 1)? "Bearish" : "Bullish") +" Zone");
          int indexH; 
          MqlRates barH;
          
