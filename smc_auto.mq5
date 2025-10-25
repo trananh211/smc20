@@ -1281,7 +1281,7 @@ struct marketStructs{
    }
    
    void realGannWave(TimeFrameData& tfData, ENUM_TIMEFRAMES timeframe) {
-      Print("-----------------------------------> New "+EnumToString(timeframe)+" bar formed: ", TimeToString(TimeCurrent())+" <------------------------------------");
+      Print("----------------------------------------------------------------------> New "+EnumToString(timeframe)+" bar formed: ", TimeToString(TimeCurrent())+" <-----------------------------------------------------------------------");
       int copied = CopyRates(_Symbol, timeframe, 0, 4, rates);
       
       string text = "";
@@ -1289,7 +1289,6 @@ struct marketStructs{
       bar1 = rates[2];
       bar2 = rates[1];
       bar3 = rates[0];
-      
       
       //text += "--------------Real Gann Wave----------------";
       text += inInfoBar(bar1, bar2, bar3);
@@ -1308,7 +1307,7 @@ struct marketStructs{
       //text += "\n------------ End Real Gann wave---------------";
       Print(text); 
       
-      Print("-----------------------------------> END "+EnumToString(timeframe)+" bar formed: ", TimeToString(TimeCurrent())+" <------------------------------------ \n");
+      Print("----------------------------------------------------------------------> END "+EnumToString(timeframe)+" bar formed: ", TimeToString(TimeCurrent())+" <----------------------------------------------------------------------- \n");
       // For develop
       //showPoiComment(tfData);
    }
@@ -3285,7 +3284,7 @@ struct marketStructs{
       datetime timeKey = zoneDefault[0].time;
       // check default has new value?? 
       if (ArraySize(zoneDefault) > 1 && priceKey != zoneTarget[0].priceKey && timeKey != zoneTarget[0].timeKey && priceKey != 0) {
-         text += ( "--> "+ str_poi +" "+ (( _type == 1)? "High" : "Low") +". Xuat hien value: "+DoubleToString(priceKey,digits)+" co time: "+(string)timeKey+" moi. them vao Extreme Zone");
+         text += ( "--> "+ str_poi +" "+ (( _type == 1)? "High" : "Low") +". Xuat hien value: "+DoubleToString(priceKey,digits)+" co time: "+(string)timeKey+" moi. them vao "+str_poi+" Zone");
          int indexH; 
          MqlRates barH;
          
@@ -3920,4 +3919,4 @@ string getValueTrend(TimeFrameData& tfData) {
                " _ iFindtarget: "+(string) tfData.iFindTarget + " iStoploss: " + DoubleToString(tfData.iStoploss,digits) + " iTarget: "+ DoubleToString(tfData.iTarget,digits) + " iFullTarget: "+ DoubleToString(tfData.iFullTarget,digits) +
                "\nGann Trend: gTrend: "+(string) tfData.gTrend+ " vGTrend: "+(string) tfData.vGTrend+ " - LastSwingMeter: "+(string) tfData.LastSwingMeter+ " | | H: "+ DoubleToString( tfData.H, digits) +" - L: "+DoubleToString( tfData.L, digits);  
    return text;
-}      
+}
