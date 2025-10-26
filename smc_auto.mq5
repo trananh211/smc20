@@ -83,8 +83,28 @@ struct PoiZone
    double close;
    datetime time;
    int mitigated; // -1 mitigated, 0 not mitigate, 1 mitigating
+   
    double priceKey;
    datetime timeKey;
+   
+//   int isFvG; // 0 not defind, -1 not Fvg, 1 has FvG
+//   
+//   // sTrend
+//   int sTrend;
+//   int vSTrend;
+//   double sStoploss; //
+//   double sTarget;
+//   double sSnR;
+//   datetime sStoplossTime;
+   
+   // iTrend
+   int iTrend;
+   int vITrend;
+   int isIComplete;
+   double iStoploss; //
+   double iTarget;
+   double iSnR;
+   datetime iStoplossTime;
 };
 
 //+------------------------------------------------------------------+
@@ -998,7 +1018,7 @@ CGlobalVariables GlobalVars;
 //| Utility Functions                                                |
 //+------------------------------------------------------------------+
 // Hàm tạo PoiZone từ giá
-PoiZone CreatePoiZone(double high, double low, double open, double close, datetime time, 
+PoiZone CreatePoiZone(TimeFrameData& tfData, double high, double low, double open, double close, datetime time, 
                       int mitigated = 0, double priceKey = -1, datetime timeKey = -1)
 {
    PoiZone zone;
@@ -1010,10 +1030,42 @@ PoiZone CreatePoiZone(double high, double low, double open, double close, dateti
    zone.mitigated = mitigated;
    zone.priceKey = (priceKey != -1) ? priceKey : -1;
    zone.timeKey = (timeKey != -1) ? timeKey : 0;
-   
+   zone.isIComplete = -1;
    return zone;
 }
 
+// Hàm bắt đầu truyền thông số vào poizone
+void beginSetValueToPoiZone(TimeFrameData& tfData, PoiZone& zone) {
+   // Cap nhat iTarget at current TimeFrame
+   if ((tfData.iStoploss == zone.high || tfData.iStoploss == zone.low) && tfData.iStoplossTime == zone.time) {
+      zone.isIComplete = 0;
+      
+      //zone.sTrend = tfData.sTrend;
+      //zone.vSTrend = tfData.vSTrend;
+      //zone.sStoploss = tfData.mStoploss;
+      //zone.sStoplossTime = tfData.mStoplossTime;
+      //zone.sSnR = tfData.mSnR;
+      //zone.sTarget = tfData.mTarget;
+      
+      zone.iTrend = tfData.iTrend;
+      zone.vITrend = tfData.vItrend;
+      zone.iStoploss = tfData.iStoploss;
+      zone.iStoplossTime = tfData.iStoplossTime;
+      zone.iSnR = tfData.iSnR;
+      zone.iTarget = tfData.iTarget;
+   }
+}
+
+// Hàm cập nhật target zone hiện tại theo Real Time
+void updateProcessPoiZone(TimeFrameData& tfData, PoiZone& zone) {
+   // Nếu đã cập nhật target trước đó rồi. Return
+   if( zone.isIComplete == 1) return;
+   // Kiểm tra xem zone hiện tại có phải đang là zone được chỉ định hay không
+   if (zone.iStoploss == tfData.iStoploss && zone.iStoplossTime == tfData.iStoplossTime) {
+      zone.iTarget = tfData.iTarget;
+      zone.isIComplete = 1;
+   }
+}
 // Hàm in thông tin PoiZone
 void PrintPoiZone(PoiZone &zone, string prefix = "")
 {
@@ -1184,7 +1236,7 @@ struct marketStructs{
       tfData.AddToLongArray(tfData.volArrDecisionalLow, firstBarVol);
       
       // Thêm PoiZone vào mảng
-      PoiZone zone1 = CreatePoiZone(Bar1.high, Bar1.low, Bar1.open, Bar1.close, Bar1.time, 0, -1, -1);
+      PoiZone zone1 = CreatePoiZone( tfData,Bar1.high, Bar1.low, Bar1.open, Bar1.close, Bar1.time, 0, -1, -1);
       tfData.AddToPoiZoneArray(tfData.zPoiLow, zone1);
       tfData.AddToPoiZoneArray(tfData.zPoiHigh, zone1);
       tfData.AddToPoiZoneArray(tfData.zPoiExtremeLow, zone1);
@@ -1428,7 +1480,7 @@ struct marketStructs{
       if (bar3.high <= bar2.high && bar2.high >= bar1.high) { // tim thay dinh high
          textGannHigh += "---> Gann: Find High: "+DoubleToString(bar2.high, digits) +" + Highest: "+ DoubleToString(tfData.highEst, digits) ;
          // set Zone
-         PoiZone zone2 = CreatePoiZone(bar2.high, bar2.low, bar2.open, bar2.close, bar2.time);
+         PoiZone zone2 = CreatePoiZone( tfData,bar2.high, bar2.low, bar2.open, bar2.close, bar2.time);
          if (typeTickVolume == 1) {
             maxVolume = bar2.tick_volume;
          } else {
@@ -1514,6 +1566,8 @@ struct marketStructs{
             tfData.AddToPoiZoneArray(tfData.zIntSHighs, zone2, poi_limit);
             // cap nhat waiting bos intSHighs ve 0
             tfData.waitingIntSHighs = 0;
+            // Cap nhat target zone Low
+            updateProcessPoiZone(tfData, tfData.zIntSLows[0]);
          }
          
          // HH 2
@@ -1552,6 +1606,8 @@ struct marketStructs{
             tfData.UpdatePoiZoneArray(tfData.zIntSHighs, 0, zone2);
             //// cap nhat waiting bos intSHighs ve 0
             tfData.waitingIntSHighs = 0;
+            // Cap nhat target zone Low
+            updateProcessPoiZone(tfData, tfData.zIntSLows[0]);
          }
                   
          // DONE 4 
@@ -1624,7 +1680,8 @@ struct marketStructs{
             tfData.AddToPoiZoneArray(tfData.zIntSHighs, zone2, poi_limit);
             // cap nhat waiting bos intSHighs ve 0
             tfData.waitingIntSHighs = 0;
-            
+            // Cap nhat target zone Low
+            updateProcessPoiZone(tfData, tfData.zIntSLows[0]);
          }
          if( isComment) {
             Print(str_internal+textInternalHigh);
@@ -1637,7 +1694,7 @@ struct marketStructs{
    //   // swing low
       if (bar3.low >= bar2.low && bar2.low <= bar1.low) { // tim thay dinh low
          textGannLow += "---> Gann: Find Low: +" +DoubleToString(bar2.low, digits)+ " + Lowest: "+DoubleToString(tfData.lowEst, digits);
-         PoiZone zone2 = CreatePoiZone(bar2.high, bar2.low, bar2.open, bar2.close, bar2.time);
+         PoiZone zone2 = CreatePoiZone( tfData,bar2.high, bar2.low, bar2.open, bar2.close, bar2.time);
          if (typeTickVolume == 1) {
             maxVolume = bar2.tick_volume;
          } else {
@@ -1721,6 +1778,8 @@ struct marketStructs{
             tfData.AddToPoiZoneArray(tfData.zIntSLows, zone2, poi_limit);
             // cap nhat waiting bos intSLows ve 0
             tfData.waitingIntSLows = 0;
+            // Cap nhat target zone High
+            updateProcessPoiZone(tfData, tfData.zIntSHighs[0]);
          }
          
          // LL
@@ -1759,6 +1818,8 @@ struct marketStructs{
             tfData.UpdatePoiZoneArray(tfData.zIntSLows, 0, zone2);
             //// cap nhat waiting bos intSLows ve 0
             tfData.waitingIntSLows = 0;
+            // Cap nhat target zone High
+            updateProcessPoiZone(tfData, tfData.zIntSHighs[0]);
          }
          
          // DONE 4
@@ -1831,7 +1892,8 @@ struct marketStructs{
             tfData.AddToPoiZoneArray(tfData.zIntSLows, zone2, poi_limit);
             // cap nhat waiting bos intSHighs ve 0
             tfData.waitingIntSLows = 0;
-            
+            // Cap nhat target zone High
+            updateProcessPoiZone(tfData, tfData.zIntSHighs[0]);
          }
          if(isComment) {
             Print(str_internal+textInternalLow);
@@ -1919,7 +1981,8 @@ struct marketStructs{
                line_target = tfData.vItrend;
             }
             isDrawTarget = true;
-            
+            // Set new value target zone
+            beginSetValueToPoiZone(tfData, tfData.zIntSLows[0]);
          }
          
          //3 choch high
@@ -1961,6 +2024,8 @@ struct marketStructs{
                line_target = tfData.vItrend;
             }
             isDrawTarget = true;
+            // Set new value target zone
+            beginSetValueToPoiZone(tfData, tfData.zIntSLows[0]);
          }
          
          // 4 choch high
@@ -1986,7 +2051,7 @@ struct marketStructs{
                tfData.AddToDateTimeArray(tfData.intSLowTime, bar1.time);
                tfData.AddToLongArray(tfData.volIntSLows, bar1.tick_volume);
                // set Zone
-               PoiZone zone1 = CreatePoiZone(bar1.high, bar1.low, bar1.open, bar1.close, bar1.time);
+               PoiZone zone1 = CreatePoiZone( tfData,bar1.high, bar1.low, bar1.open, bar1.close, bar1.time);
                // them Zone
                tfData.AddToPoiZoneArray(tfData.zIntSLows, zone1, poi_limit);
                tfData.waitingIntSLows = 0 ;
@@ -2023,6 +2088,8 @@ struct marketStructs{
                line_target = tfData.vItrend;
             }
             isDrawTarget = true;
+            // Set new value target zone
+            beginSetValueToPoiZone(tfData, tfData.zIntSLows[0]);
          }
          // show draw target line
          if ((showTargetHighTF == true && tfData.isTimeframe == highPairTF) || (showTargetLowTF == true && tfData.isTimeframe == lowPairTF)) {
@@ -2052,6 +2119,7 @@ struct marketStructs{
             if (tfData.iFindTarget != -1) {
                tfData.iFindTarget = -1;
                tfData.iStoploss = tfData.intSHighs[0];
+               tfData.iStoplossTime = tfData.intSHighTime[0];
                tfData.iTarget = 0;
                tfData.iTargetTime = 0;
                tfData.iSnR = tfData.intSLows[0];
@@ -2078,6 +2146,9 @@ struct marketStructs{
                line_target = tfData.vItrend;
             }
             isDrawTarget = true;
+            
+            // Set new value target zone
+            beginSetValueToPoiZone(tfData, tfData.zIntSHighs[0]);
          }
          
          //3 choch low
@@ -2092,6 +2163,7 @@ struct marketStructs{
             if (tfData.iFindTarget != -1) {
                tfData.iFindTarget = -1;
                tfData.iStoploss = tfData.intSHighs[0];
+               tfData.iStoplossTime = tfData.intSHighTime[0];
                tfData.iTarget = 0;
                tfData.iTargetTime = 0;
                tfData.iSnR = tfData.intSLows[0];
@@ -2118,6 +2190,8 @@ struct marketStructs{
                line_target = tfData.vItrend;
             }
             isDrawTarget = true;
+            // Set new value target zone
+            beginSetValueToPoiZone(tfData, tfData.zIntSHighs[0]);
          }
          
          // 4+5 choch low
@@ -2144,7 +2218,7 @@ struct marketStructs{
                tfData.AddToLongArray(tfData.volIntSHighs, bar1.tick_volume);
                
                // set Zone
-               PoiZone zone1 = CreatePoiZone(bar1.high, bar1.low, bar1.open, bar1.close, bar1.time);
+               PoiZone zone1 = CreatePoiZone( tfData,bar1.high, bar1.low, bar1.open, bar1.close, bar1.time);
                // them Zone
                tfData.AddToPoiZoneArray(tfData.zIntSHighs, zone1, poi_limit);
                tfData.waitingIntSHighs = 0;
@@ -2155,6 +2229,7 @@ struct marketStructs{
             if (tfData.iFindTarget != -1) {
                tfData.iFindTarget = -1;
                tfData.iStoploss = tfData.intSHighs[0];
+               tfData.iStoplossTime = tfData.intSHighTime[0];
                tfData.iTarget = 0;
                tfData.iTargetTime = 0;
                tfData.iSnR = tfData.intSLows[0];
@@ -2181,6 +2256,8 @@ struct marketStructs{
                line_target = tfData.vItrend;
             }
             isDrawTarget = true;
+            // Set new value target zone
+            beginSetValueToPoiZone(tfData, tfData.zIntSHighs[0]);
          }
          // Show draw target line
          if ((showTargetHighTF == true && tfData.isTimeframe == highPairTF) || (showTargetLowTF == true && tfData.isTimeframe == lowPairTF)) {
@@ -2214,7 +2291,7 @@ struct marketStructs{
       string text = "";
       //text +=  "First: " + getValueTrend(tfData);
       //text += "\n"+inInfoBar(bar1, bar2, bar3);
-      PoiZone zone2 = CreatePoiZone(bar2.high, bar2.low, bar2.open, bar2.close, bar2.time);
+      PoiZone zone2 = CreatePoiZone( tfData,bar2.high, bar2.low, bar2.open, bar2.close, bar2.time);
       long maxVolume = 0;
       
       double barHigh = bar1.high;
@@ -2510,7 +2587,7 @@ struct marketStructs{
                tfData.AddToLongArray( tfData.volArrPbLow, tfData.vol_L);
                // Add new zone
                MqlRates bar_tmp = tfData.L_bar;
-               PoiZone zone_tmp = CreatePoiZone(bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+               PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
                tfData.AddToPoiZoneArray( tfData.zArrPbLow, zone_tmp, poi_limit);
                // update waiting arr pblow
                tfData.waitingArrPbLows = 0;
@@ -2589,7 +2666,7 @@ struct marketStructs{
                tfData.AddToLongArray( tfData.volArrPbLow, tfData.vol_L);
                // Add new zone
                MqlRates bar_tmp = tfData.L_bar;
-               PoiZone zone_tmp = CreatePoiZone(bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+               PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
                tfData.AddToPoiZoneArray( tfData.zArrPbLow, zone_tmp, poi_limit);
                // update waiting pb low
                tfData.waitingArrPbLows = 0;
@@ -2907,7 +2984,7 @@ struct marketStructs{
                tfData.AddToLongArray( tfData.volArrPbHigh, tfData.vol_H);
                // Add new zone
                MqlRates bar_tmp = tfData.H_bar;
-               PoiZone zone_tmp = CreatePoiZone(bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+               PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
                tfData.AddToPoiZoneArray( tfData.zArrPbHigh, zone_tmp, poi_limit);
                
                // update waiting arrPbHigh
@@ -2987,7 +3064,7 @@ struct marketStructs{
                tfData.AddToLongArray( tfData.volArrPbHigh, tfData.vol_H);
                // Add new zone
                MqlRates bar_tmp = tfData.H_bar;
-               PoiZone zone_tmp = CreatePoiZone(bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+               PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
                tfData.AddToPoiZoneArray( tfData.zArrPbHigh, zone_tmp, poi_limit); 
                // update waiting arrPbHigh
                tfData.waitingArrPbHigh = 0;
@@ -3109,8 +3186,8 @@ struct marketStructs{
          //Print("Vol intSHighs: "); ArrayPrint(tfData.volIntSHighs);
          //Print("intSLows: "); ArrayPrint(tfData.intSLows); 
          //Print("Vol intSLows: "); ArrayPrint(tfData.volIntSLows); 
-         //Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
-         //Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
+         Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
+         Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
          
          
          //Print("arrTop: "); ArrayPrint(tfData.arrTop); 
@@ -3244,7 +3321,7 @@ struct marketStructs{
                getValueBar(iBar, tfData.timeFrame,indexH);               
                // Add new zone
                MqlRates bar_tmp = iBar;
-               PoiZone zone_tmp = CreatePoiZone(bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+               PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
                tfData.AddToPoiZoneArray( tfData.zArrDecisionalHigh, zone_tmp, poi_limit);
             }
          } else {
@@ -3273,7 +3350,7 @@ struct marketStructs{
                getValueBar(iBar, tfData.timeFrame, indexL);               
                // Add new zone
                MqlRates bar_tmp = iBar;
-               PoiZone zone_tmp = CreatePoiZone(bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+               PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
                tfData.AddToPoiZoneArray( tfData.zArrDecisionalLow, zone_tmp, poi_limit);
             }
          } else {
@@ -3319,7 +3396,7 @@ struct marketStructs{
                
                // Add new zone
                MqlRates bar_tmp = barH;
-               PoiZone zone_tmp = CreatePoiZone(bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time, 0, priceKey, timeKey);
+               PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time, 0, priceKey, timeKey);
                tfData.AddToPoiZoneArray( zoneTarget, zone_tmp, poi_limit);
             }
          } else {
@@ -3869,10 +3946,10 @@ bool DrawDirectionalSegment(
 ////   h1Data.AddToDateTimeArray(h1Data.HighsTime, TimeCurrent() - 3600);
 ////   
 ////   // Thêm PoiZone vào mảng zHighs
-////   PoiZone zone1 = CreatePoiZone(ask + 0.0020, ask - 0.0020, ask, bid, TimeCurrent());
+////   PoiZone zone1 = CreatePoiZone( tfData,ask + 0.0020, ask - 0.0020, ask, bid, TimeCurrent());
 ////   h1Data.AddToPoiZoneArray(h1Data.zHighs, zone1);
 ////   
-////   PoiZone zone2 = CreatePoiZone(ask + 0.0015, ask - 0.0015, ask, bid, TimeCurrent());
+////   PoiZone zone2 = CreatePoiZone( tfData,ask + 0.0015, ask - 0.0015, ask, bid, TimeCurrent());
 ////   h1Data.AddToPoiZoneArray(h1Data.zHighs, zone2);
 ////   
 ////   // Sắp xếp mảng Highs
@@ -3883,7 +3960,7 @@ bool DrawDirectionalSegment(
 ////   GlobalVars.AddToHighs(PERIOD_M15, 1.2350);
 ////   
 ////   // Thêm PoiZone vào mảng zHighs của M15
-////   PoiZone zone3 = CreatePoiZone(ask + 0.0010, ask - 0.0010, ask, bid, TimeCurrent());
+////   PoiZone zone3 = CreatePoiZone( tfData,ask + 0.0010, ask - 0.0010, ask, bid, TimeCurrent());
 ////   GlobalVars.AddToZHighs(PERIOD_M15, zone3);
 ////   
 ////   // Lấy giá trị cao nhất từ mảng Highs của H1
