@@ -3095,65 +3095,7 @@ struct marketStructs{
       }
       
    } //--- End Ham cap nhat cau truc thi truong : updatePointTopBot
-   
-   void showComment(TimeFrameData& tfData) {
-      //Print("Timeframe: "+ (string) tfData.isTimeframe);
       
-         //Print("Highs: "); ArrayPrint(tfData.Highs);
-         //Print("Vol Highs: "); ArrayPrint(tfData.volHighs);
-         //Print("Lows: "); ArrayPrint(tfData.Lows); 
-         //Print("Vol Lows: "); ArrayPrint(tfData.volLows); 
-         //Print("zHighs: "); ArrayPrint(tfData.zHighs);
-         //Print("zLows: "); ArrayPrint(tfData.zLows);
-         
-         //Print("intSHighs: "); ArrayPrint(tfData.intSHighs);
-         //Print("Vol intSHighs: "); ArrayPrint(tfData.volIntSHighs);
-         //Print("intSLows: "); ArrayPrint(tfData.intSLows); 
-         //Print("Vol intSLows: "); ArrayPrint(tfData.volIntSLows); 
-         //Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
-         //Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
-         
-         
-         //Print("arrTop: "); ArrayPrint(tfData.arrTop); 
-         //Print("Vol arrTop: "); ArrayPrint(tfData.volArrTop);
-         //Print("arrBot: "); ArrayPrint(tfData.arrBot); 
-         //Print("Vol arrBot: "); ArrayPrint(tfData.volArrBot);
-         //Print("zArrTop: "); ArrayPrint(tfData.zArrTop);
-         //Print("zArrBot: "); ArrayPrint(tfData.zArrBot);
-         
-         
-         //Print("arrPbHigh: "); ArrayPrint(tfData.arrPbHigh); 
-         //Print("Vol arrPbHigh: "); ArrayPrint(tfData.volArrPbHigh);
-         //Print("arrPbLow: "); ArrayPrint(tfData.arrPbLow); 
-         //Print("Vol arrPbLow: "); ArrayPrint(tfData.volArrPbLow);
-         //Print("zArrPbHigh"); ArrayPrint(tfData.zArrPbHigh); 
-         //Print("zArrPbLow"); ArrayPrint(tfData.zArrPbLow);
-         
-         
-         //Print("arrDecisionalHigh: "); ArrayPrint(tfData.arrDecisionalHigh);
-         //Print("Vol arrDecisionalHigh: "); ArrayPrint(tfData.volArrDecisionalHigh);
-         //Print("arrDecisionalLow: "); ArrayPrint(tfData.arrDecisionalLow);
-         //Print("Vol arrDecisionalLow: "); ArrayPrint(tfData.volArrDecisionalLow);
-         //Print("zPoiDecisionalLow: "); ArrayPrint(tfData.zPoiDecisionalLow);
-         //Print("zPoiDecisionalHigh: "); ArrayPrint(tfData.zPoiDecisionalHigh);
-         
-         
-         //Print("arrBoHigh: "+(string) tfData.arrBoHigh[0] + " "+ (string) tfData.arrBoHighTime[0]);
-//         Print("Vol arrBoHigh: "); ArrayPrint(tfData.volArrBoHigh);
-         //Print("arrBoLow: "+(string) tfData.arrBoLow[0] + " "+ (string) tfData.arrBoLowTime[0]);
-//         Print("Vol arrBoLow: "); ArrayPrint(tfData.volArrBoLow);
-
-         
-         //Print("arrChoHigh: "+DoubleToString( tfData.arrChoHigh[0], digits) + " "+ (string) tfData.arrChoHighTime[0]);
-//         Print("Vol arrChoHigh: "); ArrayPrint(tfData.volArrChoHigh);
-         //Print("arrChoLow: "+(string) tfData.arrChoLow[0]  + " "+ (string) tfData.arrChoLowTime[0]);
-//         Print("Vol arrChoLow: "); ArrayPrint(tfData.volArrChoLow);
-         
-         //Print("zPoiExtremeHigh: "); ArrayPrint(tfData.zPoiExtremeHigh);
-         //Print("zPoiExtremeLow: "); ArrayPrint(tfData.zPoiExtremeLow);
-         
-   } 
-   
    // Ham tra ve break out hay false break out
    bool checkVolumeBreak(int type_break, MqlRates& barBreak, double value_swing, long vol_swing) {
       bool result = false;
@@ -3557,7 +3499,7 @@ string getInfoStruct(ENUM_TIMEFRAMES timeframe) {
    string text = "";
    // Lấy dữ liệu cho khung H1
    TimeFrameData* tfData = GlobalVars.GetData(timeframe);
-   text += "Timeframe: "+ (string) tfData.timeFrame;
+   text += "Timeframe: "+ EnumToString(timeframe);
    text += " | Struct is : " + ((tfData.sTrend == 0) ? "Not defined" : ((tfData.sTrend == 1) ? "S UpTrend" : "S DownTrend")) + "( "+ (string) tfData.sTrend + " . "+ (string) tfData.vSTrend+ ")";
    text += " | Marjor Struct is : " + ((tfData.mTrend == 0) ? "Not defined" : ((tfData.mTrend == 1) ? "m UpTrend" : "m DownTrend")) + "( "+ (string) tfData.mTrend + " . "+ (string) tfData.vMTrend+ ")";
    text += " | Internal is : " + ((tfData.iTrend == 0) ? "Not defined" : ((tfData.iTrend == 1) ? "i UpTrend" : "i DownTrend"))+ "( "+ (string) tfData.iTrend + " . "+ (string) tfData.vItrend+ ")";
@@ -3929,6 +3871,64 @@ bool DrawDirectionalSegment(
 //+------------------------------------------------------------------+
 //| End Example usage                                                |
 //+------------------------------------------------------------------+
+
+void showComment(TimeFrameData& tfData) {
+   //Print("Timeframe: "+ (string) tfData.isTimeframe);
+   
+      //Print("Highs: "); ArrayPrint(tfData.Highs);
+      //Print("Vol Highs: "); ArrayPrint(tfData.volHighs);
+      //Print("Lows: "); ArrayPrint(tfData.Lows); 
+      //Print("Vol Lows: "); ArrayPrint(tfData.volLows); 
+      //Print("zHighs: "); ArrayPrint(tfData.zHighs);
+      //Print("zLows: "); ArrayPrint(tfData.zLows);
+      
+      Print("intSHighs: "); ArrayPrint(tfData.intSHighs);
+      //Print("Vol intSHighs: "); ArrayPrint(tfData.volIntSHighs);
+      Print("intSLows: "); ArrayPrint(tfData.intSLows); 
+      //Print("Vol intSLows: "); ArrayPrint(tfData.volIntSLows); 
+      //Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
+      //Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
+      
+      
+      //Print("arrTop: "); ArrayPrint(tfData.arrTop); 
+      //Print("Vol arrTop: "); ArrayPrint(tfData.volArrTop);
+      //Print("arrBot: "); ArrayPrint(tfData.arrBot); 
+      //Print("Vol arrBot: "); ArrayPrint(tfData.volArrBot);
+      //Print("zArrTop: "); ArrayPrint(tfData.zArrTop);
+      //Print("zArrBot: "); ArrayPrint(tfData.zArrBot);
+      
+      
+      //Print("arrPbHigh: "); ArrayPrint(tfData.arrPbHigh); 
+      //Print("Vol arrPbHigh: "); ArrayPrint(tfData.volArrPbHigh);
+      //Print("arrPbLow: "); ArrayPrint(tfData.arrPbLow); 
+      //Print("Vol arrPbLow: "); ArrayPrint(tfData.volArrPbLow);
+      //Print("zArrPbHigh"); ArrayPrint(tfData.zArrPbHigh); 
+      //Print("zArrPbLow"); ArrayPrint(tfData.zArrPbLow);
+      
+      
+      //Print("arrDecisionalHigh: "); ArrayPrint(tfData.arrDecisionalHigh);
+      //Print("Vol arrDecisionalHigh: "); ArrayPrint(tfData.volArrDecisionalHigh);
+      //Print("arrDecisionalLow: "); ArrayPrint(tfData.arrDecisionalLow);
+      //Print("Vol arrDecisionalLow: "); ArrayPrint(tfData.volArrDecisionalLow);
+      //Print("zPoiDecisionalLow: "); ArrayPrint(tfData.zPoiDecisionalLow);
+      //Print("zPoiDecisionalHigh: "); ArrayPrint(tfData.zPoiDecisionalHigh);
+      
+      
+      //Print("arrBoHigh: "+(string) tfData.arrBoHigh[0] + " "+ (string) tfData.arrBoHighTime[0]);
+//         Print("Vol arrBoHigh: "); ArrayPrint(tfData.volArrBoHigh);
+      //Print("arrBoLow: "+(string) tfData.arrBoLow[0] + " "+ (string) tfData.arrBoLowTime[0]);
+//         Print("Vol arrBoLow: "); ArrayPrint(tfData.volArrBoLow);
+
+      
+      //Print("arrChoHigh: "+DoubleToString( tfData.arrChoHigh[0], digits) + " "+ (string) tfData.arrChoHighTime[0]);
+//         Print("Vol arrChoHigh: "); ArrayPrint(tfData.volArrChoHigh);
+      //Print("arrChoLow: "+(string) tfData.arrChoLow[0]  + " "+ (string) tfData.arrChoLowTime[0]);
+//         Print("Vol arrChoLow: "); ArrayPrint(tfData.volArrChoLow);
+      
+      //Print("zPoiExtremeHigh: "); ArrayPrint(tfData.zPoiExtremeHigh);
+      //Print("zPoiExtremeLow: "); ArrayPrint(tfData.zPoiExtremeLow);
+      
+} 
 
 string getValueTrend(TimeFrameData& tfData) {
    string text =  "\nStruct Trend = STrend: "+ (string) tfData.sTrend + " vSTrend: "+(string) tfData.vSTrend + ". waitingStrend: pbHigh "+(string) tfData.waitingArrPbHigh + " pbLow " + (string) tfData.waitingArrPbLows +
