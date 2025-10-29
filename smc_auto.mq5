@@ -60,16 +60,21 @@ input group "=== Trade with volume Inputs ==="
 // định nghĩa get tick volume là loại nào. max volume 3 nến liền kề, hay chính volume của cây nến đó
 input bool isCHoCHBOSVolume = true; // Bật chế độ CHoCH và BOS theo volume
 enum typeBreak {Break_with_wick = 1, Break_with_body = 2};
-input typeBreak isTypeBreak = 1; // định nghĩa phá cấu trúc bằng Râu nến (wick) hoặc Thân nến (body)
-input int percentIsDojiBar = 40; // định nghĩa số % tối đa thân nến để nến đó không phải là Doji Bar  
+input typeBreak isTypeBreak = 1; // Định nghĩa phá cấu trúc bằng Râu(wick) hoặc Thân(body) nến
+input int percentIsDojiBar = 40; // Định nghĩa số % tối đa thân nến để nến đó không phải là Doji Bar  
 enum isTickVolume {isBar = 1, isMax3Bar = 2};
 input isTickVolume typeTickVolume = 1; // 1: is Bar; 2 : largest of 3 adjacent candles
-input int percentCompare = 85; // Số % Volume quyết định Breakout 1 swing. (70% - 90%)
+input int percentCompare = 100; // Số % Volume quyết định Breakout 1 swing. (70% - 90%)
 input group "=== Draw target ==="
 input bool showTargetHighTF = true; // Hien thi target line o High Timeframe
 input bool showTargetLowTF = true; // Hien thi target line o Low Timeframe
 input bool isDrawMarjor = true; // Draw target with Marjor Swing
-input bool isDrawInteral = true; // Draw target with Internal Swing   
+input bool isDrawInteral = true; // Draw target with Internal Swing
+input group "=== PoiZone color ==="
+input color color_LTF_Extreme_Bullish_Zone = clrLightGreen; // Low TimeFrame Extreme Bullish color
+input color color_LTF_Extreme_Bearish_Zone = clrLightPink; // Low TimeFrame Decisional Bullish color
+input color color_LTF_Decisional_Bullish_Zone = clrPowderBlue; // Low TimeFrame Extreme Bearish color
+input color color_LTF_Decisional_Bearish_Zone = clrMistyRose; // Low TimeFrame Decisional Bearish color
 // End #region variale declaration
 
 //+------------------------------------------------------------------+
@@ -3552,7 +3557,7 @@ struct marketStructs{
       bar.time = iTime(_Symbol, Timeframe, index);
       //Print("- Bar -"+index + " - "+ " High: "+ bar.high+" Low: "+bar.low + " Time: "+ bar.time);
    }
-   
+
    // Ham ve Trade zone
    void drawTradeZone(TimeFrameData& tfData, MqlRates& bar1) {
       if (tfData.isDraw) {
@@ -3560,7 +3565,7 @@ struct marketStructs{
          // Bearish Zone.
          if (ArraySize(tfData.zArrPoiZoneBearish) > 0) { 
             for(int i=0;i<=ArraySize(tfData.zArrPoiZoneBearish) - 1;i++) {
-               iColor = (tfData.zArrPoiZoneBearish[i].isTypeZone == 1) ? clrLightPink : clrMistyRose;
+               iColor = (tfData.zArrPoiZoneBearish[i].isTypeZone == 1) ? color_LTF_Extreme_Bullish_Zone : color_LTF_Decisional_Bullish_Zone;
                drawBox("ePOI", tfData.zArrPoiZoneBearish[i].time, tfData.zArrPoiZoneBearish[i].low, bar1.time, tfData.zArrPoiZoneBearish[i].high,1, iColor, 1);
             }
          }
@@ -3568,7 +3573,7 @@ struct marketStructs{
          // Bullish Zone.
          if (ArraySize(tfData.zArrPoiZoneBullish) > 0) { 
             for(int i=0;i<=ArraySize(tfData.zArrPoiZoneBullish) - 1;i++) {
-               iColor = (tfData.zArrPoiZoneBullish[i].isTypeZone == 1) ? clrLightGreen : clrPowderBlue;
+               iColor = (tfData.zArrPoiZoneBullish[i].isTypeZone == 1) ? color_LTF_Extreme_Bearish_Zone : color_LTF_Decisional_Bearish_Zone;
                drawBox("ePOI", tfData.zArrPoiZoneBullish[i].time, tfData.zArrPoiZoneBullish[i].high, bar1.time, tfData.zArrPoiZoneBullish[i].low,1, iColor, 1);
             }
          }  
@@ -3593,48 +3598,7 @@ struct marketStructs{
             deleteObj(tfData.L_idmLowTime, tfData.L_idmLow, 0, IDM_TEXT_LIVE);
          }
          drawLine(IDM_TEXT_LIVE, tfData.idmLowTime, tfData.idmLow, bar1.time, tfData.idmLow, -1, IDM_TEXT_LIVE, tfData.tfColor, STYLE_DOT);
-      }
-      
-//      if (tfData.isDraw) {
-//         // Extreme Zone.
-//         if (
-//            //sTrend == 1 && 
-//            ArraySize(tfData.zPoiExtremeHigh) > 0) { // care PB Low
-//            for(int i=0;i<ArraySize(tfData.zPoiExtremeHigh) - 1;i++) {
-//               //Print("zone "+ i);
-//               drawBox("ePOI", tfData.zPoiExtremeHigh[i].time, tfData.zPoiExtremeHigh[i].low, bar1.time, tfData.zPoiExtremeHigh[i].high,1, clrMaroon, 1);
-//            }
-//         }
-//         
-//         if (
-//            //sTrend == -1 && 
-//            ArraySize(tfData.zPoiExtremeLow) > 0) { // care PB High
-//            for(int i=0;i<ArraySize(tfData.zPoiExtremeLow) - 1;i++) {
-//               //Print("zone "+ i);
-//               drawBox("ePOI", tfData.zPoiExtremeLow[i].time, tfData.zPoiExtremeLow[i].high, bar1.time, tfData.zPoiExtremeLow[i].low,1, clrDarkGreen, 1);
-//            }
-//         }  
-//         
-//         // Decisional Zone.
-//         if (
-//            //sTrend == 1 && 
-//            ArraySize(tfData.zPoiDecisionalHigh) > 0) { // care PB Low
-//            for(int i=0;i<ArraySize(tfData.zPoiDecisionalHigh) - 1;i++) {
-//               //Print("zone "+ i);
-//               drawBox("dPOI", tfData.zPoiDecisionalHigh[i].time, tfData.zPoiDecisionalHigh[i].low, bar1.time, tfData.zPoiDecisionalHigh[i].high,1, clrSaddleBrown, 1);
-//            }
-//         }
-//         
-//         if (
-//            //sTrend == -1 && 
-//            ArraySize(tfData.zPoiDecisionalLow) > 0) { // care PB High
-//            for(int i=0;i<ArraySize(tfData.zPoiDecisionalLow) - 1;i++) {
-//               //Print("zone "+ i);
-//               drawBox("dPOI", tfData.zPoiDecisionalLow[i].time, tfData.zPoiDecisionalLow[i].high, bar1.time, tfData.zPoiDecisionalLow[i].low,1, clrDarkBlue, 1);
-//            }
-//         }  
-//      }
-      
+      }     
       
    }
 
