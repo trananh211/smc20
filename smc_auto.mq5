@@ -82,29 +82,35 @@ struct PoiZone
    double open;
    double close;
    datetime time;
-   int mitigated; // -1 mitigated, 0 not mitigate, 1 mitigating
-   int isTypeZone; // 1: Extreme Zone, 2: Decisional Zone
-   double priceKey;
-   datetime timeKey;
+   
    
 //   int isFvG; // 0 not defind, -1 not Fvg, 1 has FvG
-//   
-   // sTrend
-   int sTrend;
-   int vSTrend;
-   double sStoploss; //
-   double sTarget;
-   double sSnR;
-   datetime sStoplossTime;
+// 
+   int isTypeZone; // 1 is Extreme, 2 is Decisional 
+   
+   // mTrend
+   int mTrend;
+   int vMTrend;
+   int isMComplete; // Hoàn thành 1 vòng trade của mTrend
+   double mStoploss; //
+   double mTarget;
+   double mSnR;
+   datetime mStoplossTime;
+   
    
    // iTrend
    int iTrend;
    int vITrend;
-   int isIComplete;
+   int isIComplete; // Hoàn thành 1 vòng trade của iTrend
    double iStoploss; //
    double iTarget;
    double iSnR;
    datetime iStoplossTime;
+   
+   
+   int mitigated; // -1 mitigated, 0 not mitigate, 1 mitigating
+   double priceKey;
+   datetime timeKey;
 };
 
 //+------------------------------------------------------------------+
@@ -734,46 +740,91 @@ public:
       return count;
    }
    
-   // Phương thức scan toàn bộ PoiZone theo market struct tại khung thời gian hiện tại
+   // Todo: Phương thức scan toàn bộ PoiZone theo market struct tại khung thời gian hiện tại
    void scanPoiZoneLastTime(TimeFrameData& tfData, int typeZone) {
       if (tfData.mStoploss == 0 || tfData.mTarget == 0) return;
       
       datetime scan_timeBegin = tfData.mStoplossTime;
       datetime scan_timeEnd = tfData.mTargetTime;
-      
+      int isTypezone = 0;
+      int j; // key of New PoiZone
       // Bullish Zone
       if (typeZone == 1) {
          // xoa sach mang Bullish zone
          ClearPoiZoneArray(tfData.zArrPoiZoneBullish);
+         ClearPoiZoneArray(tfData.zArrPoiZoneBearish);
+         j = 0;
          // Quét toàn bộ zone intSLows
          for(int i=0; i< ArraySize(tfData.zIntSLows); i++) {
             // Kiem tra neu zone khong thuoc thoi gian chi dinh thi bo qua
             if (tfData.zIntSLows[i].time < scan_timeBegin || tfData.zIntSLows[i].time > scan_timeEnd) continue;
-            // Neu khong phai extreme zone
-            if (tfData.zIntSLows[i].iStoploss != tfData.iStoploss) {
-               // Them zone zIntSlow vao zArrPoiZoneBullish voi isTypeZone = 2
-            } else { // La Extreme zone
-               // Them zone zIntSlow vao zArrPoiZoneBullish voi isTypeZone = 1
+            // Cap nhat lai internal zone truoc khi thêm vào zone mới.
+            if (tfData.mStoploss == tfData.zIntSLows[i].mStoploss && tfData.mStoplossTime == tfData.zIntSLows[i].mStoplossTime) {
+               tfData.updateCompleteInternalZone(tfData, tfData.zIntSLows[i]);
             }
+            
+            // Neu La Extreme zone
+            if (tfData.zIntSLows[i].iStoploss == tfData.mStoploss && tfData.zIntSLows[i].iStoplossTime == tfData.mStoplossTime) {
+               // Them zone zIntSlow vao zArrPoiZoneBullish voi isTypeZone = 1
+               isTypezone = 1;
+            } else { // khong phai extreme zone
+               // Them zone zIntSlow vao zArrPoiZoneBullish voi isTypeZone = 2
+               isTypezone = 2;
+            }
+            // chuan hoa thong tin
+            tfData.updateCompleteInternalZoneFolowMarjorZone(tfData, tfData.zIntSLows[i], isTypezone);
+            // Them zone zIntSlow vao zArrPoiZoneBullish
+            tfData.AddToPoiZoneArray(tfData.zArrPoiZoneBullish, tfData.zIntSLows[i], poi_limit);
+            
          }
       } else if (typeZone == -1) { // Bearish zone
          // xoa sach mang Bearish zone
          ClearPoiZoneArray(tfData.zArrPoiZoneBearish);
+         ClearPoiZoneArray(tfData.zArrPoiZoneBullish);
+         j= 0;
          // Quét toàn bộ zone intSHighs
          for(int i=0; i< ArraySize(tfData.zIntSHighs); i++) {
             // Kiem tra neu zone khong thuoc thoi gian chi dinh thi bo qua
             if (tfData.zIntSHighs[i].time < scan_timeBegin || tfData.zIntSHighs[i].time > scan_timeEnd) continue;
-            // Neu khong phai extreme zone
-            if (tfData.zIntSHighs[i].iStoploss != tfData.iStoploss) {
-               // Them zone zIntSHigh vao zArrPoiZoneBearish voi isTypeZone = 2
-            } else { // La Extreme zone
-               // Them zone zIntSHigh vao zArrPoiZoneBearish voi isTypeZone = 1
+            // Cap nhat lai internal zone truoc khi thêm vào zone mới.
+            if (tfData.mStoploss == tfData.zIntSHighs[i].mStoploss && tfData.mStoplossTime == tfData.zIntSHighs[i].mStoplossTime) {
+               tfData.updateCompleteInternalZone(tfData, tfData.zIntSHighs[i]);
             }
+            // Neu La Extreme zone
+            if (tfData.zIntSHighs[i].iStoploss == tfData.mStoploss && tfData.zIntSHighs[i].iStoplossTime == tfData.mStoplossTime) {
+               // Them zone zIntSHigh vao zArrPoiZoneBearish voi isTypeZone = 1
+               isTypezone = 1;
+               
+            } else { // Neu khong phai extreme zone
+               // Them zone zIntSHigh vao zArrPoiZoneBearish voi isTypeZone = 2
+               isTypezone = 2;
+            }
+            // chuan hoa thong tin
+            tfData.updateCompleteInternalZoneFolowMarjorZone(tfData, tfData.zIntSHighs[i], isTypezone);
+            // Them zone zIntSHighs vao zArrPoiZoneBearish
+            tfData.AddToPoiZoneArray(tfData.zArrPoiZoneBearish, tfData.zIntSHighs[i], poi_limit);
          }
       }
-      
    }
    
+   // Phương thức chuẩn hoá lại thông tin zone Internal sau khi xác định được IDM
+   void updateCompleteInternalZone(TimeFrameData& tfData, PoiZone& zone){
+      zone.isMComplete = 2;
+      zone.mTarget = tfData.mTarget;
+   }
+   
+   // Phương thức chuẩn hoá lại thông tin zone Internal sau khi xác định được IDM
+   void updateCompleteInternalZoneFolowMarjorZone(TimeFrameData& tfData, PoiZone& zone, int typeZone){
+      int type = (typeZone == 1 || typeZone == 2) ? typeZone: 0;
+      zone.mTrend = tfData.mTrend;
+      zone.vMTrend = tfData.vMTrend;
+      zone.isMComplete = 1;
+      zone.isTypeZone = type;
+      zone.mStoploss = tfData.mStoploss;
+      zone.mStoplossTime = tfData.mStoplossTime;
+      zone.mSnR = tfData.mSnR;
+      zone.mTarget = tfData.mTarget;
+   }
    // Phương thức xóa tất cả phần tử trong mảng double
    void ClearDoubleArray(double &array[])
    {
@@ -1059,7 +1110,7 @@ CGlobalVariables GlobalVars;
 //+------------------------------------------------------------------+
 //| Utility Functions                                                |
 //+------------------------------------------------------------------+
-// Hàm tạo PoiZone từ giá
+//Todo: Hàm tạo PoiZone từ giá
 PoiZone CreatePoiZone(TimeFrameData& tfData, double high, double low, double open, double close, datetime time, 
                       int mitigated = 0, double priceKey = -1, datetime timeKey = -1)
 {
@@ -1072,7 +1123,24 @@ PoiZone CreatePoiZone(TimeFrameData& tfData, double high, double low, double ope
    zone.mitigated = mitigated;
    zone.priceKey = (priceKey != -1) ? priceKey : -1;
    zone.timeKey = (timeKey != -1) ? timeKey : 0;
-   zone.isIComplete = -1;
+   
+   zone.isTypeZone = 0;
+      
+   zone.mTrend = (tfData.mTrend == 1 || tfData.mTrend == -1)? tfData.mTrend : 0;
+   zone.vMTrend = (tfData.vMTrend == 1 || tfData.vMTrend == -1)? tfData.vMTrend : 0;
+   zone.isMComplete = -1;  
+   zone.mStoploss = 0;
+   zone.mStoplossTime = 0;
+   zone.mSnR = 0;
+   zone.mTarget = 0;
+   
+   zone.isIComplete = -1;      
+   zone.iTrend = (tfData.iTrend == 1 || tfData.iTrend == -1) ? tfData.iTrend : 0;
+   zone.vITrend = (tfData.vItrend == 1 || tfData.vItrend == -1) ? tfData.vItrend : 0;
+   zone.iStoploss = 0;
+   zone.iStoplossTime = 0;
+   zone.iSnR = 0;
+   zone.iTarget = 0;
    return zone;
 }
 
@@ -1081,10 +1149,16 @@ void beginSetValueToPoiZone(TimeFrameData& tfData, PoiZone& zone, string type = 
    if (type == "InternalZone") {
       // Cap nhat iTarget at current TimeFrame
       if ((tfData.iStoploss == zone.high || tfData.iStoploss == zone.low) && tfData.iStoplossTime == zone.time) {
-         zone.isIComplete = 0;
-                  
-         zone.iTrend = tfData.iTrend;
-         zone.vITrend = tfData.vItrend;
+         zone.mTrend = (tfData.mTrend == 1 || tfData.mTrend == -1)? tfData.mTrend : 0;
+         zone.vMTrend = (tfData.vMTrend == 1 || tfData.vMTrend == -1)? tfData.vMTrend : 0;
+         zone.mStoploss = (tfData.mStoploss != 0)? tfData.mStoploss : 0;
+         zone.mStoplossTime = (tfData.mStoploss != 0)? tfData.mStoplossTime : 0;
+         zone.mSnR = (tfData.mSnR != 0)? tfData.mSnR : 0;
+         zone.mTarget = (tfData.mTarget != 0)? tfData.mTarget : 0;
+         
+         zone.isIComplete = 0;       
+         zone.iTrend = (tfData.iTrend == 1 || tfData.iTrend == -1) ? tfData.iTrend : 0;
+         zone.vITrend = (tfData.vItrend == 1 || tfData.vItrend == -1) ? tfData.vItrend : 0;
          zone.iStoploss = tfData.iStoploss;
          zone.iStoplossTime = tfData.iStoplossTime;
          zone.iSnR = tfData.iSnR;
@@ -1093,13 +1167,25 @@ void beginSetValueToPoiZone(TimeFrameData& tfData, PoiZone& zone, string type = 
    }
 }
 
-// Hàm cập nhật target zone hiện tại theo Real Time
+// Hàm cập nhật target Internal zone hiện tại theo Real Time
 void updateProcessPoiZone(TimeFrameData& tfData, PoiZone& zone) {
    // Nếu đã cập nhật target trước đó rồi. Return
    if( zone.isIComplete == 1) return;
    // Kiểm tra xem zone hiện tại có phải đang là zone được chỉ định hay không
    if (zone.iStoploss == tfData.iStoploss && zone.iStoplossTime == tfData.iStoplossTime) {
+      zone.mTrend = (tfData.mTrend == 1 || tfData.mTrend == -1)? tfData.mTrend : 0;
+      zone.vMTrend = (tfData.vMTrend == 1 || tfData.vMTrend == -1)? tfData.vMTrend : 0;
+      zone.mStoploss = (tfData.mStoploss != 0)? tfData.mStoploss : 0;
+      zone.mStoplossTime = (tfData.mStoploss != 0)? tfData.mStoplossTime : 0;
+      zone.mSnR = (tfData.mSnR != 0)? tfData.mSnR : 0;
+      zone.mTarget = (tfData.mTarget != 0)? tfData.mTarget : 0;
+      
       zone.iTarget = tfData.iTarget;
+      zone.iTrend = (tfData.iTrend == 1 || tfData.iTrend == -1) ? tfData.iTrend : 0;
+      zone.vITrend = (tfData.vItrend == 1 || tfData.vItrend == -1) ? tfData.vItrend : 0;
+      zone.iStoploss = tfData.iStoploss;
+      zone.iStoplossTime = tfData.iStoplossTime;
+      zone.iSnR = tfData.iSnR;
       zone.isIComplete = 1;
    }
 }
@@ -2418,6 +2504,7 @@ struct marketStructs{
             tfData.AddToPoiZoneArray(tfData.zArrBot, tfData.zIntSLows[0], poi_limit);
             // Add Zone
             tfData.AddToPoiZoneArray(tfData.zPoiLow, tfData.zIntSLows[0], poi_limit);
+            // Todo chuan hoa internal zone
             
             tfData.L_idmHigh = tfData.idmHigh;
             tfData.L_idmHighTime = tfData.idmHighTime;
@@ -2531,7 +2618,7 @@ struct marketStructs{
             
             // Quét toàn bộ các vùng POI để Trade theo Order Block, Order Flow
             tfData.scanPoiZoneLastTime(tfData, 1);
-            
+            drawTradeZone(tfData, bar1);
             if (isComment && StringLen(text) > 0) {
                Print(str_marjor+text);
             }
@@ -2654,7 +2741,7 @@ struct marketStructs{
                tfData.mStoplossTime = tfData.arrPbLTime[0];
                tfData.mTarget = 0;
                tfData.mTargetTime = 0;
-               tfData.mSnR = tfData.arrPbLow[0];
+               tfData.mSnR = tfData.arrPbHigh[0];
                text += " | Continue BOS High M1.6";
             }
             
@@ -2817,7 +2904,8 @@ struct marketStructs{
             tfData.AddToPoiZoneArray( tfData.zArrTop, tfData.zIntSHighs[0], poi_limit); 
             // Add new zone
             tfData.AddToPoiZoneArray( tfData.zPoiHigh, tfData.zIntSHighs[0], poi_limit); 
-                     
+            // Todo chuan hoa internal zone
+                                 
             tfData.L_idmLow = tfData.idmLow;
             tfData.L_idmLowTime = tfData.idmLowTime;
             
@@ -2936,7 +3024,7 @@ struct marketStructs{
             
             // Quét toàn bộ các vùng POI để Trade theo Order Block, Order Flow
             tfData.scanPoiZoneLastTime(tfData, -1);
-            
+            drawTradeZone(tfData, bar1);
             if (isComment && StringLen(text) > 0) {
                Print(str_marjor+text);
             }
@@ -3058,7 +3146,7 @@ struct marketStructs{
                tfData.mStoplossTime = tfData.arrPbHTime[0];
                tfData.mTarget = 0;
                tfData.mTargetTime = 0;
-               tfData.mSnR = tfData.arrPbHigh[0];
+               tfData.mSnR = tfData.arrPbLow[0];
                text += " | Continue BOS Low M-3.6";
             }
             
@@ -3289,7 +3377,7 @@ struct marketStructs{
       //setValueToZone(tfData, -1, tfData.zArrDecisionalLow, tfData.zPoiDecisionalLow, isComment, "Decisional");
    }      
    
-   // Todo: dang setup chua xong, can verify Decisinal POI moi khi chay. Luu gia tri High, Low vao 1 gia tri cố định để so sánh
+   // Todo1: dang setup chua xong, can verify Decisinal POI moi khi chay. Luu gia tri High, Low vao 1 gia tri cố định để so sánh
    // 
    void getDecisionalValue(TimeFrameData& tfData, bool isComment = false) {
       string str_zone = "==> Function getDecisionalValue: ";
@@ -3465,6 +3553,29 @@ struct marketStructs{
       //Print("- Bar -"+index + " - "+ " High: "+ bar.high+" Low: "+bar.low + " Time: "+ bar.time);
    }
    
+   // Ham ve Trade zone
+   void drawTradeZone(TimeFrameData& tfData, MqlRates& bar1) {
+      if (tfData.isDraw) {
+         color iColor;
+         // Bearish Zone.
+         if (ArraySize(tfData.zArrPoiZoneBearish) > 0) { 
+            for(int i=0;i<ArraySize(tfData.zArrPoiZoneBearish) - 1;i++) {
+               iColor = (tfData.zArrPoiZoneBearish[i].isTypeZone == 1) ? clrMaroon : clrSaddleBrown;
+               drawBox("ePOI", tfData.zArrPoiZoneBearish[i].time, tfData.zArrPoiZoneBearish[i].low, bar1.time, tfData.zArrPoiZoneBearish[i].high,1, iColor, 1);
+            }
+         }
+         
+         // Bullish Zone.
+         if (ArraySize(tfData.zArrPoiZoneBullish) > 0) { 
+            for(int i=0;i<ArraySize(tfData.zArrPoiZoneBullish) - 1;i++) {
+               iColor = (tfData.zArrPoiZoneBearish[i].isTypeZone == 1) ? clrDarkGreen : clrLightBlue;
+               drawBox("ePOI", tfData.zArrPoiZoneBullish[i].time, tfData.zArrPoiZoneBullish[i].high, bar1.time, tfData.zArrPoiZoneBullish[i].low,1, iColor, 1);
+            }
+         }  
+      }
+   }
+   
+   // ham ve trade line
    void drawZone(TimeFrameData& tfData, MqlRates& bar1) {
       // IDM Live 
       if (tfData.sTrend == 1 && tfData.findLow == 0 && tfData.L_idmHigh != 0) {
@@ -3484,45 +3595,45 @@ struct marketStructs{
          drawLine(IDM_TEXT_LIVE, tfData.idmLowTime, tfData.idmLow, bar1.time, tfData.idmLow, -1, IDM_TEXT_LIVE, tfData.tfColor, STYLE_DOT);
       }
       
-      if (tfData.isDraw) {
-         // Extreme Zone.
-         if (
-            //sTrend == 1 && 
-            ArraySize(tfData.zPoiExtremeHigh) > 0) { // care PB Low
-            for(int i=0;i<ArraySize(tfData.zPoiExtremeHigh) - 1;i++) {
-               //Print("zone "+ i);
-               drawBox("ePOI", tfData.zPoiExtremeHigh[i].time, tfData.zPoiExtremeHigh[i].low, bar1.time, tfData.zPoiExtremeHigh[i].high,1, clrMaroon, 1);
-            }
-         }
-         
-         if (
-            //sTrend == -1 && 
-            ArraySize(tfData.zPoiExtremeLow) > 0) { // care PB High
-            for(int i=0;i<ArraySize(tfData.zPoiExtremeLow) - 1;i++) {
-               //Print("zone "+ i);
-               drawBox("ePOI", tfData.zPoiExtremeLow[i].time, tfData.zPoiExtremeLow[i].high, bar1.time, tfData.zPoiExtremeLow[i].low,1, clrDarkGreen, 1);
-            }
-         }  
-         
-         // Decisional Zone.
-         if (
-            //sTrend == 1 && 
-            ArraySize(tfData.zPoiDecisionalHigh) > 0) { // care PB Low
-            for(int i=0;i<ArraySize(tfData.zPoiDecisionalHigh) - 1;i++) {
-               //Print("zone "+ i);
-               drawBox("dPOI", tfData.zPoiDecisionalHigh[i].time, tfData.zPoiDecisionalHigh[i].low, bar1.time, tfData.zPoiDecisionalHigh[i].high,1, clrSaddleBrown, 1);
-            }
-         }
-         
-         if (
-            //sTrend == -1 && 
-            ArraySize(tfData.zPoiDecisionalLow) > 0) { // care PB High
-            for(int i=0;i<ArraySize(tfData.zPoiDecisionalLow) - 1;i++) {
-               //Print("zone "+ i);
-               drawBox("dPOI", tfData.zPoiDecisionalLow[i].time, tfData.zPoiDecisionalLow[i].high, bar1.time, tfData.zPoiDecisionalLow[i].low,1, clrDarkBlue, 1);
-            }
-         }  
-      }
+//      if (tfData.isDraw) {
+//         // Extreme Zone.
+//         if (
+//            //sTrend == 1 && 
+//            ArraySize(tfData.zPoiExtremeHigh) > 0) { // care PB Low
+//            for(int i=0;i<ArraySize(tfData.zPoiExtremeHigh) - 1;i++) {
+//               //Print("zone "+ i);
+//               drawBox("ePOI", tfData.zPoiExtremeHigh[i].time, tfData.zPoiExtremeHigh[i].low, bar1.time, tfData.zPoiExtremeHigh[i].high,1, clrMaroon, 1);
+//            }
+//         }
+//         
+//         if (
+//            //sTrend == -1 && 
+//            ArraySize(tfData.zPoiExtremeLow) > 0) { // care PB High
+//            for(int i=0;i<ArraySize(tfData.zPoiExtremeLow) - 1;i++) {
+//               //Print("zone "+ i);
+//               drawBox("ePOI", tfData.zPoiExtremeLow[i].time, tfData.zPoiExtremeLow[i].high, bar1.time, tfData.zPoiExtremeLow[i].low,1, clrDarkGreen, 1);
+//            }
+//         }  
+//         
+//         // Decisional Zone.
+//         if (
+//            //sTrend == 1 && 
+//            ArraySize(tfData.zPoiDecisionalHigh) > 0) { // care PB Low
+//            for(int i=0;i<ArraySize(tfData.zPoiDecisionalHigh) - 1;i++) {
+//               //Print("zone "+ i);
+//               drawBox("dPOI", tfData.zPoiDecisionalHigh[i].time, tfData.zPoiDecisionalHigh[i].low, bar1.time, tfData.zPoiDecisionalHigh[i].high,1, clrSaddleBrown, 1);
+//            }
+//         }
+//         
+//         if (
+//            //sTrend == -1 && 
+//            ArraySize(tfData.zPoiDecisionalLow) > 0) { // care PB High
+//            for(int i=0;i<ArraySize(tfData.zPoiDecisionalLow) - 1;i++) {
+//               //Print("zone "+ i);
+//               drawBox("dPOI", tfData.zPoiDecisionalLow[i].time, tfData.zPoiDecisionalLow[i].high, bar1.time, tfData.zPoiDecisionalLow[i].low,1, clrDarkBlue, 1);
+//            }
+//         }  
+//      }
       
       
    }
@@ -4055,6 +4166,10 @@ void showComment(TimeFrameData& tfData) {
       
       //Print("zPoiExtremeHigh: "); ArrayPrint(tfData.zPoiExtremeHigh);
       //Print("zPoiExtremeLow: "); ArrayPrint(tfData.zPoiExtremeLow);
+      
+      Print("zArrPoiZoneBullish: "); ArrayPrint(tfData.zArrPoiZoneBullish);
+      Print("zArrPoiZoneBearish: "); ArrayPrint(tfData.zArrPoiZoneBearish);
+      
       
 } 
 
