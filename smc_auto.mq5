@@ -3559,16 +3559,16 @@ struct marketStructs{
          color iColor;
          // Bearish Zone.
          if (ArraySize(tfData.zArrPoiZoneBearish) > 0) { 
-            for(int i=0;i<ArraySize(tfData.zArrPoiZoneBearish) - 1;i++) {
-               iColor = (tfData.zArrPoiZoneBearish[i].isTypeZone == 1) ? clrMaroon : clrSaddleBrown;
+            for(int i=0;i<=ArraySize(tfData.zArrPoiZoneBearish) - 1;i++) {
+               iColor = (tfData.zArrPoiZoneBearish[i].isTypeZone == 1) ? clrLightPink : clrMistyRose;
                drawBox("ePOI", tfData.zArrPoiZoneBearish[i].time, tfData.zArrPoiZoneBearish[i].low, bar1.time, tfData.zArrPoiZoneBearish[i].high,1, iColor, 1);
             }
          }
          
          // Bullish Zone.
          if (ArraySize(tfData.zArrPoiZoneBullish) > 0) { 
-            for(int i=0;i<ArraySize(tfData.zArrPoiZoneBullish) - 1;i++) {
-               iColor = (tfData.zArrPoiZoneBearish[i].isTypeZone == 1) ? clrDarkGreen : clrLightBlue;
+            for(int i=0;i<=ArraySize(tfData.zArrPoiZoneBullish) - 1;i++) {
+               iColor = (tfData.zArrPoiZoneBullish[i].isTypeZone == 1) ? clrLightGreen : clrPowderBlue;
                drawBox("ePOI", tfData.zArrPoiZoneBullish[i].time, tfData.zArrPoiZoneBullish[i].high, bar1.time, tfData.zArrPoiZoneBullish[i].low,1, iColor, 1);
             }
          }  
