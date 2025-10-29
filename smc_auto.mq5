@@ -3565,7 +3565,7 @@ struct marketStructs{
          // Bearish Zone.
          if (ArraySize(tfData.zArrPoiZoneBearish) > 0) { 
             for(int i=0;i<=ArraySize(tfData.zArrPoiZoneBearish) - 1;i++) {
-               iColor = (tfData.zArrPoiZoneBearish[i].isTypeZone == 1) ? color_LTF_Extreme_Bullish_Zone : color_LTF_Decisional_Bullish_Zone;
+               iColor = (tfData.zArrPoiZoneBearish[i].isTypeZone == 1) ? color_LTF_Extreme_Bearish_Zone : color_LTF_Decisional_Bearish_Zone;
                drawBox("ePOI", tfData.zArrPoiZoneBearish[i].time, tfData.zArrPoiZoneBearish[i].low, bar1.time, tfData.zArrPoiZoneBearish[i].high,1, iColor, 1);
             }
          }
@@ -3573,7 +3573,7 @@ struct marketStructs{
          // Bullish Zone.
          if (ArraySize(tfData.zArrPoiZoneBullish) > 0) { 
             for(int i=0;i<=ArraySize(tfData.zArrPoiZoneBullish) - 1;i++) {
-               iColor = (tfData.zArrPoiZoneBullish[i].isTypeZone == 1) ? color_LTF_Extreme_Bearish_Zone : color_LTF_Decisional_Bearish_Zone;
+               iColor = (tfData.zArrPoiZoneBullish[i].isTypeZone == 1) ? color_LTF_Extreme_Bullish_Zone : color_LTF_Decisional_Bullish_Zone;
                drawBox("ePOI", tfData.zArrPoiZoneBullish[i].time, tfData.zArrPoiZoneBullish[i].high, bar1.time, tfData.zArrPoiZoneBullish[i].low,1, iColor, 1);
             }
          }  
