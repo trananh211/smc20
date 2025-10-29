@@ -4089,8 +4089,8 @@ void showComment(TimeFrameData& tfData) {
       //Print("Vol intSHighs: "); ArrayPrint(tfData.volIntSHighs);
       //Print("intSLows: "); ArrayPrint(tfData.intSLows); 
       //Print("Vol intSLows: "); ArrayPrint(tfData.volIntSLows); 
-      //Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
-      //Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
+      Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
+      Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
       
       
       //Print("arrTop: "); ArrayPrint(tfData.arrTop); 
@@ -4131,8 +4131,8 @@ void showComment(TimeFrameData& tfData) {
       //Print("zPoiExtremeHigh: "); ArrayPrint(tfData.zPoiExtremeHigh);
       //Print("zPoiExtremeLow: "); ArrayPrint(tfData.zPoiExtremeLow);
       
-      Print("zArrPoiZoneBullish: "); ArrayPrint(tfData.zArrPoiZoneBullish);
-      Print("zArrPoiZoneBearish: "); ArrayPrint(tfData.zArrPoiZoneBearish);
+      //Print("zArrPoiZoneBullish: "); ArrayPrint(tfData.zArrPoiZoneBullish);
+      //Print("zArrPoiZoneBearish: "); ArrayPrint(tfData.zArrPoiZoneBearish);
       
       
 } 
