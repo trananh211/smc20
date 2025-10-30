@@ -88,6 +88,7 @@ struct PoiZone
    double close;
    datetime time;
    
+   int mitigated; // -1 mitigated, 0 not mitigate, 1 mitigating
    
 //   int isFvG; // 0 not defind, -1 not Fvg, 1 has FvG
 // 
@@ -113,7 +114,7 @@ struct PoiZone
    datetime iStoplossTime;
    
    
-   int mitigated; // -1 mitigated, 0 not mitigate, 1 mitigating
+   
    double priceKey;
    datetime timeKey;
 };
@@ -253,12 +254,12 @@ public:
    PoiZone zArrBot[];
    PoiZone zArrPbHigh[];
    PoiZone zArrPbLow[];
-   PoiZone zPoiExtremeLow[];
-   PoiZone zPoiExtremeHigh[];
+   //PoiZone zPoiExtremeLow[];
+   //PoiZone zPoiExtremeHigh[];
    PoiZone zPoiLow[];
    PoiZone zPoiHigh[];
-   PoiZone zPoiDecisionalLow[];
-   PoiZone zPoiDecisionalHigh[];
+   //PoiZone zPoiDecisionalLow[];
+   //PoiZone zPoiDecisionalHigh[];
 
    double arrDecisionalHigh[];
    double arrDecisionalLow[];
@@ -760,14 +761,16 @@ public:
          ClearPoiZoneArray(tfData.zArrPoiZoneBearish);
          j = 0;
          // Quét toàn bộ zone intSLows
-         for(int i=0; i< ArraySize(tfData.zIntSLows); i++) {
+         for(int i=ArraySize(tfData.zIntSLows) - 1; i >= 0 ; i--) {
+            
             // Kiem tra neu zone khong thuoc thoi gian chi dinh thi bo qua
             if (tfData.zIntSLows[i].time < scan_timeBegin || tfData.zIntSLows[i].time > scan_timeEnd) continue;
             // Cap nhat lai internal zone truoc khi thêm vào zone mới.
             if (tfData.mStoploss == tfData.zIntSLows[i].mStoploss && tfData.mStoplossTime == tfData.zIntSLows[i].mStoplossTime) {
                tfData.updateCompleteInternalZone(tfData, tfData.zIntSLows[i]);
             }
-            
+            // Kiểm tra nếu zone đã bị phá qua rồi thì bỏ qua
+            if (tfData.zIntSLows[i].mitigated == -1) continue;
             // Neu La Extreme zone
             if (tfData.zIntSLows[i].iStoploss == tfData.mStoploss && tfData.zIntSLows[i].iStoplossTime == tfData.mStoplossTime) {
                // Them zone zIntSlow vao zArrPoiZoneBullish voi isTypeZone = 1
@@ -788,13 +791,17 @@ public:
          ClearPoiZoneArray(tfData.zArrPoiZoneBullish);
          j= 0;
          // Quét toàn bộ zone intSHighs
-         for(int i=0; i< ArraySize(tfData.zIntSHighs); i++) {
+         for(int i=ArraySize(tfData.zIntSHighs) -1; i >= 0 ; i--) {
+            
             // Kiem tra neu zone khong thuoc thoi gian chi dinh thi bo qua
             if (tfData.zIntSHighs[i].time < scan_timeBegin || tfData.zIntSHighs[i].time > scan_timeEnd) continue;
+            
             // Cap nhat lai internal zone truoc khi thêm vào zone mới.
             if (tfData.mStoploss == tfData.zIntSHighs[i].mStoploss && tfData.mStoplossTime == tfData.zIntSHighs[i].mStoplossTime) {
                tfData.updateCompleteInternalZone(tfData, tfData.zIntSHighs[i]);
             }
+            // Kiểm tra nếu zone đã bị phá qua rồi thì bỏ qua
+            if (tfData.zIntSHighs[i].mitigated == -1) continue;
             // Neu La Extreme zone
             if (tfData.zIntSHighs[i].iStoploss == tfData.mStoploss && tfData.zIntSHighs[i].iStoplossTime == tfData.mStoplossTime) {
                // Them zone zIntSHigh vao zArrPoiZoneBearish voi isTypeZone = 1
@@ -1200,17 +1207,6 @@ void PrintPoiZone(PoiZone &zone, string prefix = "")
    Print(prefix, "PoiZone: High=", zone.high, ", Low=", zone.low, ", Time=", TimeToString(zone.time), ", PriceKey=", zone.priceKey);
 }
 
-// Hàm kiểm tra xem PoiZone có được mitigate không
-bool IsPoiZoneMitigated(PoiZone &zone, double currentPrice, double tolerance = 0.0005)
-{
-   // Kiểm tra xem giá hiện tại có vượt qua zone không
-   if(currentPrice >= zone.high - tolerance || currentPrice <= zone.low + tolerance)
-   {
-      return true;
-   }
-   return false;
-}
-
 //+------------------------------------------------------------------+
 //| Example usage                                                    |
 //+------------------------------------------------------------------+
@@ -1367,8 +1363,8 @@ struct marketStructs{
       PoiZone zone1 = CreatePoiZone( tfData,Bar1.high, Bar1.low, Bar1.open, Bar1.close, Bar1.time, 0, -1, -1);
       tfData.AddToPoiZoneArray(tfData.zPoiLow, zone1);
       tfData.AddToPoiZoneArray(tfData.zPoiHigh, zone1);
-      tfData.AddToPoiZoneArray(tfData.zPoiExtremeLow, zone1);
-      tfData.AddToPoiZoneArray(tfData.zPoiExtremeHigh, zone1);
+      //tfData.AddToPoiZoneArray(tfData.zPoiExtremeLow, zone1);
+      //tfData.AddToPoiZoneArray(tfData.zPoiExtremeHigh, zone1);
       tfData.AddToPoiZoneArray(tfData.zArrTop, zone1);
       tfData.AddToPoiZoneArray(tfData.zArrBot, zone1);
       tfData.AddToPoiZoneArray(tfData.zHighs, zone1);
@@ -1377,8 +1373,8 @@ struct marketStructs{
       tfData.AddToPoiZoneArray(tfData.zIntSLows, zone1);
       tfData.AddToPoiZoneArray(tfData.zArrPbHigh, zone1);
       tfData.AddToPoiZoneArray(tfData.zArrPbLow, zone1);
-      tfData.AddToPoiZoneArray(tfData.zPoiDecisionalHigh, zone1);
-      tfData.AddToPoiZoneArray(tfData.zPoiDecisionalLow, zone1);
+      //tfData.AddToPoiZoneArray(tfData.zPoiDecisionalHigh, zone1);
+      //tfData.AddToPoiZoneArray(tfData.zPoiDecisionalLow, zone1);
       tfData.AddToPoiZoneArray(tfData.zArrDecisionalHigh, zone1);
       tfData.AddToPoiZoneArray(tfData.zArrDecisionalLow, zone1);
       
@@ -1454,10 +1450,8 @@ struct marketStructs{
          
          int resultStructure = drawStructureInternal(tfData, bar1, bar2, bar3, enabledComment);
          updatePointTopBot(tfData, bar1, bar2, bar3, enabledComment);
-         //// POI
-         getZoneValid(tfData);
-         drawZone(tfData, bar1);
-         
+         drawMarketStruct(tfData, bar1);
+         // POI
          checkMitigateZone(tfData, bar1);
          
          Print("\n#Final:"+getValueTrend(tfData));
@@ -1483,11 +1477,8 @@ struct marketStructs{
       Print(text);
       int resultStructure = drawStructureInternal(tfData, bar1, bar2, bar3, enabledComment);
       updatePointTopBot(tfData, bar1, bar2, bar3, enabledComment);
-      
-      //// POI
-      getZoneValid(tfData);
-      drawZone(tfData, bar1);
-      
+      drawMarketStruct(tfData, bar1);
+      // POI
       checkMitigateZone(tfData, bar1);
       
       text = "#Final: "+getValueTrend(tfData);
@@ -1496,14 +1487,14 @@ struct marketStructs{
       
       Print("----------------------------------------------------------------------> END "+EnumToString(timeframe)+" bar formed: ", TimeToString(TimeCurrent())+" <----------------------------------------------------------------------- \n");
       // For develop
-      //showPoiComment(tfData);
+      showPoiComment(tfData);
    }
    
-   // Kiểm tra lần lượt zone đã mitigate hay chưa
+   // Todo: Kiểm tra lần lượt zone đã mitigate hay chưa
    void checkMitigateZone(TimeFrameData& tfData, MqlRates& bar1) {
       
-//      getIsMitigatedZone(tfData, bar1, tfData.zIntSHighs, -1);
-//      getIsMitigatedZone(tfData, bar1, tfData.zIntSLows, 1);
+      getIsMitigatedZone(tfData, bar1, tfData.zIntSHighs, -1, 0);
+      getIsMitigatedZone(tfData, bar1, tfData.zIntSLows, 1, 0);
 //      
 //      getIsMitigatedZone(tfData, bar1, tfData.zArrDecisionalHigh, -1);
 //      getIsMitigatedZone(tfData, bar1, tfData.zArrDecisionalLow, 1);
@@ -1511,19 +1502,18 @@ struct marketStructs{
 //      getIsMitigatedZone(tfData, bar1, tfData.zArrPbHigh, -1);
 //      getIsMitigatedZone(tfData, bar1, tfData.zArrPbLow, 1);
       
-      getIsMitigatedZone(tfData, bar1, tfData.zPoiDecisionalHigh, -1);
-      getIsMitigatedZone(tfData, bar1, tfData.zPoiDecisionalLow, 1);
+      getIsMitigatedZone(tfData, bar1, tfData.zArrPoiZoneBearish, -1);
+      getIsMitigatedZone(tfData, bar1, tfData.zArrPoiZoneBullish, 1);
       
-      getIsMitigatedZone(tfData, bar1, tfData.zPoiExtremeHigh, -1);
-      getIsMitigatedZone(tfData, bar1, tfData.zPoiExtremeLow, 1);
    }
    
    // Hàm kiểm tra từng zone mitigate hay chưa
-   void getIsMitigatedZone(TimeFrameData& tfData, MqlRates& bar1, PoiZone& zone[], int type) {
+   void getIsMitigatedZone(TimeFrameData& tfData, MqlRates& bar1, PoiZone& zone[], int type, int skip_key = -1) {
       // kiem tra xem zone co du lieu hay khong
       if (ArraySize(zone) > 0) {
          // lap du lieu 
          for(int i=0;i < ArraySize(zone);i++) {
+            if (i == skip_key) continue;
             // chi kiem tra zone not mitigate va mitigating
             if (zone[i].mitigated == -1) continue;
             
@@ -1557,25 +1547,28 @@ struct marketStructs{
       }
    }
    
+   // Todo: 
    void showPoiComment(TimeFrameData& tfData) {
       Print("Timeframe: "+ (string) tfData.isTimeframe);
-      if (tfData.sTrend == 1) {
+      if (tfData.sTrend == 1 
+         //|| tfData.sTrend == -1
+         ) {
          
          //Print("zLows: "); ArrayPrint(tfData.zLows);
-         //Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
+         Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
          
          //Print("zArrPbLow"); ArrayPrint(tfData.zArrPbLow);
-         Print("zPoiExtremeLow: "); ArrayPrint(tfData.zPoiExtremeLow);
-         Print("zPoiDecisionalLow: "); ArrayPrint(tfData.zPoiDecisionalLow);
+         Print("zArrPoiZoneBullish: "); ArrayPrint(tfData.zArrPoiZoneBullish);
       }
-      if (tfData.sTrend == -1) {
+      if (tfData.sTrend == -1 
+         //|| tfData.sTrend == 1
+         ) {
                
          //Print("zHighs: "); ArrayPrint(tfData.zHighs);
-         //Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
+         Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
          
          //Print("zArrPbHigh"); ArrayPrint(tfData.zArrPbHigh); 
-         Print("zPoiExtremeHigh: "); ArrayPrint(tfData.zPoiExtremeHigh);
-         Print("zPoiDecisionalHigh: "); ArrayPrint(tfData.zPoiDecisionalHigh);
+         Print("zArrPoiZoneBearish: "); ArrayPrint(tfData.zArrPoiZoneBearish);
       }
    }
    
@@ -3368,84 +3361,84 @@ struct marketStructs{
       return result;
    }
    
-   void getZoneValid(TimeFrameData& tfData, bool isComment = false) {
-      isComment = true;
-      showComment(tfData);
-      // Pre arr Decisional
-      //getDecisionalValue(tfData, isComment);
-      
-      //// Extreme Poi
-      //setValueToZone(tfData, 1, tfData.zArrPbHigh, tfData.zPoiExtremeHigh, isComment, "Extreme");
-      //setValueToZone(tfData, -1, tfData.zArrPbLow, tfData.zPoiExtremeLow, isComment, "Extreme");
-      ////// Decisional Poi
-      //setValueToZone(tfData, 1, tfData.zArrDecisionalHigh, tfData.zPoiDecisionalHigh, isComment, "Decisional");
-      //setValueToZone(tfData, -1, tfData.zArrDecisionalLow, tfData.zPoiDecisionalLow, isComment, "Decisional");
-   }      
+//   void getZoneValid(TimeFrameData& tfData, bool isComment = false) {
+//      isComment = true;
+//      showComment(tfData);
+//      // Pre arr Decisional
+//      //getDecisionalValue(tfData, isComment);
+//      
+//      //// Extreme Poi
+//      //setValueToZone(tfData, 1, tfData.zArrPbHigh, tfData.zPoiExtremeHigh, isComment, "Extreme");
+//      //setValueToZone(tfData, -1, tfData.zArrPbLow, tfData.zPoiExtremeLow, isComment, "Extreme");
+//      ////// Decisional Poi
+//      //setValueToZone(tfData, 1, tfData.zArrDecisionalHigh, tfData.zPoiDecisionalHigh, isComment, "Decisional");
+//      //setValueToZone(tfData, -1, tfData.zArrDecisionalLow, tfData.zPoiDecisionalLow, isComment, "Decisional");
+//   }      
    
-   // Todo1: dang setup chua xong, can verify Decisinal POI moi khi chay. Luu gia tri High, Low vao 1 gia tri cố định để so sánh
-   // 
-   void getDecisionalValue(TimeFrameData& tfData, bool isComment = false) {
-      string str_zone = "==> Function getDecisionalValue: ";
-      string text = "";
-      // High
-      if (ArraySize(tfData.intSHighs) > 1 && tfData.arrDecisionalHigh[0] != tfData.intSHighs[1]) {
-         text += "\n Checking intSHighs[1]: "+ DoubleToString( tfData.intSHighs[1],digits);
-         // intSHigh[1] not include Extrempoi
-         int isExist = -1;
-         if (ArraySize(tfData.arrPbHigh) > 0) {
-            isExist = checkExist(tfData.intSHighs[1], tfData.arrPbHigh);
-            text += ": Tim thay vi tri "+(string) isExist+" trong arrPbHigh.";
-         }
-         // Neu khong phai la extreme POI. update if isExist == -1
-         if (isExist == -1) {
-            // add new point
-            tfData.AddToDoubleArray(tfData.arrDecisionalHigh, tfData.intSHighs[1]);
-            tfData.AddToDateTimeArray(tfData.arrDecisionalHighTime, tfData.intSHighTime[1]);
-            // Get Bar Index
-            MqlRates iBar;
-            int indexH = iBarShift(_Symbol, tfData.timeFrame, tfData.intSHighTime[1], true);
-            if (indexH != -1) {
-               getValueBar(iBar, tfData.timeFrame,indexH);               
-               // Add new zone
-               MqlRates bar_tmp = iBar;
-               PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
-               tfData.AddToPoiZoneArray( tfData.zArrDecisionalHigh, zone_tmp, poi_limit);
-            }
-         } else {
-            text += "\n Da ton tai o vi tri : "+(string) isExist+" trong arrPbHigh. Bo qua.";
-         }
-      }
-      
-      // Low
-      if (ArraySize(tfData.intSLows) > 1 && tfData.arrDecisionalLow[0] != tfData.intSLows[1]) {
-         text += "\n Checking intSLows[1]: "+ DoubleToString( tfData.intSLows[1],digits);
-         // intSLow[1] not include Extrempoi
-         int isExist = -1;
-         if (ArraySize(tfData.arrPbLow) > 0) {
-            isExist = checkExist(tfData.intSLows[1], tfData.arrPbLow);
-            text += ": Tim thay vi tri "+(string) isExist+" trong arrPbLow.";
-         }
-         // Neu khong phai la extreme POI. update if isExist == -1
-         if (isExist == -1) {
-            // add new point
-            tfData.AddToDoubleArray(tfData.arrDecisionalLow, tfData.intSLows[1]);
-            tfData.AddToDateTimeArray(tfData.arrDecisionalLowTime, tfData.intSLowTime[1]);
-            // Get Bar Index
-            MqlRates iBar;
-            int indexL = iBarShift(_Symbol, tfData.timeFrame, tfData.intSLowTime[1], true);
-            if (indexL != -1) {
-               getValueBar(iBar, tfData.timeFrame, indexL);               
-               // Add new zone
-               MqlRates bar_tmp = iBar;
-               PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
-               tfData.AddToPoiZoneArray( tfData.zArrDecisionalLow, zone_tmp, poi_limit);
-            }
-         } else {
-            text += "\n Da ton tai o vi tri : "+(string) isExist+" trong arrPbLow. Bo qua.";
-         }
-      }
-      if (isComment) Print(str_zone+text);
-   }
+//   // Todo1: dang setup chua xong, can verify Decisinal POI moi khi chay. Luu gia tri High, Low vao 1 gia tri cố định để so sánh
+//   // 
+//   void getDecisionalValue(TimeFrameData& tfData, bool isComment = false) {
+//      string str_zone = "==> Function getDecisionalValue: ";
+//      string text = "";
+//      // High
+//      if (ArraySize(tfData.intSHighs) > 1 && tfData.arrDecisionalHigh[0] != tfData.intSHighs[1]) {
+//         text += "\n Checking intSHighs[1]: "+ DoubleToString( tfData.intSHighs[1],digits);
+//         // intSHigh[1] not include Extrempoi
+//         int isExist = -1;
+//         if (ArraySize(tfData.arrPbHigh) > 0) {
+//            isExist = checkExist(tfData.intSHighs[1], tfData.arrPbHigh);
+//            text += ": Tim thay vi tri "+(string) isExist+" trong arrPbHigh.";
+//         }
+//         // Neu khong phai la extreme POI. update if isExist == -1
+//         if (isExist == -1) {
+//            // add new point
+//            tfData.AddToDoubleArray(tfData.arrDecisionalHigh, tfData.intSHighs[1]);
+//            tfData.AddToDateTimeArray(tfData.arrDecisionalHighTime, tfData.intSHighTime[1]);
+//            // Get Bar Index
+//            MqlRates iBar;
+//            int indexH = iBarShift(_Symbol, tfData.timeFrame, tfData.intSHighTime[1], true);
+//            if (indexH != -1) {
+//               getValueBar(iBar, tfData.timeFrame,indexH);               
+//               // Add new zone
+//               MqlRates bar_tmp = iBar;
+//               PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+//               tfData.AddToPoiZoneArray( tfData.zArrDecisionalHigh, zone_tmp, poi_limit);
+//            }
+//         } else {
+//            text += "\n Da ton tai o vi tri : "+(string) isExist+" trong arrPbHigh. Bo qua.";
+//         }
+//      }
+//      
+//      // Low
+//      if (ArraySize(tfData.intSLows) > 1 && tfData.arrDecisionalLow[0] != tfData.intSLows[1]) {
+//         text += "\n Checking intSLows[1]: "+ DoubleToString( tfData.intSLows[1],digits);
+//         // intSLow[1] not include Extrempoi
+//         int isExist = -1;
+//         if (ArraySize(tfData.arrPbLow) > 0) {
+//            isExist = checkExist(tfData.intSLows[1], tfData.arrPbLow);
+//            text += ": Tim thay vi tri "+(string) isExist+" trong arrPbLow.";
+//         }
+//         // Neu khong phai la extreme POI. update if isExist == -1
+//         if (isExist == -1) {
+//            // add new point
+//            tfData.AddToDoubleArray(tfData.arrDecisionalLow, tfData.intSLows[1]);
+//            tfData.AddToDateTimeArray(tfData.arrDecisionalLowTime, tfData.intSLowTime[1]);
+//            // Get Bar Index
+//            MqlRates iBar;
+//            int indexL = iBarShift(_Symbol, tfData.timeFrame, tfData.intSLowTime[1], true);
+//            if (indexL != -1) {
+//               getValueBar(iBar, tfData.timeFrame, indexL);               
+//               // Add new zone
+//               MqlRates bar_tmp = iBar;
+//               PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+//               tfData.AddToPoiZoneArray( tfData.zArrDecisionalLow, zone_tmp, poi_limit);
+//            }
+//         } else {
+//            text += "\n Da ton tai o vi tri : "+(string) isExist+" trong arrPbLow. Bo qua.";
+//         }
+//      }
+//      if (isComment) Print(str_zone+text);
+//   }
    
    int checkExist(double value, double& array[]){
       int checkExist = -1;
@@ -3581,7 +3574,7 @@ struct marketStructs{
    }
    
    // ham ve trade line
-   void drawZone(TimeFrameData& tfData, MqlRates& bar1) {
+   void drawMarketStruct(TimeFrameData& tfData, MqlRates& bar1) {
       // IDM Live 
       if (tfData.sTrend == 1 && tfData.findLow == 0 && tfData.L_idmHigh != 0) {
          if (tfData.L_idmHigh > 0) {
@@ -4048,16 +4041,6 @@ bool DrawDirectionalSegment(
 ////   
 ////   // Truy cập dữ liệu H1
 ////   TimeFrameData* h1Data = GlobalVars.GetData(PERIOD_H1);
-////   
-////   // Kiểm tra và cập nhật các PoiZone
-////   for(int i = ArraySize(h1Data.zHighs) - 1; i >= 0; i--)
-////   {
-////      if(IsPoiZoneMitigated(h1Data.zHighs[i], bid))
-////      {
-////         Print("PoiZone mitigated: ", TimeToString(h1Data.zHighs[i].time));
-////         h1Data.zHighs[i].mitigated = 1;
-////      }
-////   }
 ////   
 ////   // Dọn dẹp dữ liệu cũ mỗi giờ
 ////   static datetime lastCleanup = 0;
