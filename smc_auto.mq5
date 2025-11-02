@@ -40,6 +40,7 @@ int iWingding_internal_low = 226;
 int iWingding_internal_key_high = 225;
 int iWingding_internal_key_low = 226;
 
+// Biến global
 int digits = Digits();
 
 input group "=== Market Struct Inputs ==="   
@@ -90,6 +91,15 @@ input color color_LTF_Internal_Bearish_Zone = clrLavenderBlush; // Low Internal 
 
 // End #region variale declaration
 
+// Settings structure default High Timeframe to LowTimeframe
+bool ss_IntScanActive = false;
+int ss_ITrend;
+int ss_vITrend;
+double ss_iStoploss; //
+double ss_iTarget;
+double ss_iSnR;
+datetime ss_iStoplossTime;
+datetime ss_iTargetTime;
 //+------------------------------------------------------------------+
 //| PoiZone structure                                                |
 //+------------------------------------------------------------------+
@@ -286,6 +296,9 @@ public:
    
    PoiZone zArrPoiZoneBullish[];
    PoiZone zArrPoiZoneBearish[];
+   
+   PoiZone zArrPoiZoneBullishBelongHighTF[];
+   PoiZone zArrPoiZoneBearishBelongHighTF[];
 
    // Constructor
    TimeFrameData()
@@ -1181,9 +1194,28 @@ void updateProcessPoiZone(TimeFrameData& tfData, PoiZone& zone) {
       zone.iStoplossTime = tfData.iStoplossTime;
       zone.iSnR = tfData.iSnR;
       zone.isIComplete = 1;
+      
+      // TODOTODO:
+      if (tfData.isHighTF) {
+         ss_ITrend = tfData.iTrend;
+         ss_vITrend = tfData.vItrend;
+         ss_iStoploss = tfData.iStoploss;
+         ss_iStoplossTime = tfData.iStoplossTime;
+         ss_iSnR = tfData.iSnR;
+         ss_iTarget = tfData.iTarget;
+         ss_iTargetTime = tfData.iTargetTime;
+      }
    }
 }
 
+// Hàm Scan poizone low timeframe thuộc Internal Break high timeframe
+void scanPoiZoneLowTFBelongToInternalHF(TimeFrameData& tfData){
+   if (ss_IntScanActive) {
+      ss_IntScanActive = false;
+      Alert("[[[[[[[[[[[[[[[[[[[[[[[[[[[ Checking ]]]]]]]]]]]]]]]]]]]]]]]");
+   }
+   Print("ss_ITrend: " + (string) ss_ITrend +" ss_vITrend: "+ (string) ss_vITrend + " ss_iStoploss: " +(string) ss_iStoploss + " ss_iSnR: "+ (string) ss_iSnR + " ss_iTarget: "+ (string) ss_iTarget);
+}
 //+------------------------------------------------------------------+
 //| Example usage                                                    |
 //+------------------------------------------------------------------+
@@ -1469,7 +1501,7 @@ struct marketStructs{
       text = "#Final: "+getValueTrend(tfData);
       //text += "\n------------ End Real Gann wave---------------";
       Print(text); 
-      
+      scanPoiZoneLowTFBelongToInternalHF(tfData);
       Print("----------------------------------------------------------------------> END "+EnumToString(timeframe)+" bar formed: ", TimeToString(TimeCurrent())+" <----------------------------------------------------------------------- \n");
       // For develop
       showPoiComment(tfData);
@@ -1651,6 +1683,8 @@ struct marketStructs{
             updateProcessPoiZone(tfData, tfData.zIntSLows[0]);
             // Cap nhat target Internal Zone Bullish
             tfData.UpdatePoiZoneArray(tfData.zArrIntBullish,0,tfData.zIntSLows[0]);
+            // Scan poizone low timeframe thuộc Internal Break high timeframe Bullish
+            ss_IntScanActive = true;
          }
          
          // HH 2
@@ -1693,6 +1727,8 @@ struct marketStructs{
             updateProcessPoiZone(tfData, tfData.zIntSLows[0]);
             // Cap nhat target Internal Zone Bullish
             tfData.UpdatePoiZoneArray(tfData.zArrIntBullish,0,tfData.zIntSLows[0]);
+            // Scan poizone low timeframe thuộc Internal Break high timeframe bullish
+            ss_IntScanActive = true;
          }
                   
          // DONE 4 
@@ -1769,6 +1805,8 @@ struct marketStructs{
             updateProcessPoiZone(tfData, tfData.zIntSLows[0]);
             // Cap nhat target Internal Zone Bullish
             tfData.UpdatePoiZoneArray(tfData.zArrIntBullish,0,tfData.zIntSLows[0]);
+            // Scan poizone low timeframe thuộc Internal Break high timeframe bullish
+            ss_IntScanActive = true;
          }
          if( isComment) {
             Print(str_internal+textInternalHigh);
@@ -1869,6 +1907,8 @@ struct marketStructs{
             updateProcessPoiZone(tfData, tfData.zIntSHighs[0]);
             // Cap nhat target Internal Zone Bearish
             tfData.UpdatePoiZoneArray(tfData.zArrIntBearish,0,tfData.zIntSHighs[0]);
+            // Scan poizone low timeframe thuộc Internal Break high timeframe Bearish
+            ss_IntScanActive = true;
          }
          
          // LL
@@ -1911,6 +1951,8 @@ struct marketStructs{
             updateProcessPoiZone(tfData, tfData.zIntSHighs[0]);
             // Cap nhat target Internal Zone Bearish
             tfData.UpdatePoiZoneArray(tfData.zArrIntBearish,0,tfData.zIntSHighs[0]);
+            // Scan poizone low timeframe thuộc Internal Break high timeframe Bearish
+            ss_IntScanActive = true;
          }
          
          // DONE 4
@@ -1987,6 +2029,8 @@ struct marketStructs{
             updateProcessPoiZone(tfData, tfData.zIntSHighs[0]);
             // Cap nhat target Internal Zone Bearish
             tfData.UpdatePoiZoneArray(tfData.zArrIntBearish,0,tfData.zIntSHighs[0]);
+            // Scan poizone low timeframe thuộc Internal Break high timeframe Bearish
+            ss_IntScanActive = true;
          }
          if(isComment) {
             Print(str_internal+textInternalLow);
@@ -4076,10 +4120,10 @@ void showPoiComment(TimeFrameData& tfData) {
       ) {
       
       //Print("zLows: "); ArrayPrint(tfData.zLows);
-      Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
+      //Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
       
       //Print("zArrPbLow"); ArrayPrint(tfData.zArrPbLow);
-      Print("zArrIntBullish: "); ArrayPrint(tfData.zArrIntBullish);
+      //Print("zArrIntBullish: "); ArrayPrint(tfData.zArrIntBullish);
       //Print("zArrPoiZoneBullish: "); ArrayPrint(tfData.zArrPoiZoneBullish);
    }
    if (tfData.sTrend == -1 
@@ -4087,10 +4131,10 @@ void showPoiComment(TimeFrameData& tfData) {
       ) {
             
       //Print("zHighs: "); ArrayPrint(tfData.zHighs);
-      Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
+      //Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
       
       //Print("zArrPbHigh"); ArrayPrint(tfData.zArrPbHigh); 
-      Print("zArrIntBearish: "); ArrayPrint(tfData.zArrIntBearish);
+      //Print("zArrIntBearish: "); ArrayPrint(tfData.zArrIntBearish);
       //Print("zArrPoiZoneBearish: "); ArrayPrint(tfData.zArrPoiZoneBearish);
    }
    Print("END Timeframe: "+ EnumToString(tfData.timeFrame));
@@ -4110,8 +4154,8 @@ void showComment(TimeFrameData& tfData) {
       //Print("Vol intSHighs: "); ArrayPrint(tfData.volIntSHighs);
       //Print("intSLows: "); ArrayPrint(tfData.intSLows); 
       //Print("Vol intSLows: "); ArrayPrint(tfData.volIntSLows); 
-      Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
-      Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
+      //Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
+      //Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
       
       
       //Print("arrTop: "); ArrayPrint(tfData.arrTop); 
