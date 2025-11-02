@@ -70,11 +70,24 @@ input bool showTargetHighTF = true; // Hien thi target line o High Timeframe
 input bool showTargetLowTF = true; // Hien thi target line o Low Timeframe
 input bool isDrawMarjor = true; // Draw target with Marjor Swing
 input bool isDrawInteral = true; // Draw target with Internal Swing
+
 input group "=== PoiZone color ==="
+input color color_HTF_Extreme_Bullish_Zone = clrGreen; // High TimeFrame Extreme Bullish color
+input color color_HTF_Extreme_Bearish_Zone = clrFireBrick; // High TimeFrame Decisional Bullish color
+input color color_HTF_Decisional_Bullish_Zone = clrCornflowerBlue; // High TimeFrame Extreme Bearish color
+input color color_HTF_Decisional_Bearish_Zone = clrOrangeRed; // High TimeFrame Decisional Bearish color
+
+input color color_HTF_Internal_Bullish_Zone = clrMediumSlateBlue; // High Internal bullish
+input color color_HTF_Internal_Bearish_Zone = clrPaleVioletRed; // High Internal bearish
+
 input color color_LTF_Extreme_Bullish_Zone = clrLightGreen; // Low TimeFrame Extreme Bullish color
 input color color_LTF_Extreme_Bearish_Zone = clrLightPink; // Low TimeFrame Decisional Bullish color
 input color color_LTF_Decisional_Bullish_Zone = clrPowderBlue; // Low TimeFrame Extreme Bearish color
 input color color_LTF_Decisional_Bearish_Zone = clrMistyRose; // Low TimeFrame Decisional Bearish color
+
+input color color_LTF_Internal_Bullish_Zone = clrLavender; // Low Internal bullish
+input color color_LTF_Internal_Bearish_Zone = clrLavenderBlush; // Low Internal bearish
+
 // End #region variale declaration
 
 //+------------------------------------------------------------------+
@@ -112,9 +125,6 @@ struct PoiZone
    double mSnR;
    datetime mStoplossTime;
    
-   
-   
-   
    double priceKey;
    datetime timeKey;
 };
@@ -129,6 +139,7 @@ public:
    color tfColor;
    ENUM_TIMEFRAMES timeFrame;
    bool isDraw;
+   bool isHighTF;
    // Gann Wave
    double highEst;
    double lowEst;
@@ -1240,6 +1251,11 @@ struct marketStructs{
    void definedFunction(TimeFrameData& tfData, ENUM_TIMEFRAMES timeframe) {
       tfData.timeFrame = timeframe;
       setDefautTimeframe(tfData, timeframe);
+      if (tfData.isTimeframe == highPairTF) {
+         tfData.isHighTF = true;
+      } else {
+         tfData.isHighTF = false;
+      }
       if ( (tfData.isTimeframe == highPairTF && isDrawHighTF == true) || (tfData.isTimeframe == lowPairTF && isDrawLowTF == true)) {
          tfData.isDraw = true;
       }
@@ -1984,6 +2000,8 @@ struct marketStructs{
       //reset log
       textInternalLow = "";
       textInternalHigh = "";
+      color iColorBull = (tfData.isHighTF) ? color_HTF_Internal_Bullish_Zone : color_LTF_Internal_Bullish_Zone;
+      color iColorBear = (tfData.isHighTF) ? color_HTF_Internal_Bearish_Zone : color_LTF_Internal_Bearish_Zone;
       // Gann wave
       // BOS Highs
       if (tfData.waitingHighs == 0 && bar1.high > tfData.Highs[0]) {
@@ -2062,6 +2080,8 @@ struct marketStructs{
             beginSetValueToPoiZone(tfData, tfData.zIntSLows[0], "InternalZone");
             // Them moi poizone Internal Bullish
             tfData.AddToPoiZoneArray(tfData.zArrIntBullish, tfData.zIntSLows[0], poi_limit);
+            // Ve poizone Internal Bullish trên chart
+            if(tfData.isDraw) drawBox("ePOI", tfData.zArrIntBullish[0].time, tfData.zArrIntBullish[0].high, bar1.time, tfData.zArrIntBullish[0].low,1, iColorBull, 1);
          }
          
          //3 choch high
@@ -2107,6 +2127,8 @@ struct marketStructs{
             beginSetValueToPoiZone(tfData, tfData.zIntSLows[0], "InternalZone");
             // Them moi poizone Internal Bullish
             tfData.AddToPoiZoneArray(tfData.zArrIntBullish, tfData.zIntSLows[0], poi_limit);
+            // Ve poizone Internal Bullish trên chart
+            if(tfData.isDraw) drawBox("ePOI", tfData.zArrIntBullish[0].time, tfData.zArrIntBullish[0].high, bar1.time, tfData.zArrIntBullish[0].low,1, iColorBull, 1);
          }
          
          // 4 choch high
@@ -2173,6 +2195,8 @@ struct marketStructs{
             beginSetValueToPoiZone(tfData, tfData.zIntSLows[0], "InternalZone");
             // Them moi poizone Internal Bullish
             tfData.AddToPoiZoneArray(tfData.zArrIntBullish, tfData.zIntSLows[0], poi_limit);
+            // Ve poizone Internal Bullish trên chart
+            if(tfData.isDraw) drawBox("ePOI", tfData.zArrIntBullish[0].time, tfData.zArrIntBullish[0].high, bar1.time, tfData.zArrIntBullish[0].low,1, iColorBull, 1);
          }
          // show draw target line
          if ((showTargetHighTF == true && tfData.isTimeframe == highPairTF) || (showTargetLowTF == true && tfData.isTimeframe == lowPairTF)) {
@@ -2234,6 +2258,8 @@ struct marketStructs{
             beginSetValueToPoiZone(tfData, tfData.zIntSHighs[0], "InternalZone");
             // Them moi poizone Internal Bearish
             tfData.AddToPoiZoneArray(tfData.zArrIntBearish, tfData.zIntSHighs[0], poi_limit);
+            // Ve poizone Internal Bearish trên chart
+            if(tfData.isDraw) drawBox("ePOI", tfData.zArrIntBearish[0].time, tfData.zArrIntBearish[0].low, bar1.time, tfData.zArrIntBearish[0].high,1, iColorBear, 1);
          }
          
          //3 choch low
@@ -2279,6 +2305,8 @@ struct marketStructs{
             beginSetValueToPoiZone(tfData, tfData.zIntSHighs[0], "InternalZone");
             // Them moi poizone Internal Bearish
             tfData.AddToPoiZoneArray(tfData.zArrIntBearish, tfData.zIntSHighs[0], poi_limit);
+            // Ve poizone Internal Bearish trên chart
+            if(tfData.isDraw) drawBox("ePOI", tfData.zArrIntBearish[0].time, tfData.zArrIntBearish[0].low, bar1.time, tfData.zArrIntBearish[0].high,1, iColorBear, 1);
          }
          
          // 4+5 choch low
@@ -2347,6 +2375,8 @@ struct marketStructs{
             beginSetValueToPoiZone(tfData, tfData.zIntSHighs[0], "InternalZone");
             // Them moi poizone Internal Bearish
             tfData.AddToPoiZoneArray(tfData.zArrIntBearish, tfData.zIntSHighs[0], poi_limit);
+            // Ve poizone Internal Bearish trên chart
+            if(tfData.isDraw) drawBox("ePOI", tfData.zArrIntBearish[0].time, tfData.zArrIntBearish[0].low, bar1.time, tfData.zArrIntBearish[0].high,1, iColorBear, 1);
          }
          // Show draw target line
          if ((showTargetHighTF == true && tfData.isTimeframe == highPairTF) || (showTargetLowTF == true && tfData.isTimeframe == lowPairTF)) {
@@ -2583,7 +2613,7 @@ struct marketStructs{
             
             // Quét toàn bộ các vùng POI để Trade theo Order Block, Order Flow
             tfData.scanPoiZoneLastTime(tfData, 1);
-            drawTradeZone(tfData, bar1);
+            drawMarjorTradeZone(tfData, bar1);
             if (isComment && StringLen(text) > 0) {
                Print(str_marjor+text);
             }
@@ -2989,7 +3019,7 @@ struct marketStructs{
             
             // Quét toàn bộ các vùng POI để Trade theo Order Block, Order Flow
             tfData.scanPoiZoneLastTime(tfData, -1);
-            drawTradeZone(tfData, bar1);
+            drawMarjorTradeZone(tfData, bar1);
             if (isComment && StringLen(text) > 0) {
                Print(str_marjor+text);
             }
@@ -3518,14 +3548,27 @@ struct marketStructs{
       //Print("- Bar -"+index + " - "+ " High: "+ bar.high+" Low: "+bar.low + " Time: "+ bar.time);
    }
 
-   // Ham ve Trade zone
-   void drawTradeZone(TimeFrameData& tfData, MqlRates& bar1) {
+   // Ham ve Trade zone Marjor Struct
+   void drawMarjorTradeZone(TimeFrameData& tfData, MqlRates& bar1) {
       if (tfData.isDraw) {
          color iColor;
+         color mExtremeBear, mExtremeBull, mDecisionalBear, mDecisionalBull;
+         
+         if(tfData.isHighTF) {
+            mExtremeBear = color_HTF_Extreme_Bearish_Zone;
+            mExtremeBull = color_HTF_Extreme_Bullish_Zone;
+            mDecisionalBear = color_HTF_Decisional_Bearish_Zone;
+            mDecisionalBull = color_HTF_Decisional_Bullish_Zone;
+         } else {
+            mExtremeBear = color_LTF_Extreme_Bearish_Zone;
+            mExtremeBull = color_LTF_Extreme_Bullish_Zone;
+            mDecisionalBear = color_LTF_Decisional_Bearish_Zone;
+            mDecisionalBull = color_LTF_Decisional_Bullish_Zone;
+         }
          // Bearish Zone.
          if (ArraySize(tfData.zArrPoiZoneBearish) > 0) { 
             for(int i=0;i<=ArraySize(tfData.zArrPoiZoneBearish) - 1;i++) {
-               iColor = (tfData.zArrPoiZoneBearish[i].isTypeZone == 1) ? color_LTF_Extreme_Bearish_Zone : color_LTF_Decisional_Bearish_Zone;
+               iColor = (tfData.zArrPoiZoneBearish[i].isTypeZone == 1) ? mExtremeBear : mDecisionalBear;
                drawBox("ePOI", tfData.zArrPoiZoneBearish[i].time, tfData.zArrPoiZoneBearish[i].low, bar1.time, tfData.zArrPoiZoneBearish[i].high,1, iColor, 1);
             }
          }
@@ -3533,7 +3576,7 @@ struct marketStructs{
          // Bullish Zone.
          if (ArraySize(tfData.zArrPoiZoneBullish) > 0) { 
             for(int i=0;i<=ArraySize(tfData.zArrPoiZoneBullish) - 1;i++) {
-               iColor = (tfData.zArrPoiZoneBullish[i].isTypeZone == 1) ? color_LTF_Extreme_Bullish_Zone : color_LTF_Decisional_Bullish_Zone;
+               iColor = (tfData.zArrPoiZoneBullish[i].isTypeZone == 1) ? mExtremeBull : mDecisionalBull;
                drawBox("ePOI", tfData.zArrPoiZoneBullish[i].time, tfData.zArrPoiZoneBullish[i].high, bar1.time, tfData.zArrPoiZoneBullish[i].low,1, iColor, 1);
             }
          }  
