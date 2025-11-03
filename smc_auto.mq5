@@ -1170,6 +1170,17 @@ void beginSetValueToPoiZone(TimeFrameData& tfData, PoiZone& zone, string type = 
          zone.iStoplossTime = tfData.iStoplossTime;
          zone.iSnR = tfData.iSnR;
          zone.iTarget = tfData.iTarget;
+         
+         // Thêm thông số ban đầu Data Default Internal High TF sau khi break
+         if (tfData.isHighTF) {
+            ss_ITrend = tfData.iTrend;
+            ss_vITrend = tfData.vItrend;
+            ss_iStoploss = tfData.iStoploss;
+            ss_iStoplossTime = tfData.iStoplossTime;
+            ss_iSnR = tfData.iSnR;
+            ss_iTarget = tfData.iTarget;
+            ss_iTargetTime = tfData.iTargetTime;
+         }
       }
    }
 }
@@ -1195,7 +1206,7 @@ void updateProcessPoiZone(TimeFrameData& tfData, PoiZone& zone) {
       zone.iSnR = tfData.iSnR;
       zone.isIComplete = 1;
       
-      // TODOTODO:
+      // Hoàn thiện thông số Target Data Default Internal High TF sau khi break
       if (tfData.isHighTF) {
          ss_ITrend = tfData.iTrend;
          ss_vITrend = tfData.vItrend;
@@ -1209,10 +1220,20 @@ void updateProcessPoiZone(TimeFrameData& tfData, PoiZone& zone) {
 }
 
 // Hàm Scan poizone low timeframe thuộc Internal Break high timeframe
-void scanPoiZoneLowTFBelongToInternalHF(TimeFrameData& tfData){
+void scanPoiZoneLowTFBelongToInternalHF(TimeFrameData& tfData, MqlRates& bar1){
    if (ss_IntScanActive) {
       ss_IntScanActive = false;
       Alert("[[[[[[[[[[[[[[[[[[[[[[[[[[[ Checking ]]]]]]]]]]]]]]]]]]]]]]]");
+   } else 
+   // Reset thông số ban đầu nếu Stoploss hoặc Take Profit
+   if ( (ss_ITrend == 1 && (bar1.high > ss_iTarget || bar1.low < ss_iStoploss)) || (ss_ITrend == -1 && (bar1.low < ss_iTarget || bar1.high > ss_iStoploss))) {
+      ss_ITrend = 0;
+      ss_vITrend = 0;
+      ss_iStoploss = 0;
+      ss_iStoplossTime = 0;
+      ss_iSnR = 0;
+      ss_iTarget = 0;
+      ss_iTargetTime = 0;
    }
    Print("ss_ITrend: " + (string) ss_ITrend +" ss_vITrend: "+ (string) ss_vITrend + " ss_iStoploss: " +(string) ss_iStoploss + " ss_iSnR: "+ (string) ss_iSnR + " ss_iTarget: "+ (string) ss_iTarget);
 }
@@ -1471,6 +1492,7 @@ struct marketStructs{
          // POI
          checkMitigateZone(tfData, bar1);
          
+         scanPoiZoneLowTFBelongToInternalHF(tfData, bar1);
          Print("\n#Final:"+getValueTrend(tfData));
          Print("------------ End Gann wave---------------\n");
       }
@@ -1501,7 +1523,7 @@ struct marketStructs{
       text = "#Final: "+getValueTrend(tfData);
       //text += "\n------------ End Real Gann wave---------------";
       Print(text); 
-      scanPoiZoneLowTFBelongToInternalHF(tfData);
+      scanPoiZoneLowTFBelongToInternalHF(tfData, bar1);
       Print("----------------------------------------------------------------------> END "+EnumToString(timeframe)+" bar formed: ", TimeToString(TimeCurrent())+" <----------------------------------------------------------------------- \n");
       // For develop
       showPoiComment(tfData);
