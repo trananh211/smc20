@@ -72,22 +72,27 @@ input bool showTargetLowTF = true; // Hien thi target line o Low Timeframe
 input bool isDrawMarjor = true; // Draw target with Marjor Swing
 input bool isDrawInteral = true; // Draw target with Internal Swing
 
-input group "=== PoiZone color ==="
+input group "=== PoiZone Marjor color High + Low TF ==="
 input color color_HTF_Extreme_Bullish_Zone = clrGreen; // High TimeFrame Extreme Bullish color
 input color color_HTF_Extreme_Bearish_Zone = clrFireBrick; // High TimeFrame Decisional Bullish color
 input color color_HTF_Decisional_Bullish_Zone = clrCornflowerBlue; // High TimeFrame Extreme Bearish color
 input color color_HTF_Decisional_Bearish_Zone = clrOrangeRed; // High TimeFrame Decisional Bearish color
-
-input color color_HTF_Internal_Bullish_Zone = clrMediumSlateBlue; // High Internal bullish
-input color color_HTF_Internal_Bearish_Zone = clrPaleVioletRed; // High Internal bearish
 
 input color color_LTF_Extreme_Bullish_Zone = clrLightGreen; // Low TimeFrame Extreme Bullish color
 input color color_LTF_Extreme_Bearish_Zone = clrLightPink; // Low TimeFrame Decisional Bullish color
 input color color_LTF_Decisional_Bullish_Zone = clrPowderBlue; // Low TimeFrame Extreme Bearish color
 input color color_LTF_Decisional_Bearish_Zone = clrMistyRose; // Low TimeFrame Decisional Bearish color
 
+input group "=== PoiZone Internal color High + Low TF ==="
+input color color_HTF_Internal_Bullish_Zone = clrMediumSlateBlue; // High Internal bullish
+input color color_HTF_Internal_Bearish_Zone = clrPaleVioletRed; // High Internal bearish
+
 input color color_LTF_Internal_Bullish_Zone = clrLavender; // Low Internal bullish
 input color color_LTF_Internal_Bearish_Zone = clrLavenderBlush; // Low Internal bearish
+
+input group "=== PoiZone Global POI Trade Zone color ==="
+input color color_Global_Internal_Bullish_Zone = clrOliveDrab; // Low Internal bullish
+input color color_Global_Internal_Bearish_Zone = clrFireBrick; // Low Internal bearish
 
 // End #region variale declaration
 
@@ -138,6 +143,10 @@ struct PoiZone
    double priceKey;
    datetime timeKey;
 };
+
+// Poi zone low timeframe thuộc vùng trade zone High Timeframe khi High TF breakout
+PoiZone zArrPoiZoneLTFBullishBelongHighTF[]; // Poi zone Bullish
+PoiZone zArrPoiZoneLTFBearishBelongHighTF[]; // Poi zone Bearish
 
 //+------------------------------------------------------------------+
 //| TimeFrameData class                                              |
@@ -296,9 +305,6 @@ public:
    
    PoiZone zArrPoiZoneBullish[];
    PoiZone zArrPoiZoneBearish[];
-   
-   PoiZone zArrPoiZoneBullishBelongHighTF[];
-   PoiZone zArrPoiZoneBearishBelongHighTF[];
 
    // Constructor
    TimeFrameData()
@@ -1219,24 +1225,82 @@ void updateProcessPoiZone(TimeFrameData& tfData, PoiZone& zone) {
    }
 }
 
-// Hàm Scan poizone low timeframe thuộc Internal Break high timeframe
-void scanPoiZoneLowTFBelongToInternalHF(TimeFrameData& tfData, MqlRates& bar1){
-   if (ss_IntScanActive) {
-      ss_IntScanActive = false;
-      Alert("[[[[[[[[[[[[[[[[[[[[[[[[[[[ Checking ]]]]]]]]]]]]]]]]]]]]]]]");
-   } else 
-   // Reset thông số ban đầu nếu Stoploss hoặc Take Profit
-   if ( (ss_ITrend == 1 && (bar1.high > ss_iTarget || bar1.low < ss_iStoploss)) || (ss_ITrend == -1 && (bar1.low < ss_iTarget || bar1.high > ss_iStoploss))) {
-      ss_ITrend = 0;
-      ss_vITrend = 0;
-      ss_iStoploss = 0;
-      ss_iStoplossTime = 0;
-      ss_iSnR = 0;
-      ss_iTarget = 0;
-      ss_iTargetTime = 0;
+//+-----------------------------------------------------------------------------------+
+//|      Tổ hợp các Hàm Scan poizone low timeframe thuộc Internal Break high timeframe|
+//+-----------------------------------------------------------------------------------+
+
+// Phương thức duyệt mảng chỉ định làm POI Internal Zone Lowtimeframe từ khoảng giá trị highest và lowest của Internal High Timeframe
+void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& Select_zone[], PoiZone& Target_zone[], int type, MqlRates& bar1){
+   int isTypezone = 0;
+   PoiZone tmp_zone;
+   string name = "global_Poi";
+   string name_plus = "";
+   // Quét toàn bộ zone intSLows
+   for(int i=ArraySize(Select_zone) - 1; i >= 0 ; i--) {
+      
+      // Kiem tra neu zone khong thuoc thoi gian chi dinh thi bo qua
+      if (Select_zone[i].time < ss_iStoplossTime || Select_zone[i].time > ss_iTargetTime) continue;
+      
+      // Kiểm tra nếu zone đã bị phá qua rồi thì bỏ qua
+      if (Select_zone[i].mitigated == -1) continue;
+      // Neu La Extreme zone
+      if (Select_zone[i].iStoploss == ss_iStoploss) {
+         // Them zone zIntSlow vao zArrPoiZoneBullish voi isTypeZone = 1
+         isTypezone = 1;
+      } else { // khong phai extreme zone
+         // Them zone zIntSlow vao zArrPoiZoneBullish voi isTypeZone = 2
+         isTypezone = 2;
+      }
+      tmp_zone = Select_zone[i];
+      tmp_zone.isTypeZone = isTypezone;
+      name_plus = name +DoubleToString(tmp_zone.high) + "_"+ DoubleToString(tmp_zone.low)+  "_" +TimeToString(tmp_zone.time);
+      // Them zone zIntSlow vao zArrPoiZoneBullish
+      tfData.AddToPoiZoneArray(Target_zone, tmp_zone, poi_limit);
+      //TODOTODO: Ve zone
+      if (type == 1) {
+         drawBox("ePOI"+(string)tmp_zone.high, tmp_zone.time, tmp_zone.low, bar1.time, tmp_zone.high,1, color_Global_Internal_Bullish_Zone, 1);
+         Print(" ------------------------------------------------------GOAL "+(string)isTypezone+ " "+(string) bar1.high+ " "+(string) bar1.time+"------------------------------------------------------------------");
+      } else if (type == -1) {
+         drawBox("ePOI"+(string)tmp_zone.low, tmp_zone.time, tmp_zone.high, bar1.time, tmp_zone.low,1, color_Global_Internal_Bearish_Zone, 1);
+         Print(" ------------------------------------------------------GOAL "+(string)isTypezone+ " "+(string) bar1.high+ " "+(string) bar1.time+"------------------------------------------------------------------");
+      }      
+      
    }
-   Print("ss_ITrend: " + (string) ss_ITrend +" ss_vITrend: "+ (string) ss_vITrend + " ss_iStoploss: " +(string) ss_iStoploss + " ss_iSnR: "+ (string) ss_iSnR + " ss_iTarget: "+ (string) ss_iTarget);
 }
+
+void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
+   if (tfData.isHighTF != true) { // Neu tiep theo cu break out cua Internal High TF la scan thong tin tu Low TF
+      if (ss_IntScanActive) {
+         // Scan bullish
+         if (ss_ITrend == 1 && ArraySize(tfData.zArrPoiZoneBullish) > 0) {
+            beginScanGlobalZoneInternalSelected(tfData, tfData.zArrPoiZoneBullish, zArrPoiZoneLTFBullishBelongHighTF, 1, bar1);
+         } else if (ss_ITrend == -1 && ArraySize(tfData.zArrPoiZoneBearish) > 0) { // Scan Bearish
+            beginScanGlobalZoneInternalSelected(tfData, tfData.zArrPoiZoneBearish, zArrPoiZoneLTFBearishBelongHighTF, -1, bar1);
+         }
+         ss_IntScanActive = false;  
+      } else 
+      // Reset thông số ban đầu nếu Stoploss hoặc Take Profit
+      if ( (ss_ITrend == 1 && (bar1.high > ss_iTarget || bar1.low < ss_iStoploss)) || (ss_ITrend == -1 && (bar1.low < ss_iTarget || bar1.high > ss_iStoploss))) {
+         ss_ITrend = 0;
+         ss_vITrend = 0;
+         ss_iStoploss = 0;
+         ss_iStoplossTime = 0;
+         ss_iSnR = 0;
+         ss_iTarget = 0;
+         ss_iTargetTime = 0;
+         // xoa du lieu de tranh vao lenh lien tuc sau khi dat target
+         tfData.ClearPoiZoneArray(zArrPoiZoneLTFBullishBelongHighTF);
+         tfData.ClearPoiZoneArray(zArrPoiZoneLTFBearishBelongHighTF);
+      }
+   }
+   Print("## ss_ITrend: " + (string) ss_ITrend +" ss_vITrend: "+ (string) ss_vITrend + " ss_iStoploss: " +(string) ss_iStoploss + " ss_iSnR: "+ (string) ss_iSnR + " ss_iTarget: "+ (string) ss_iTarget);
+}
+
+//+-----------------------------------------------------------------------------------+
+//| END: Tổ hợp các Hàm Scan poizone low timeframe thuộc Internal Break high timeframe|
+//+-----------------------------------------------------------------------------------+
+
+
 //+------------------------------------------------------------------+
 //| Example usage                                                    |
 //+------------------------------------------------------------------+
@@ -1492,7 +1556,7 @@ struct marketStructs{
          // POI
          checkMitigateZone(tfData, bar1);
          
-         scanPoiZoneLowTFBelongToInternalHF(tfData, bar1);
+         scanGlobalInternalPoiZone(tfData, bar1);
          Print("\n#Final:"+getValueTrend(tfData));
          Print("------------ End Gann wave---------------\n");
       }
@@ -1523,7 +1587,7 @@ struct marketStructs{
       text = "#Final: "+getValueTrend(tfData);
       //text += "\n------------ End Real Gann wave---------------";
       Print(text); 
-      scanPoiZoneLowTFBelongToInternalHF(tfData, bar1);
+      scanGlobalInternalPoiZone(tfData, bar1);
       Print("----------------------------------------------------------------------> END "+EnumToString(timeframe)+" bar formed: ", TimeToString(TimeCurrent())+" <----------------------------------------------------------------------- \n");
       // For develop
       showPoiComment(tfData);
@@ -1706,7 +1770,7 @@ struct marketStructs{
             // Cap nhat target Internal Zone Bullish
             tfData.UpdatePoiZoneArray(tfData.zArrIntBullish,0,tfData.zIntSLows[0]);
             // Scan poizone low timeframe thuộc Internal Break high timeframe Bullish
-            ss_IntScanActive = true;
+            if(tfData.isHighTF) ss_IntScanActive = true;
          }
          
          // HH 2
@@ -1739,8 +1803,7 @@ struct marketStructs{
                tfData.iFindTarget = 0;
                textInternalHigh += " | New High 2,1";
             }
-            
-            
+                        
             // cap nhat Zone
             tfData.UpdatePoiZoneArray(tfData.zIntSHighs, 0, zone2);
             //// cap nhat waiting bos intSHighs ve 0
@@ -1750,7 +1813,7 @@ struct marketStructs{
             // Cap nhat target Internal Zone Bullish
             tfData.UpdatePoiZoneArray(tfData.zArrIntBullish,0,tfData.zIntSLows[0]);
             // Scan poizone low timeframe thuộc Internal Break high timeframe bullish
-            ss_IntScanActive = true;
+            if(tfData.isHighTF) ss_IntScanActive = true;
          }
                   
          // DONE 4 
@@ -1828,7 +1891,7 @@ struct marketStructs{
             // Cap nhat target Internal Zone Bullish
             tfData.UpdatePoiZoneArray(tfData.zArrIntBullish,0,tfData.zIntSLows[0]);
             // Scan poizone low timeframe thuộc Internal Break high timeframe bullish
-            ss_IntScanActive = true;
+            if(tfData.isHighTF) ss_IntScanActive = true;
          }
          if( isComment) {
             Print(str_internal+textInternalHigh);
@@ -1930,7 +1993,7 @@ struct marketStructs{
             // Cap nhat target Internal Zone Bearish
             tfData.UpdatePoiZoneArray(tfData.zArrIntBearish,0,tfData.zIntSHighs[0]);
             // Scan poizone low timeframe thuộc Internal Break high timeframe Bearish
-            ss_IntScanActive = true;
+            if(tfData.isHighTF) ss_IntScanActive = true;
          }
          
          // LL
@@ -1974,7 +2037,7 @@ struct marketStructs{
             // Cap nhat target Internal Zone Bearish
             tfData.UpdatePoiZoneArray(tfData.zArrIntBearish,0,tfData.zIntSHighs[0]);
             // Scan poizone low timeframe thuộc Internal Break high timeframe Bearish
-            ss_IntScanActive = true;
+            if(tfData.isHighTF) ss_IntScanActive = true;
          }
          
          // DONE 4
@@ -2052,7 +2115,7 @@ struct marketStructs{
             // Cap nhat target Internal Zone Bearish
             tfData.UpdatePoiZoneArray(tfData.zArrIntBearish,0,tfData.zIntSHighs[0]);
             // Scan poizone low timeframe thuộc Internal Break high timeframe Bearish
-            ss_IntScanActive = true;
+            if(tfData.isHighTF) ss_IntScanActive = true;
          }
          if(isComment) {
             Print(str_internal+textInternalLow);
@@ -4159,6 +4222,9 @@ void showPoiComment(TimeFrameData& tfData) {
       //Print("zArrIntBearish: "); ArrayPrint(tfData.zArrIntBearish);
       //Print("zArrPoiZoneBearish: "); ArrayPrint(tfData.zArrPoiZoneBearish);
    }
+   Print("zArrPoiZoneLTFBullishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBullishBelongHighTF);
+   Print("zArrPoiZoneLTFBearishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBearishBelongHighTF);
+   
    Print("END Timeframe: "+ EnumToString(tfData.timeFrame));
 }
 
@@ -4221,6 +4287,8 @@ void showComment(TimeFrameData& tfData) {
       //Print("zArrPoiZoneBullish: "); ArrayPrint(tfData.zArrPoiZoneBullish);
       //Print("zArrPoiZoneBearish: "); ArrayPrint(tfData.zArrPoiZoneBearish);
       
+      Print("zArrPoiZoneLTFBullishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBullishBelongHighTF);
+      Print("zArrPoiZoneLTFBearishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBearishBelongHighTF);
       
 } 
 
