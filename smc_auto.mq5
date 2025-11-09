@@ -1231,6 +1231,7 @@ void updateProcessPoiZone(TimeFrameData& tfData, PoiZone& zone) {
 
 // Phương thức duyệt mảng chỉ định làm POI Internal Zone Lowtimeframe từ khoảng giá trị highest và lowest của Internal High Timeframe
 void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& Select_zone[], PoiZone& Target_zone[], int type, MqlRates& bar1){
+   Print("Bắt đầu scan Global Internal Zone");
    int isTypezone = 0;
    PoiZone tmp_zone;
    string name = "global_Poi";
@@ -1271,13 +1272,15 @@ void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& Select_
 void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
    if (tfData.isHighTF != true) { // Neu tiep theo cu break out cua Internal High TF la scan thong tin tu Low TF
       if (ss_IntScanActive) {
-         // Scan bullish
-         if (ss_ITrend == 1 && ArraySize(tfData.zArrPoiZoneBullish) > 0) {
-            beginScanGlobalZoneInternalSelected(tfData, tfData.zArrPoiZoneBullish, zArrPoiZoneLTFBullishBelongHighTF, 1, bar1);
-         } else if (ss_ITrend == -1 && ArraySize(tfData.zArrPoiZoneBearish) > 0) { // Scan Bearish
-            beginScanGlobalZoneInternalSelected(tfData, tfData.zArrPoiZoneBearish, zArrPoiZoneLTFBearishBelongHighTF, -1, bar1);
+         if (ss_ITrend != 0) {
+            // Scan bullish
+            if (ss_ITrend == 1 && ArraySize(tfData.zArrPoiZoneBullish) > 0) {
+               beginScanGlobalZoneInternalSelected(tfData, tfData.zArrPoiZoneBullish, zArrPoiZoneLTFBullishBelongHighTF, 1, bar1);
+            } else if(ss_ITrend == -1 && ArraySize(tfData.zArrPoiZoneBearish) > 0) { // Scan Bearish
+               beginScanGlobalZoneInternalSelected(tfData, tfData.zArrPoiZoneBearish, zArrPoiZoneLTFBearishBelongHighTF, -1, bar1);
+            }
+            ss_IntScanActive = false;  
          }
-         ss_IntScanActive = false;  
       } else 
       // Reset thông số ban đầu nếu Stoploss hoặc Take Profit
       if ( (ss_ITrend == 1 && (bar1.high > ss_iTarget || bar1.low < ss_iStoploss)) || (ss_ITrend == -1 && (bar1.low < ss_iTarget || bar1.high > ss_iStoploss))) {
@@ -1554,9 +1557,11 @@ struct marketStructs{
          updatePointTopBot(tfData, bar1, bar2, bar3, enabledComment);
          drawMarketStruct(tfData, bar1);
          // POI
-         checkMitigateZone(tfData, bar1);
-         
          scanGlobalInternalPoiZone(tfData, bar1);
+         
+         // Mitigation
+         checkMitigateZone(tfData, bar1);         
+         
          Print("\n#Final:"+getValueTrend(tfData));
          Print("------------ End Gann wave---------------\n");
       }
@@ -1582,13 +1587,16 @@ struct marketStructs{
       updatePointTopBot(tfData, bar1, bar2, bar3, enabledComment);
       drawMarketStruct(tfData, bar1);
       // POI
+      scanGlobalInternalPoiZone(tfData, bar1);
+      
+      // Mitigation
       checkMitigateZone(tfData, bar1);
       
       text = "#Final: "+getValueTrend(tfData);
       //text += "\n------------ End Real Gann wave---------------";
-      Print(text); 
-      scanGlobalInternalPoiZone(tfData, bar1);
-      Print("----------------------------------------------------------------------> END "+EnumToString(timeframe)+" bar formed: ", TimeToString(TimeCurrent())+" <----------------------------------------------------------------------- \n");
+      //Print(text); 
+      
+      Print(text + "\n----------------------------------------------------------------------> END "+EnumToString(timeframe)+" bar formed: ", TimeToString(TimeCurrent())+" <----------------------------------------------------------------------- \n");
       // For develop
       showPoiComment(tfData);
    }
@@ -4200,6 +4208,10 @@ bool DrawDirectionalSegment(
 // Todo: 
 void showPoiComment(TimeFrameData& tfData) {
    Print("Timeframe: "+ (string) tfData.isTimeframe);
+   Print("ss_IntScanActive: " + (string) ss_IntScanActive + " ss_ITrend: " + (string) ss_ITrend + " ss_vITrend: " + (string) ss_vITrend +
+         "_ ss_iStoploss: " + (string) ss_iStoploss + " ss_iStoplossTime: " + (string) ss_iStoplossTime +" ss_iSnR: " + (string) ss_iSnR +
+         "_ ss_iTarget: " + (string) ss_iTarget +" ss_iTargetTime: " + (string) ss_iTargetTime
+         );
    if (tfData.sTrend == 1 
       //|| tfData.sTrend == -1
       ) {
