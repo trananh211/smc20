@@ -48,7 +48,8 @@ input int _PointSpace = 1000; // Khoảng cách để vẽ swing, line so với 
 input int poi_limit = 30; // Số lượng mảng POI tối đa để lưu vào hệ thống
 int limit = 10; // Khối lượng tối đa để lưu trữ mảng của Swing High, Low
 int lookback = 100; // Số lượng thanh Bar được đếm ngược lại so với thời điểm chạy bot
-
+datetime lookback_time = 0; 
+int lookback_LTF = 0;
 // định nghĩa riêng cặp khung thời gian trade
 enum pairTF {m1_m15 = 1, m5_h1 = 5, m15_h4 = 15, h1_d1 = 60};
 input pairTF pairTimeFrameInput = m5_h1; // Cặp khung thời gian trade: low TimeFrame _ high TimeFrame
@@ -1435,19 +1436,23 @@ struct marketStructs{
    }
    
    void definedFunction(TimeFrameData& tfData, ENUM_TIMEFRAMES timeframe) {
+      int count_lookback = 0;
       tfData.timeFrame = timeframe;
       setDefautTimeframe(tfData, timeframe);
       if (tfData.isTimeframe == highPairTF) {
          tfData.isHighTF = true;
+         count_lookback = lookback;
       } else {
          tfData.isHighTF = false;
+         lookback_LTF = iBarShift(_Symbol, tfData.timeFrame, lookback_time, true);
+         count_lookback = (lookback_LTF > 0) ? lookback_LTF : lookback;
       }
       if ( (tfData.isTimeframe == highPairTF && isDrawHighTF == true) || (tfData.isTimeframe == lowPairTF && isDrawLowTF == true)) {
          tfData.isDraw = true;
       }
       
       // Copy toan bo Lookback = 100 Bar tu Bar hien tai vao mang waveRates
-      int copied = CopyRates(_Symbol, timeframe, 0, lookback, waveRates);
+      int copied = CopyRates(_Symbol, timeframe, 0, count_lookback, waveRates);
       //ArrayPrint(waveRates);
       //int firstBar = ArraySize(waveRates) - 1;
       int firstBar = 0;
@@ -1604,6 +1609,19 @@ struct marketStructs{
       }
    }
    
+   // Ham tim look back bar cua low timeframe tu High timeframe
+   void lookBackCandle(TimeFrameData& tfData) {
+      if (tfData.iTrend == 1) {
+         if (ArraySize(tfData.intSLowTime) >= 3) {
+            lookback_time = tfData.intSLowTime[2];
+         }
+      } else if (tfData.iTrend == -1) {
+         if (ArraySize(tfData.intSHighTime) >= 3) {
+            lookback_time = tfData.intSHighTime[2];
+         }
+      }
+   }
+   
    void gannWave(TimeFrameData& tfData){
       MqlRates bar1, bar2, bar3; 
       // danh dau vi tri bat dau
@@ -1633,6 +1651,11 @@ struct marketStructs{
       }
       // danh dau vi tri ket thuc
       createObj(waveRates[ArraySize(waveRates) - 1].time, waveRates[ArraySize(waveRates) - 1].low, 238, -1, tfData.tfColor, "Stop");
+      
+      
+      // Ham tim look back bar cua low timeframe tu High timeframe
+      if (tfData.isHighTF) lookBackCandle(tfData);
+      
    }
    
    void realGannWave(TimeFrameData& tfData, ENUM_TIMEFRAMES timeframe) {
