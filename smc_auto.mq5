@@ -1236,7 +1236,8 @@ void updateProcessPoiZone(TimeFrameData& tfData, PoiZone& zone) {
 
 // Phương thức duyệt mảng chỉ định làm POI Internal Zone Lowtimeframe từ khoảng giá trị highest và lowest của Internal High Timeframe
 void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& Select_zone[], PoiZone& Target_zone[], int type, MqlRates& bar1){
-   Print("Bắt đầu scan Global Internal Zone");
+   string text = "";
+   text += "\nBắt đầu scan Global Internal Zone";
    int isTypezone = 0;
    PoiZone tmp_zone;
    string name = "global_Poi";
@@ -1251,12 +1252,12 @@ void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& Select_
       
       // Kiem tra neu zone khong thuoc thoi gian chi dinh thi bo qua
       if (Select_zone[i].time < ss_iStoplossTime || Select_zone[i].time > target_time) {
-         Print("1. Zone "+ (string) i + " không thuộc thời gian chỉ định. Bỏ qua");
+         text += "\n1. Zone "+ (string) i + " không thuộc thời gian chỉ định. Bỏ qua";
          continue; 
       }
       // Kiểm tra nếu zone đã bị phá qua rồi thì bỏ qua
       if (Select_zone[i].mitigated == -1) {
-         Print("2. Zone "+ (string) i + " đã bị mitigated. Bỏ qua");
+         text += "\n2. Zone "+ (string) i + " đã bị mitigated. Bỏ qua";
          continue;
       }
       // Kiểm tra đã tồn tại trong target zone hay chưa. Nếu tồn tại rồi thì bỏ qua
@@ -1264,15 +1265,15 @@ void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& Select_
       for(int j=0; j<ArraySize(Target_zone); j++) {
          if( Select_zone[i].iStoploss == Target_zone[j].iStoploss) {
             next = true;
-            Print("x.x Zone "+ (string) i +" - "+(string) j + " đã tồn tại trong Global Zone. Break");
+            text += "\nx.x Zone "+ (string) i +" - "+(string) j + " đã tồn tại trong Global Zone. Break";
             break;
          } else {
-            Print("x.x Zone "+ (string) i +" - "+(string) j + " chưa tồn tại trong Global Zone. Tiếp tục kiểm tra.");
+            text += "\nx.x Zone "+ (string) i +" - "+(string) j + " chưa tồn tại trong Global Zone. Tiếp tục kiểm tra.";
          }
       }
       // Đã tồn tại trong Global zone trước đó.
       if( next == true) {
-         Print("3. Zone "+ (string) i + " đã tồn tại trong Global zone trước đó. Bỏ qua");
+         text += "\n3. Zone "+ (string) i + " đã tồn tại trong Global zone trước đó. Bỏ qua";
          continue;
       }
       
@@ -1292,16 +1293,18 @@ void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& Select_
       //TODOTODO: Ve zone
       if (type == 1) {
          drawBox("ePOI"+(string)tmp_zone.high, tmp_zone.time, tmp_zone.low, bar1.time, tmp_zone.high,1, color_Global_Internal_Bullish_Zone, 1);
-         Print(" ------------------------------------------------------GOAL "+(string)isTypezone+ " "+(string) bar1.high+ " "+(string) bar1.time+"------------------------------------------------------------------");
+         text += "\n------------------------------------------------------GOAL "+(string)isTypezone+ " "+(string) bar1.high+ " "+(string) bar1.time+"------------------------------------------------------------------";
       } else if (type == -1) {
          drawBox("ePOI"+(string)tmp_zone.low, tmp_zone.time, tmp_zone.high, bar1.time, tmp_zone.low,1, color_Global_Internal_Bearish_Zone, 1);
-         Print(" ------------------------------------------------------GOAL "+(string)isTypezone+ " "+(string) bar1.high+ " "+(string) bar1.time+"------------------------------------------------------------------");
+         text += "\n------------------------------------------------------GOAL "+(string)isTypezone+ " "+(string) bar1.high+ " "+(string) bar1.time+"------------------------------------------------------------------";
       }      
       
    }
+   //Print(text);
 }
 
 void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
+   string text = "";
 	if (tfData.isHighTF != true) { // Neu tiep theo cu break out cua Internal High TF la scan thong tin tu Low TF
 		if (ss_IntScanActive) {
 			if (ss_ITrend != 0) {
@@ -1328,7 +1331,7 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
 			if ( (ss_ITrend == 1 && ((bar1.high > ss_iTarget && ss_iTarget != 0) || (bar1.low < ss_iStoploss && ss_iStoploss != 0))) 
 			   || (ss_ITrend == -1 && ((bar1.low < ss_iTarget && ss_iTarget != 0 ) || (bar1.high > ss_iStoploss && ss_iStoploss != 0)))
 			   ) {
-				Print("================> Clean Data vi đã take profit hoặc quét stoploss");
+				text += "\n================> Clean Data vi đã take profit hoặc quét stoploss";
 				ss_ITrend = 0;
 				ss_vITrend = 0;
 				ss_iStoploss = 0;
@@ -1343,14 +1346,14 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
 				if (ss_ITrend == 1) {
 				   if ((ss_iTarget != 0 && bar1.high < ss_iTarget) || ( ss_iStoploss != 0 && bar1.low > ss_iStoploss) ) {
 				      if (ArraySize(zArrPoiZoneLTFBullishBelongHighTF) == 0 ) {
-				         Print("================> Thiếu thông số Bullish. Scan lại Global zone ở bước sau");
+				         text += "\n================> Thiếu thông số Bullish. Scan lại Global zone ở bước sau";
 				         ss_IntScanActive = true;
 				      }
 				   }
 				} else if (ss_ITrend == -1) {
 				   if ((bar1.low > ss_iTarget && ss_iTarget != 0 ) || (bar1.high < ss_iStoploss && ss_iStoploss != 0)) {
 				      if (ArraySize(zArrPoiZoneLTFBearishBelongHighTF) == 0) {
-				         Print("================> Thiếu thông số Bearish. Scan lại Global zone ở bước sau");
+				         text += "\n================> Thiếu thông số Bearish. Scan lại Global zone ở bước sau";
 				         ss_IntScanActive = true;
 				      }
 				   }
@@ -1358,7 +1361,8 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
 			}     
 		} // End ss_IntScanActive == false
 	} // End tfData.isHighTF != true
-	Print("## ss_ITrend: " + (string) ss_ITrend +" ss_vITrend: "+ (string) ss_vITrend + " ss_iStoploss: " +(string) ss_iStoploss + " ss_iSnR: "+ (string) ss_iSnR + " ss_iTarget: "+ (string) ss_iTarget);
+	text += "\n## ss_ITrend: " + (string) ss_ITrend +" ss_vITrend: "+ (string) ss_vITrend + " ss_iStoploss: " +(string) ss_iStoploss + " ss_iSnR: "+ (string) ss_iSnR + " ss_iTarget: "+ (string) ss_iTarget;
+	Print(text);
 } // End scanGlobalInternalPoiZone
 
 //+-----------------------------------------------------------------------------------+
@@ -1665,17 +1669,37 @@ struct marketStructs{
    
    // Todo: Kiểm tra lần lượt zone đã mitigate hay chưa
    void checkMitigateZone(TimeFrameData& tfData, MqlRates& bar1) {
+      // Hàm luôn phải chạy không được dừng để check mitigate còn loại POI ra khỏi vùng scan zone.
+      if (ArraySize(tfData.zArrIntBearish) > 0) {
+         getIsMitigatedZone(bar1, tfData.zArrIntBearish, -1);
+      }
       
-      getIsMitigatedZone(tfData, bar1, tfData.zArrIntBearish, -1);
-      getIsMitigatedZone(tfData, bar1, tfData.zArrIntBullish, 1);
+      if (ArraySize(tfData.zArrIntBullish) > 0) {
+         getIsMitigatedZone(bar1, tfData.zArrIntBullish, 1);
+      }
       
-      getIsMitigatedZone(tfData, bar1, tfData.zArrPoiZoneBearish, -1);
-      getIsMitigatedZone(tfData, bar1, tfData.zArrPoiZoneBullish, 1);
+      // Hàm check mitigate của Marjor Zone theo từng TF
+      if (ArraySize(tfData.zArrPoiZoneBearish) > 0) {
+         getIsMitigatedZone(bar1, tfData.zArrPoiZoneBearish, -1);
+      }
+      
+      if (ArraySize(tfData.zArrPoiZoneBullish) > 0) {
+         getIsMitigatedZone(bar1, tfData.zArrPoiZoneBullish, 1);
+      }
+      
+      // Hàm check mitigate của global zone dành cho Trade Multi TF
+      if( ArraySize(zArrPoiZoneLTFBullishBelongHighTF) > 0) {
+         getIsMitigatedZone(bar1, zArrPoiZoneLTFBullishBelongHighTF, 1);
+      }
+      
+      if (ArraySize(zArrPoiZoneLTFBearishBelongHighTF) > 0) {
+         getIsMitigatedZone(bar1, zArrPoiZoneLTFBullishBelongHighTF, -1);
+      }
       
    }
    
    // Hàm kiểm tra từng zone mitigate hay chưa
-   void getIsMitigatedZone(TimeFrameData& tfData, MqlRates& bar1, PoiZone& zone[], int type, int skip_key = -1) {
+   void getIsMitigatedZone(MqlRates& bar1, PoiZone& zone[], int type, int skip_key = -1) {
       // kiem tra xem zone co du lieu hay khong
       if (ArraySize(zone) > 0) {
          bool isDraw = false;
