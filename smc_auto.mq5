@@ -1288,8 +1288,9 @@ void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& Select_
       }
       tmp_zone = Select_zone[i];
       tmp_zone.isTypeZone = isTypezone;
+      tmp_zone.mitigated = 0;
       name_plus = name +DoubleToString(tmp_zone.high) + "_"+ DoubleToString(tmp_zone.low)+  "_" +TimeToString(tmp_zone.time);
-      // Them zone zIntSlow vao zArrPoiZoneBullish
+      // Them zone tmp_zone vao Target_zone
       tfData.AddToPoiZoneArray(Target_zone, tmp_zone, poi_limit);
       //TODOTODO: Ve zone
       if (type == 1) {
@@ -1709,7 +1710,7 @@ struct marketStructs{
          Print(textall);
       }
       // For develop
-      //showPoiComment(tfData);
+      showPoiComment(tfData);
    }
    
    // Todo: Kiểm tra lần lượt zone đã mitigate hay chưa
@@ -1738,7 +1739,7 @@ struct marketStructs{
       }
       
       if (ArraySize(zArrPoiZoneLTFBearishBelongHighTF) > 0) {
-         getIsMitigatedZone(bar1, zArrPoiZoneLTFBullishBelongHighTF, -1);
+         getIsMitigatedZone(bar1, zArrPoiZoneLTFBearishBelongHighTF, -1);
       }
       
    }
@@ -1761,12 +1762,12 @@ struct marketStructs{
                if( bar1.low > zone[i].high) continue; 
                // Neu gia bat dau mitigate zone
                // neu gia van nam trong zone
-               if (bar1.low <= zone[i].high && bar1.low >= zone[i].low) {
+               if (bar1.low <= zone[i].high && bar1.low >= zone[i].low && zone[i].mitigated != 1) {
                   zone[i].mitigated = 1;
                   //drawBox("ePOI", zone[i].time, zone[i].high, bar1.time, zone[i].low,1, iColor, 1);
                }
                // neu gia vuot ra ngoai zone
-               if (bar1.low < zone[i].low) {
+               if (bar1.low < zone[i].low && zone[i].mitigated != -1) {
                   zone[i].mitigated = -1;
                }
             } else if (type == -1) { // neu dang check bearish zone
@@ -1774,13 +1775,13 @@ struct marketStructs{
                // Neu gia bat dau mitigate zone
                
                // neu gia van nam trong zone
-               if (bar1.high >= zone[i].low && bar1.high <= zone[i].high) {
+               if (bar1.high >= zone[i].low && bar1.high <= zone[i].high && zone[i].mitigated != 1) {
                   zone[i].mitigated = 1;
                   //drawBox("ePOI", zone[i].time, zone[i].low, bar1.time, zone[i].high,1, iColor, 1);
                }
                
                // neu gia vuot ra ngoai zone
-               if (bar1.high > zone[i].high) {
+               if (bar1.high > zone[i].high && zone[i].mitigated != -1) {
                   zone[i].mitigated = -1;
                }
             }
