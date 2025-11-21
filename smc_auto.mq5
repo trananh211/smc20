@@ -101,11 +101,15 @@ input color color_Global_Internal_Bearish_Zone = clrFireBrick; // Low Internal b
 bool ss_IntScanActive = false;
 int ss_ITrend;
 int ss_vITrend;
+int ss_mitigate_iOrderFlow; // Mặc định = -1 kể cả khi breakout, Khi ss_iTarget được xác định = 0, khi mitigate = 1.
 double ss_iStoploss; //
+double ss_iOrderBlock;
+int ss_mitigate_iOrderBlock; // Mặc định = -1, Khi breakout =0, Khi mitigate thì biến này chuyển thành 1. 
 double ss_iTarget;
 double ss_iSnR;
 datetime ss_iStoplossTime;
 datetime ss_iTargetTime;
+
 //+------------------------------------------------------------------+
 //| PoiZone structure                                                |
 //+------------------------------------------------------------------+
@@ -4407,15 +4411,16 @@ bool DrawDirectionalSegment(
 
 // Todo: 
 void showPoiComment(TimeFrameData& tfData) {
-   Print("Timeframe: "+ (string) tfData.isTimeframe);
-   Print("ss_IntScanActive: " + (string) ss_IntScanActive + " ss_ITrend: " + (string) ss_ITrend + " ss_vITrend: " + (string) ss_vITrend +
-         "_ ss_iStoploss: " + (string) ss_iStoploss + " ss_iStoplossTime: " + (string) ss_iStoplossTime +" ss_iSnR: " + (string) ss_iSnR +
-         "_ ss_iTarget: " + (string) ss_iTarget +" ss_iTargetTime: " + (string) ss_iTargetTime
-         );
+   bool show = false;
+   string text = "Timeframe: "+ (string) tfData.isTimeframe;
+   //text += "\nss_IntScanActive: " + (string) ss_IntScanActive + " ss_ITrend: " + (string) ss_ITrend + " ss_vITrend: " + (string) ss_vITrend +
+   //      "_ ss_iStoploss: " + DoubleToString(ss_iStoploss, digits) + " ss_iStoplossTime: " + (string) ss_iStoplossTime +" ss_iSnR: " + DoubleToString( ss_iSnR, digits) +
+   //      "_ ss_iTarget: " + DoubleToString(ss_iTarget, digits) +" ss_iTargetTime: " + (string) ss_iTargetTime;
+   
    if (tfData.sTrend == 1 
       //|| tfData.sTrend == -1
       ) {
-      
+      //show = true;
       //Print("zLows: "); ArrayPrint(tfData.zLows);
       //Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
       
@@ -4426,7 +4431,7 @@ void showPoiComment(TimeFrameData& tfData) {
    if (tfData.sTrend == -1 
       //|| tfData.sTrend == 1
       ) {
-            
+      //show = true;
       //Print("zHighs: "); ArrayPrint(tfData.zHighs);
       //Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
       
@@ -4436,16 +4441,19 @@ void showPoiComment(TimeFrameData& tfData) {
    }
    
    if (ss_ITrend == 1) {
+      show = true;
       //Print("zArrIntBullish: "); ArrayPrint(tfData.zArrIntBullish);
       Print("zArrPoiZoneLTFBullishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBullishBelongHighTF);
    }
    
    if (ss_ITrend == -1) {
+      show = true;
       //Print("zArrIntBearish: "); ArrayPrint(tfData.zArrIntBearish);
       Print("zArrPoiZoneLTFBearishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBearishBelongHighTF);
    }
    
-   Print("END Timeframe: "+ EnumToString(tfData.timeFrame));
+   //text += "\nEND Timeframe: "+ EnumToString(tfData.timeFrame);
+   if (show) Print(text);
 }
 
 void showComment(TimeFrameData& tfData) {
