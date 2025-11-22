@@ -121,7 +121,7 @@ struct PoiZone
    double close;
    datetime time;
    
-   int mitigated; // -1 mitigated, 0 not mitigate, 1 mitigating
+   int mitigated; // -1 reject order block, 0 not mitigate, 1 mitigating Order Block
    
    // iTrend
    int iTrend;
@@ -192,6 +192,7 @@ public:
    
    int iFindTarget;
    double iStoploss; datetime iStoplossTime;
+   double iOrderBlock;
    double iTarget; datetime iTargetTime;
    double iFullTarget;
    double iSnR;
@@ -365,6 +366,7 @@ public:
       iFindTarget = 0;
       iStoploss = 0; iStoplossTime = 0;
       iTarget = 0; iTargetTime = 0;
+      iOrderBlock = 0;
       iFullTarget = 0;
       iSnR = 0;
    
@@ -1171,9 +1173,12 @@ void setGlobalValueLowToHighTF(TimeFrameData& tfData) {
       ss_vITrend = tfData.vItrend;
       ss_iStoploss = tfData.iStoploss;
       ss_iStoplossTime = tfData.iStoplossTime;
+      ss_iOrderBlock = tfData.iOrderBlock;
       ss_iSnR = tfData.iSnR;
       ss_iTarget = tfData.iTarget;
       ss_iTargetTime = tfData.iTargetTime;
+      ss_mitigate_iOrderBlock = 0;
+      if (ss_iTarget != 0) ss_mitigate_iOrderFlow = 0;
    }
 }
 
@@ -1231,6 +1236,7 @@ void updateProcessPoiZone(TimeFrameData& tfData, PoiZone& zone) {
          ss_iSnR = tfData.iSnR;
          ss_iTarget = tfData.iTarget;
          ss_iTargetTime = tfData.iTargetTime;
+         ss_mitigate_iOrderFlow = 0;
       }
    }
 }
@@ -1342,9 +1348,12 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
 				ss_vITrend = 0;
 				ss_iStoploss = 0;
 				ss_iStoplossTime = 0;
+				ss_iOrderBlock = 0;
 				ss_iSnR = 0;
 				ss_iTarget = 0;
 				ss_iTargetTime = 0;
+				ss_mitigate_iOrderFlow = -1;
+				ss_mitigate_iOrderBlock = -1;
 				// xoa du lieu de tranh vao lenh lien tuc sau khi dat target
 				tfData.ClearPoiZoneArray(zArrPoiZoneLTFBullishBelongHighTF);
 				tfData.ClearPoiZoneArray(zArrPoiZoneLTFBearishBelongHighTF);
@@ -1737,6 +1746,11 @@ struct marketStructs{
          getIsMitigatedZone(bar1, tfData.zArrPoiZoneBullish, 1);
       }
       
+      // Hàm check mitigate của Global Target
+      if (ss_ITrend != 0) {
+         getIsMitigateGlobal(bar1);
+      }
+      
       // Hàm check mitigate của global zone dành cho Trade Multi TF
       if( ArraySize(zArrPoiZoneLTFBullishBelongHighTF) > 0) {
          getIsMitigatedZone(bar1, zArrPoiZoneLTFBullishBelongHighTF, 1);
@@ -1746,6 +1760,43 @@ struct marketStructs{
          getIsMitigatedZone(bar1, zArrPoiZoneLTFBearishBelongHighTF, -1);
       }
       
+   }
+   
+   // Hàm chỉ kiểm tra ss Global đã mitigate order flow hoặc order block hay chưa
+   void getIsMitigateGlobal(MqlRates& bar1) {
+      if (ss_ITrend == 1) {
+         // Kiểm tra order flow
+         if (ss_mitigate_iOrderFlow == 0 && bar1.low < ss_iSnR && bar1.low > ss_iStoploss) {
+            ss_mitigate_iOrderFlow = 1;
+         } 
+         
+         // Kiểm tra order block
+         if (ss_mitigate_iOrderBlock == 0 && bar1.low < ss_iOrderBlock && bar1.low > ss_iStoploss) {
+            ss_mitigate_iOrderBlock = 1;
+         }
+         
+         // Nếu giá hit stoploss
+         if (bar1.low < ss_iStoploss) {
+            ss_mitigate_iOrderFlow = -1;
+            ss_mitigate_iOrderBlock = -1;
+         }
+      } else if (ss_ITrend == -1) {
+         // Kiểm tra order flow
+         if (ss_mitigate_iOrderFlow == 0 && bar1.high > ss_iSnR && bar1.high < ss_iStoploss) {
+            ss_mitigate_iOrderFlow = 1;
+         } 
+         
+         // Kiểm tra order block
+         if (ss_mitigate_iOrderBlock == 0 && bar1.high > ss_iOrderBlock && bar1.high < ss_iStoploss) {
+            ss_mitigate_iOrderBlock = 1;
+         }
+         
+         // Nếu giá hit stoploss
+         if (bar1.high > ss_iStoploss) {
+            ss_mitigate_iOrderFlow = -1;
+            ss_mitigate_iOrderBlock = -1;
+         }
+      }
    }
    
    // Hàm kiểm tra từng zone mitigate hay chưa
@@ -2358,6 +2409,7 @@ struct marketStructs{
                tfData.iFindTarget = 1;
                tfData.iStoploss = tfData.intSLows[0];
                tfData.iStoplossTime = tfData.intSLowTime[0];
+               tfData.iOrderBlock = tfData.zIntSLows[0].high;
                tfData.iTarget = 0;
                tfData.iTargetTime = 0;
                tfData.iSnR = tfData.intSHighs[0];
@@ -2409,6 +2461,7 @@ struct marketStructs{
                tfData.iFindTarget = 1;
                tfData.iStoploss = tfData.intSLows[0];
                tfData.iStoplossTime = tfData.intSLowTime[0];
+               tfData.iOrderBlock = tfData.zIntSLows[0].high;
                tfData.iTarget = 0;
                tfData.iTargetTime = 0;
                tfData.iSnR = tfData.intSHighs[0];
@@ -2482,6 +2535,7 @@ struct marketStructs{
                tfData.iFindTarget = 1;
                tfData.iStoploss = tfData.intSLows[0];
                tfData.iStoplossTime = tfData.intSLowTime[0];
+               tfData.iOrderBlock = tfData.zIntSLows[0].high;
                tfData.iTarget = 0;
                tfData.iTargetTime = 0;
                tfData.iSnR = tfData.intSHighs[0];
@@ -2550,6 +2604,7 @@ struct marketStructs{
                tfData.iFindTarget = -1;
                tfData.iStoploss = tfData.intSHighs[0];
                tfData.iStoplossTime = tfData.intSHighTime[0];
+               tfData.iOrderBlock = tfData.zIntSHighs[0].low;
                tfData.iTarget = 0;
                tfData.iTargetTime = 0;
                tfData.iSnR = tfData.intSLows[0];
@@ -2602,6 +2657,7 @@ struct marketStructs{
                tfData.iFindTarget = -1;
                tfData.iStoploss = tfData.intSHighs[0];
                tfData.iStoplossTime = tfData.intSHighTime[0];
+               tfData.iOrderBlock = tfData.zIntSHighs[0].low;
                tfData.iTarget = 0;
                tfData.iTargetTime = 0;
                tfData.iSnR = tfData.intSLows[0];
@@ -2676,6 +2732,7 @@ struct marketStructs{
                tfData.iFindTarget = -1;
                tfData.iStoploss = tfData.intSHighs[0];
                tfData.iStoplossTime = tfData.intSHighTime[0];
+               tfData.iOrderBlock = tfData.zIntSHighs[0].low;
                tfData.iTarget = 0;
                tfData.iTargetTime = 0;
                tfData.iSnR = tfData.intSLows[0];
@@ -4413,9 +4470,6 @@ bool DrawDirectionalSegment(
 void showPoiComment(TimeFrameData& tfData) {
    bool show = false;
    string text = "Timeframe: "+ (string) tfData.isTimeframe;
-   //text += "\nss_IntScanActive: " + (string) ss_IntScanActive + " ss_ITrend: " + (string) ss_ITrend + " ss_vITrend: " + (string) ss_vITrend +
-   //      "_ ss_iStoploss: " + DoubleToString(ss_iStoploss, digits) + " ss_iStoplossTime: " + (string) ss_iStoplossTime +" ss_iSnR: " + DoubleToString( ss_iSnR, digits) +
-   //      "_ ss_iTarget: " + DoubleToString(ss_iTarget, digits) +" ss_iTargetTime: " + (string) ss_iTargetTime;
    
    if (tfData.sTrend == 1 
       //|| tfData.sTrend == -1
@@ -4527,8 +4581,10 @@ string getValueTrend(TimeFrameData& tfData) {
                " findLow: "+(string) tfData.findLow+" - idmLow: "+DoubleToString( tfData.idmLow,digits)+ " - vol idmLow: "+(string) tfData.vol_idmLow+
                " _ mFindtarget: "+(string) tfData.mFindTarget + " mStoploss: " + DoubleToString(tfData.mStoploss,digits) + " mSnR: " + DoubleToString(tfData.mSnR,digits) + " mTarget: "+ DoubleToString(tfData.mTarget,digits) + " mFullTarget: "+ DoubleToString(tfData.mFullTarget,digits) +
                "\n($) Internal Trend: iTrend: "+(string) tfData.iTrend+ " vItrend: "+(string) tfData.vItrend+ " waitingItrend: IntSHighs "+(string) tfData.waitingIntSHighs + " IntSLows " + (string) tfData.waitingIntSLows +" - LastSwingInternal: "+(string) tfData.LastSwingInternal+
-               " _ iFindtarget: "+(string) tfData.iFindTarget + " iStoploss: " + DoubleToString(tfData.iStoploss,digits) + " iSnR: " + DoubleToString(tfData.iSnR,digits) + " iTarget: "+ DoubleToString(tfData.iTarget,digits) + " iFullTarget: "+ DoubleToString(tfData.iFullTarget,digits) +
+               " _ iFindtarget: "+(string) tfData.iFindTarget + " iStoploss: " + DoubleToString(tfData.iStoploss,digits) + " iOrderBlock: " + DoubleToString(tfData.iOrderBlock,digits) + " iSnR: " + DoubleToString(tfData.iSnR,digits) + " iTarget: "+ DoubleToString(tfData.iTarget,digits) + " iFullTarget: "+ DoubleToString(tfData.iFullTarget,digits) +
                "\n($) Gann Trend: gTrend: "+(string) tfData.gTrend+ " vGTrend: "+(string) tfData.vGTrend+ " - LastSwingMeter: "+(string) tfData.LastSwingMeter+ " | | H: "+ DoubleToString( tfData.H, digits) +" - L: "+DoubleToString( tfData.L, digits);  
-   text += "\n($) Global Trend: ss_ITrend: " + (string) ss_ITrend +"; ss_vITrend: "+ (string) ss_vITrend + "; ss_iStoploss: " +DoubleToString(ss_iStoploss,digits) + "; ss_iSnR: "+ DoubleToString (ss_iSnR, digits) + "; ss_iTarget: "+ DoubleToString( ss_iTarget, digits);               
+   text += "\n($) Global Trend: ss_ITrend: " + (string) ss_ITrend +"; ss_vITrend: "+ (string) ss_vITrend + "; ss_iStoploss: " +DoubleToString(ss_iStoploss,digits) + 
+            "; ss_iOrderBlock: "+ DoubleToString(ss_iOrderBlock, digits) +"; ss_iSnR: "+ DoubleToString (ss_iSnR, digits) + "; ss_iTarget: "+ DoubleToString( ss_iTarget, digits)
+            + "; ss_mitigate_iOrderFlow: "+ (string) ss_mitigate_iOrderFlow + "; ss_mitigate_iOrderBlock: "+ (string) ss_mitigate_iOrderBlock;
    return text;
 }
