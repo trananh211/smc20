@@ -1744,16 +1744,29 @@ struct marketStructs{
       int countPosition = 0;
       countPosition = checkPositionRunning();
       if (countPosition > 0) return;
-      // 2. Đạt điều kiện về trùng hướng trend và volume Trend break của HTF
-      // 3. Đạt điều kiện về trùng trend của Low TF với HTF
-      if (gl_mTrend == gl_vMTrend && gl_mTrend == tfData.mTrend && tfData.mTrend == tfData.iTrend && tfData.iTrend == tfData.vItrend) {
-         // 3.1 DĐạt điều kiện là giá phải đang nằm trong Order Flow của HTF
-         if (ss_mitigate_iOrderFlow == 1) {
-            // Gọi hàm với điều kiện khắt khe hơn vì chưa vào order block. Cần double break out để khẳng định
-         }
-         // 3.2 DĐạt điều kiện giá phải nằm trong Order Block của HTF
+      if (
+         gl_mTrend == gl_vMTrend && // 2. Đạt điều kiện về trùng hướng trend và volume Trend break của HTF
+            gl_mTrend == gl_iTrend && gl_iTrend == gl_vITrend && // 2.1 Đạt điều kiện về Internal trùng với Marjor; Internal đồng nhất với volume của HTF
+            gl_iTrend == tfData.mTrend && // 3. Đạt điều kiện về trùng trend của marjor LTF với Internal HTF
+               tfData.mTrend == tfData.iTrend && // 3.1 DĐạt điều kiện về trùng Internal Trend với Marjor Trend của LTF
+                  tfData.iTrend == tfData.vItrend // 3.2 DĐạt điều kiện về Internal Trend break với volume đồng nhất
+         ) {
+         // 3.3 DĐạt điều kiện giá phải nằm trong Order Block của HTF
          if (ss_mitigate_iOrderBlock == 1) {
             // Gọi hàm với điều kiện ít hơn vì đã chạm order block của HTF. Chỉ cần break out 1 lần để khẳng định
+            if (tfData.iTrend == 1) {
+               Print("BUY BUY BUY BUY BUY BUY BUY 222");
+            } else {
+               Print("SELL SELL SELL SELL SELL SELL 222");
+            }
+            //if(gl_iTrend == )
+         } else if (ss_mitigate_iOrderFlow == 1) { // 3.4 Đạt điều kiện là giá phải đang nằm trong Order Flow của HTF
+            // Gọi hàm với điều kiện khắt khe hơn vì chưa vào order block. Cần double break out để khẳng định
+            if (tfData.iTrend == 1) {
+               Print("BUY BUY BUY BUY BUY BUY BUY 111");
+            } else {
+               Print("SELL SELL SELL SELL SELL SELL 111");
+            }
          }
       }
       
@@ -1854,7 +1867,6 @@ struct marketStructs{
             if (i == skip_key) continue;
             // chi kiem tra zone not mitigate va mitigating
             if (zone[i].mitigated == -1) continue;
-            
             // neu dang check bullish zone
             if (type == 1) {
                if( bar1.low > zone[i].high) continue; 
