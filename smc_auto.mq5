@@ -96,6 +96,13 @@ input color color_Global_Internal_Bullish_Zone = clrOliveDrab; // Low Internal b
 input color color_Global_Internal_Bearish_Zone = clrFireBrick; // Low Internal bearish
 
 // End #region variale declaration
+// Value HighTimeFrame to Global setup
+int gl_sTrend;
+int gl_vSTrend;
+int gl_mTrend;
+int gl_vMTrend;
+int gl_iTrend;
+int gl_vITrend;
 
 // Settings structure default High Timeframe to LowTimeframe
 bool ss_IntScanActive = false;
@@ -1724,6 +1731,42 @@ struct marketStructs{
       }
       // For develop
       showPoiComment(tfData);
+      
+      // Gọi hàm vào lệnh
+      if (tfData.isHighTF == false) {
+         afterCheckMarketForTrade(tfData);
+      }
+   }
+   
+   // Hàm vào lệnh theo điều kiện của EA
+   void afterCheckMarketForTrade(TimeFrameData& tfData) {
+      // 1. Chưa có lệnh nào đang chạy của cặp tiền này
+      int countPosition = 0;
+      countPosition = checkPositionRunning();
+      if (countPosition > 0) return;
+      // 2. Đạt điều kiện về trùng hướng trend và volume Trend break của HTF
+      // 3. Đạt điều kiện về trùng trend của Low TF với HTF
+      if (gl_mTrend == gl_vMTrend && gl_mTrend == tfData.mTrend && tfData.mTrend == tfData.iTrend && tfData.iTrend == tfData.vItrend) {
+         // 3.1 DĐạt điều kiện là giá phải đang nằm trong Order Flow của HTF
+         if (ss_mitigate_iOrderFlow == 1) {
+            // Gọi hàm với điều kiện khắt khe hơn vì chưa vào order block. Cần double break out để khẳng định
+         }
+         // 3.2 DĐạt điều kiện giá phải nằm trong Order Block của HTF
+         if (ss_mitigate_iOrderBlock == 1) {
+            // Gọi hàm với điều kiện ít hơn vì đã chạm order block của HTF. Chỉ cần break out 1 lần để khẳng định
+         }
+      }
+      
+      // 4. Điều kiện vào lệnh là: 
+      // 4.1 đỉnh (đáy) internal hiện tại của LTF phải thấp (cao) hơn với ssTarget của nó
+      // 4.2 khoảng cách phải đủ pip để vào được tối thiểu 2 đơn vị lot
+      // 
+   }
+   
+   // Hàm kiểm tra số lượng lệnh của chính cặp tiền đó đang chạy
+   int checkPositionRunning() {
+      int count = 0;
+      return count;
    }
    
    // Todo: Kiểm tra lần lượt zone đã mitigate hay chưa
@@ -2100,7 +2143,7 @@ struct marketStructs{
             // Scan poizone low timeframe thuộc Internal Break high timeframe bullish
             if(tfData.isHighTF) ss_IntScanActive = true;
          }
-         
+                  
          if(StringLen(textInternalHigh) > 0) {
             text_all += str_internal+" (Swing) "+str_internal_high+textInternalHigh;
          }
@@ -2786,6 +2829,11 @@ struct marketStructs{
             text_all += str_internal+" (Break) "+textInternalLow;
          }
       }
+      // Set Global Value of High Timeframe
+      if (tfData.isHighTF) {
+         gl_iTrend = tfData.iTrend;
+         gl_vITrend = tfData.vItrend;
+      } 
       return text_all;
    } //--- End Ham cap nhat cau truc song Gann
    
@@ -3699,6 +3747,16 @@ struct marketStructs{
       //   Print(textall);
       //   //showComment(tfData);
       //}
+      
+      // Set Global Value of High Timeframe
+      if (tfData.isHighTF) {
+         gl_sTrend = tfData.sTrend;
+         gl_vSTrend = tfData.vSTrend;
+         
+         gl_mTrend = tfData.mTrend;
+         gl_vMTrend = tfData.vMTrend;
+      } 
+      
       if (StringLen(text) > 0) {
          textall += str_marjor+text;
       }
@@ -4000,7 +4058,6 @@ struct marketStructs{
          }
          drawLine(IDM_TEXT_LIVE, tfData.idmLowTime, tfData.idmLow, bar1.time, tfData.idmLow, -1, IDM_TEXT_LIVE, tfData.tfColor, STYLE_DOT);
       }     
-      
    }
 
 }; //--- End marketStructs
@@ -4586,5 +4643,6 @@ string getValueTrend(TimeFrameData& tfData) {
    text += "\n($) Global Trend: ss_ITrend: " + (string) ss_ITrend +"; ss_vITrend: "+ (string) ss_vITrend + "; ss_iStoploss: " +DoubleToString(ss_iStoploss,digits) + 
             "; ss_iOrderBlock: "+ DoubleToString(ss_iOrderBlock, digits) +"; ss_iSnR: "+ DoubleToString (ss_iSnR, digits) + "; ss_iTarget: "+ DoubleToString( ss_iTarget, digits)
             + "; ss_mitigate_iOrderFlow: "+ (string) ss_mitigate_iOrderFlow + "; ss_mitigate_iOrderBlock: "+ (string) ss_mitigate_iOrderBlock;
+   text += "\n($) HTF: sTrend: "+(string) gl_sTrend+"("+(string) gl_vSTrend+") ; mTrend: "+(string) gl_mTrend+"("+(string) gl_vMTrend+") ; iTrend: "+(string) gl_iTrend+"("+(string) gl_vITrend+")";
    return text;
 }
