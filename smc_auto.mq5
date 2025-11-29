@@ -1756,15 +1756,29 @@ struct marketStructs{
             // Gọi hàm với điều kiện ít hơn vì đã chạm order block của HTF. Chỉ cần break out 1 lần để khẳng định
             if (tfData.iTrend == 1) {
                Print("BUY BUY BUY BUY BUY BUY BUY 222");
+               if (ArraySize(zArrPoiZoneLTFBullishBelongHighTF) > 0) {
+                  for(int i=0;i<total;i++) {
+                     
+                  }
+               }
             } else {
+               if (ArraySize(zArrPoiZoneLTFBearishBelongHighTF) > 0) {
+               
+               }
                Print("SELL SELL SELL SELL SELL SELL 222");
             }
             //if(gl_iTrend == )
          } else if (ss_mitigate_iOrderFlow == 1) { // 3.4 Đạt điều kiện là giá phải đang nằm trong Order Flow của HTF
             // Gọi hàm với điều kiện khắt khe hơn vì chưa vào order block. Cần double break out để khẳng định
             if (tfData.iTrend == 1) {
+               if (ArraySize(zArrPoiZoneLTFBullishBelongHighTF) > 0) {
+               
+               }
                Print("BUY BUY BUY BUY BUY BUY BUY 111");
             } else {
+               if (ArraySize(zArrPoiZoneLTFBearishBelongHighTF) > 0) {
+               
+               }
                Print("SELL SELL SELL SELL SELL SELL 111");
             }
          }
