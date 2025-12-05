@@ -1185,7 +1185,10 @@ void setGlobalValueLowToHighTF(TimeFrameData& tfData) {
       ss_iTarget = tfData.iTarget;
       ss_iTargetTime = tfData.iTargetTime;
       ss_mitigate_iOrderBlock = 0;
-      if (ss_iTarget != 0) ss_mitigate_iOrderFlow = 0;
+      if (ss_iTarget != 0) {
+         ss_mitigate_iOrderFlow = 0;
+         ss_mitigate_iOrderBlock = 0;
+      }
    }
 }
 
@@ -1704,7 +1707,7 @@ struct marketStructs{
       textall += "\n"+inInfoBar(bar1, bar2, bar3);
       //textall += "\nFirst: "+getValueTrend(tfData);
       //Print(text);
-      resultStructure = drawStructureInternal(tfData, bar1, bar2, bar3, enabledComment);
+      resultStructure = drawStructureInternal(tfData, bar1, bar2, bar3, disableComment);
       if (StringLen(resultStructure) > 0) {
          text += resultStructure;
          textall += resultStructure;
@@ -1729,8 +1732,8 @@ struct marketStructs{
       if (StringLen(text) > 0) {
          Print(textall);
       }
-      // For develop
-      showPoiComment(tfData);
+      //// For develop
+      //showPoiComment(tfData);
       
       // Gọi hàm vào lệnh
       if (tfData.isHighTF == false) {
@@ -1740,46 +1743,103 @@ struct marketStructs{
    
    // Hàm vào lệnh theo điều kiện của EA
    void afterCheckMarketForTrade(TimeFrameData& tfData) {
+      int count = 0;
+      int key_actived = -1;
       // 1. Chưa có lệnh nào đang chạy của cặp tiền này
       int countPosition = 0;
       countPosition = checkPositionRunning();
       if (countPosition > 0) return;
+      
+      
+      
+      // OPTIONS 1: Tuyệt đối
       if (
          gl_mTrend == gl_vMTrend && // 2. Đạt điều kiện về trùng hướng trend và volume Trend break của HTF
             gl_mTrend == gl_iTrend && gl_iTrend == gl_vITrend && // 2.1 Đạt điều kiện về Internal trùng với Marjor; Internal đồng nhất với volume của HTF
-            gl_iTrend == tfData.mTrend && // 3. Đạt điều kiện về trùng trend của marjor LTF với Internal HTF
-               tfData.mTrend == tfData.iTrend && // 3.1 DĐạt điều kiện về trùng Internal Trend với Marjor Trend của LTF
+            //gl_iTrend == tfData.mTrend && // 3. Đạt điều kiện về trùng trend của marjor LTF với Internal HTF
+            //   tfData.mTrend == tfData.iTrend && // 3.1 DĐạt điều kiện về trùng Internal Trend với Marjor Trend của LTF
                   tfData.iTrend == tfData.vItrend // 3.2 DĐạt điều kiện về Internal Trend break với volume đồng nhất
          ) {
          // 3.3 DĐạt điều kiện giá phải nằm trong Order Block của HTF
          if (ss_mitigate_iOrderBlock == 1) {
             // Gọi hàm với điều kiện ít hơn vì đã chạm order block của HTF. Chỉ cần break out 1 lần để khẳng định
             if (tfData.iTrend == 1) {
-               Print("BUY BUY BUY BUY BUY BUY BUY 222");
-               if (ArraySize(zArrPoiZoneLTFBullishBelongHighTF) > 0) {
-                  for(int i=0;i<total;i++) {
-                     
-                  }
+               
+               key_actived = getMitigatingPoiZoneActived(zArrPoiZoneLTFBullishBelongHighTF);
+               if (key_actived >= 0) {
+                  count++;
+                  Print("BUY BUY BUY BUY BUY BUY BUY 1.222");
                }
             } else {
-               if (ArraySize(zArrPoiZoneLTFBearishBelongHighTF) > 0) {
-               
+               key_actived = getMitigatingPoiZoneActived(zArrPoiZoneLTFBearishBelongHighTF);
+               if (key_actived >= 0) {
+                  count++;
+                  Print("SELL SELL SELL SELL SELL SELL -1.222");
                }
-               Print("SELL SELL SELL SELL SELL SELL 222");
+               
             }
             //if(gl_iTrend == )
          } else if (ss_mitigate_iOrderFlow == 1) { // 3.4 Đạt điều kiện là giá phải đang nằm trong Order Flow của HTF
             // Gọi hàm với điều kiện khắt khe hơn vì chưa vào order block. Cần double break out để khẳng định
             if (tfData.iTrend == 1) {
-               if (ArraySize(zArrPoiZoneLTFBullishBelongHighTF) > 0) {
-               
+               key_actived = getMitigatingPoiZoneActived(zArrPoiZoneLTFBullishBelongHighTF);
+               if (key_actived >= 0) {
+                  count++;
+                  Print("BUY BUY BUY BUY BUY BUY BUY 1.111");
                }
-               Print("BUY BUY BUY BUY BUY BUY BUY 111");
+               
             } else {
-               if (ArraySize(zArrPoiZoneLTFBearishBelongHighTF) > 0) {
-               
+               key_actived = getMitigatingPoiZoneActived(zArrPoiZoneLTFBearishBelongHighTF);
+               if (key_actived >= 0) {
+                  count++;
+                  Print("SELL SELL SELL SELL SELL SELL -1.111");
                }
-               Print("SELL SELL SELL SELL SELL SELL 111");
+               
+            }
+         }
+      }
+      
+      
+      // OPTIONS 2: điều kiện không tuyệt đối. Chỉ cần xu hướng đúng. Bắt buộc phải phản ứng ở Order Block HTF
+      else if (gl_mTrend == gl_iTrend && gl_iTrend == tfData.mTrend && 
+      
+            gl_iTrend == tfData.iTrend && tfData.iTrend == tfData.vItrend ) {
+         if (ss_mitigate_iOrderBlock == 1) { // 3.4 Đạt điều kiện là giá phải đang nằm trong Order Flow của HTF
+            // Gọi hàm với điều kiện khắt khe hơn vì chưa vào order block. Cần double break out để khẳng định
+            if (tfData.iTrend == 1) {
+               key_actived = getMitigatingPoiZoneActived(zArrPoiZoneLTFBullishBelongHighTF);
+               if (key_actived >= 0) {
+                  count++;
+                  Print("BUY BUY BUY BUY BUY BUY BUY 2.111");
+               }
+            } else {
+               key_actived = getMitigatingPoiZoneActived(zArrPoiZoneLTFBearishBelongHighTF);
+               if (key_actived >= 0) {
+                  count++;
+                  Print("SELL SELL SELL SELL SELL SELL -2.111");
+               }
+            }
+         }
+      }
+      
+      // OPTIONS 3: điều kiện không tuyệt đối. Chỉ cần xu hướng đúng. Bắt buộc phải phản ứng ở Order Block HTF
+      else if (gl_iTrend == gl_vITrend && 
+         tfData.mTrend == tfData.iTrend &&
+         gl_iTrend == tfData.iTrend && tfData.iTrend == tfData.vItrend ) {
+         if (ss_mitigate_iOrderBlock == 1) { // 3.4 Đạt điều kiện là giá phải đang nằm trong Order Flow của HTF
+            // Gọi hàm với điều kiện khắt khe hơn vì chưa vào order block. Cần double break out để khẳng định
+            if (tfData.iTrend == 1) {
+               key_actived = getMitigatingPoiZoneActived(zArrPoiZoneLTFBullishBelongHighTF);
+               if (key_actived >= 0) {
+                  count++;
+                  Print("BUY BUY BUY BUY BUY BUY BUY 3.111");
+               }
+            } else {
+               key_actived = getMitigatingPoiZoneActived(zArrPoiZoneLTFBearishBelongHighTF);
+               if (key_actived >= 0) {
+                  count++;
+                  Print("SELL SELL SELL SELL SELL SELL -3.111");
+               }
             }
          }
       }
@@ -1788,6 +1848,25 @@ struct marketStructs{
       // 4.1 đỉnh (đáy) internal hiện tại của LTF phải thấp (cao) hơn với ssTarget của nó
       // 4.2 khoảng cách phải đủ pip để vào được tối thiểu 2 đơn vị lot
       // 
+      
+      if (count > 0) {
+         showPoiComment(tfData);
+      }
+   }
+   
+   // Chưa active Order Flow
+   int getMitigatingPoiZoneActived(PoiZone& zone[]) {
+      int key = -1;
+      if (ArraySize(zone) > 0) {
+         for(int i=0;i<ArraySize(zone);i++) {
+             if (zone[i].mitigated == -1) continue;
+             if (zone[i].mitigated == 1) {
+               key = i;
+               break;
+             }
+         }
+      }
+      return key;
    }
    
    // Hàm kiểm tra số lượng lệnh của chính cặp tiền đó đang chạy
@@ -1834,6 +1913,7 @@ struct marketStructs{
    
    // Hàm chỉ kiểm tra ss Global đã mitigate order flow hoặc order block hay chưa
    void getIsMitigateGlobal(MqlRates& bar1) {
+      if (ss_iTarget == 0) return;
       if (ss_ITrend == 1) {
          // Kiểm tra order flow
          if (ss_mitigate_iOrderFlow == 0 && bar1.low < ss_iSnR && bar1.low > ss_iStoploss) {
@@ -2860,6 +2940,11 @@ struct marketStructs{
          gl_iTrend = tfData.iTrend;
          gl_vITrend = tfData.vItrend;
       } 
+      
+      if (isComment == false) {
+         text_all = "";
+      }
+      
       return text_all;
    } //--- End Ham cap nhat cau truc song Gann
    
@@ -3782,10 +3867,15 @@ struct marketStructs{
          gl_mTrend = tfData.mTrend;
          gl_vMTrend = tfData.vMTrend;
       } 
-      
-      if (StringLen(text) > 0) {
-         textall += str_marjor+text;
+ 
+      if (isComment == false) {
+         textall = "";
+      } else {
+         if (StringLen(text) > 0) {
+            textall += str_marjor+text;
+         }
       }
+      
       return textall;
    } //--- End Ham cap nhat cau truc thi truong : updatePointTopBot
     
@@ -4590,7 +4680,10 @@ void showPoiComment(TimeFrameData& tfData) {
    }
    
    //text += "\nEND Timeframe: "+ EnumToString(tfData.timeFrame);
-   if (show) Print(text);
+   if (show) {
+      Print(getValueTrend(tfData));
+      Print(text);
+   }
 }
 
 void showComment(TimeFrameData& tfData) {
