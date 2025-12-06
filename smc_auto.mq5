@@ -1721,15 +1721,15 @@ struct marketStructs{
             if (gl_iTrend == tfData.mTrend ) {
                if (gl_iTrend == gl_vITrend) {
                   if (tfData.mTrend == tfData.vMTrend) { // x1 + y1 + z1
-                     checkPositionAccessForTrade(tfData, 3);
+                     checkPositionAccessForTrade(tfData, 3, "x1 + y1 + z1");
                   } else { // x2?
-                     checkPositionAccessForTrade(tfData, 1);
+                     checkPositionAccessForTrade(tfData, 1, "x2 ?");
                   }
                } else {
                   if (tfData.mTrend == tfData.vMTrend) { // x3 + y3
-                     checkPositionAccessForTrade(tfData, 2);
+                     checkPositionAccessForTrade(tfData, 2, "x3 + y3");
                   } else { // x4?
-                     checkPositionAccessForTrade(tfData, 1);
+                     checkPositionAccessForTrade(tfData, 1, "x4 ?");
                   }
                }
             }
@@ -1737,11 +1737,11 @@ struct marketStructs{
             else if (gl_iTrend != tfData.mTrend) {
                if (gl_iTrend == gl_vITrend) {
                   if (tfData.mTrend != tfData.vMTrend) { // x5?
-                     checkPositionAccessForTrade(tfData, 1);
+                     checkPositionAccessForTrade(tfData, 1, "x5 ?");
                   }
                } else {
                   if (tfData.mTrend != tfData.vMTrend) { // x6
-                     checkPositionAccessForTrade(tfData, 1);
+                     checkPositionAccessForTrade(tfData, 1, "x6");
                   }
                }
             }
@@ -1752,11 +1752,11 @@ struct marketStructs{
             if (gl_iTrend != tfData.mTrend) {
                if (gl_iTrend == gl_vITrend) {
                   if (tfData.mTrend != tfData.vMTrend) { // x8
-                     checkPositionAccessForTrade(tfData, 1);
+                     checkPositionAccessForTrade(tfData, 1, "x8");
                   }
                } else {
                   if (tfData.mTrend != tfData.vMTrend) { // x7
-                     checkPositionAccessForTrade(tfData, 1);
+                     checkPositionAccessForTrade(tfData, 1, "x7");
                   }
                }
             }
@@ -1764,15 +1764,15 @@ struct marketStructs{
             else if (gl_iTrend == tfData.mTrend) {
                if (gl_iTrend == gl_vITrend) {
                   if (tfData.mTrend == tfData.vMTrend) { // x12 + y12
-                     checkPositionAccessForTrade(tfData, 2);
+                     checkPositionAccessForTrade(tfData, 2, "x12 + y12");
                   } else { // x11 ?
-                     checkPositionAccessForTrade(tfData, 1);
+                     checkPositionAccessForTrade(tfData, 1, "x11 ?");
                   }
                } else {
                   if (tfData.mTrend == tfData.vMTrend) { // x10 + y 10 
-                     checkPositionAccessForTrade(tfData, 2);
+                     checkPositionAccessForTrade(tfData, 2, "x10 + y 10");
                   } else { // x9 ?
-                     checkPositionAccessForTrade(tfData, 1);
+                     checkPositionAccessForTrade(tfData, 1, "x9 ?");
                   }
                }
             }
@@ -1787,50 +1787,50 @@ struct marketStructs{
    }
    
    // Hàm kiểm tra vị trí của nến hiện tại có đủ điều kiện vào lệnh theo từng loại hay không
-   void checkPositionAccessForTrade(TimeFrameData& tfData, int type = 0) {
+   void checkPositionAccessForTrade(TimeFrameData& tfData, int type = 0, string text = "") {
       string string_type = "";
       int type_trend = 0;
       if (type == 1) { // Chỉ vào lệnh ở OB HTF
          if (ss_mitigate_iOrderBlock == 1) {
             // Gọi hàm với điều kiện khắt khe hơn vì chưa vào order block. Cần double break out để khẳng định
             if (gl_iTrend == 1) {
-               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBullishBelongHighTF, 1, "Only OB1");
+               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBullishBelongHighTF, 1, "Only OB1 "+ text);
             } else if (gl_iTrend == -1){
-               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBearishBelongHighTF, -1, "Only OB1");
+               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBearishBelongHighTF, -1, "Only OB1 "+ text);
             }
          }
       } else if (type == 2) { // Chỉ vào lệnh ở OB + OF HTF
          if (ss_mitigate_iOrderBlock == 1) { 
             if (gl_iTrend == 1) {
-               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBullishBelongHighTF, 1, "OB 2");
+               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBullishBelongHighTF, 1, "OB 2 "+ text);
             } else if (gl_iTrend == -1){
-               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBearishBelongHighTF, -1, "OB 2");
+               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBearishBelongHighTF, -1, "OB 2 "+ text);
             }
          } else if (ss_mitigate_iOrderFlow == 1) {
             if (gl_iTrend == 1) {
-               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBullishBelongHighTF, 1, "OF 2");
+               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBullishBelongHighTF, 1, "OF 2 "+ text);
             } else if (gl_iTrend == -1){
-               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBearishBelongHighTF, -1, "OF 2");
+               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBearishBelongHighTF, -1, "OF 2 "+ text);
             }
          }
       } else if (type == 3) { // Vào lệnh cả OB + OF và Non OF sau Break HTF
          if (ss_mitigate_iOrderBlock == 1) { 
             if (gl_iTrend == 1) {
-               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBullishBelongHighTF, 1, "OB 3");
+               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBullishBelongHighTF, 1, "OB 3 "+ text);
             } else if (gl_iTrend == -1){
-               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBearishBelongHighTF, -1, "OB 3");
+               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBearishBelongHighTF, -1, "OB 3 "+ text);
             }
          } else if (ss_mitigate_iOrderFlow == 1) {
             if (gl_iTrend == 1) {
-               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBullishBelongHighTF, 1, "OF 3");
+               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBullishBelongHighTF, 1, "OF 3 "+ text);
             } else if (gl_iTrend == -1){
-               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBearishBelongHighTF, -1, "OF 3");
+               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBearishBelongHighTF, -1, "OF 3 "+ text);
             }
          } else if (ss_mitigate_iOrderBlock != 1 && ss_mitigate_iOrderFlow != 1) {
             if (gl_iTrend == 1) {
-               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBullishBelongHighTF, 1, "NON OB OF 3");
+               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBullishBelongHighTF, 1, "NON OB OF 3 "+ text);
             } else if (gl_iTrend == -1){
-               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBearishBelongHighTF, -1, "NON OB OF 3");
+               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBearishBelongHighTF, -1, "NON OB OF 3 "+ text);
             }
          }
       }
@@ -1847,12 +1847,13 @@ struct marketStructs{
             }
          }
          if (key >= 0) {
-            Print(getValueTrend(tfData));
+            
             if (type == 1) {
                Print("BUY  BUY BUY "+ str_options);
             } else if (type == -1) {
                Print("SEL SELL SELL "+ str_options);
             }
+            Print(getValueTrend(tfData));
          }
          
       }
