@@ -103,6 +103,8 @@ int gl_mTrend;
 int gl_vMTrend;
 int gl_iTrend;
 int gl_vITrend;
+bool gl_getIdmBuy;
+bool gl_getIdmSell;
 
 // Settings structure default High Timeframe to LowTimeframe
 bool ss_IntScanActive = false;
@@ -1674,7 +1676,7 @@ struct marketStructs{
          text += resultStructure;
          textall += resultStructure;
       }   
-      resultMarjorStruct = updatePointTopBot(tfData, bar1, bar2, bar3, enabledComment);
+      resultMarjorStruct = updatePointTopBot(tfData, bar1, bar2, bar3, disableComment);
       if (StringLen(resultMarjorStruct) > 0) {
          text += resultMarjorStruct;
          textall += resultMarjorStruct;
@@ -1849,13 +1851,12 @@ struct marketStructs{
          if (key >= 0) {
             
             if (type == 1) {
-               Print("BUY  BUY BUY "+ str_options);
+               Print("======================================================================================================> BUY  BUY BUY "+ str_options);
             } else if (type == -1) {
-               Print("SEL SELL SELL "+ str_options);
+               Print("======================================================================================================> SEL SELL SELL "+ str_options);
             }
             Print(getValueTrend(tfData));
          }
-         
       }
    }
    
@@ -1910,7 +1911,7 @@ struct marketStructs{
          }
          
          // Nếu giá hit stoploss
-         if (bar1.low < ss_iStoploss) {
+         if (bar1.close < ss_iStoploss) {
             ss_mitigate_iOrderFlow = -1;
             ss_mitigate_iOrderBlock = -1;
          }
@@ -1926,7 +1927,7 @@ struct marketStructs{
          }
          
          // Nếu giá hit stoploss
-         if (bar1.high > ss_iStoploss) {
+         if (bar1.close > ss_iStoploss) {
             ss_mitigate_iOrderFlow = -1;
             ss_mitigate_iOrderBlock = -1;
          }
@@ -2969,7 +2970,7 @@ struct marketStructs{
             tfData.vol_idmLow = tfData.volHighs[0];
             
             tfData.sTrend = -1; tfData.mTrend = -1; tfData.LastSwingMajor = 1;
-            
+                        
          } else if (barHigh > tfData.arrTop[0]) { 
             text += "\n0.1. barHigh > arrTop[0]"+" => "+DoubleToString(barHigh,digits)+" > "+DoubleToString(tfData.arrTop[0], digits);
             text += " => Cap nhat idmHigh = Lows[0] = "+DoubleToString(tfData.Lows[0], digits)+"; sTrend = 1; mTrend = 1; LastSwingMajor = -1;";
@@ -2980,9 +2981,11 @@ struct marketStructs{
             tfData.idmHigh = tfData.Lows[0]; tfData.idmHighTime = tfData.LowsTime[0]; tfData.vol_idmHigh = tfData.volLows[0];
             tfData.sTrend = 1; tfData.mTrend = 1; tfData.LastSwingMajor = -1;
          }
-         //if (isComment && StringLen(text) > 0) {
-         //   Print(str_marjor+text);
-         //}
+         
+         if (tfData.isHighTF) {
+            gl_getIdmSell = false;
+            gl_getIdmBuy = false;
+         }
       }
       // End Lan dau tien
       
@@ -2997,9 +3000,9 @@ struct marketStructs{
             tfData.H_bar = bar2;
             tfData.vol_H = bar2.tick_volume;
          }
-         if (isComment && StringLen(text) > 0) {
-            Print(str_marjor+text);
-         }
+         //if (isComment && StringLen(text) > 0) {
+         //   Print(str_marjor+text);
+         //}
       }
       if (bar3.low >= bar2.low && bar2.low <= bar1.low) { // tim thay swing low 
          
@@ -3044,9 +3047,12 @@ struct marketStructs{
             tfData.sTrend = 1; tfData.mTrend = 1; tfData.LastSwingMajor = 1;
             tfData.findLow = 0; 
             tfData.idmHigh = tfData.Lows[0]; tfData.idmHighTime = tfData.LowsTime[0]; tfData.vol_idmHigh = tfData.volLows[0];
-            //if (isComment && StringLen(text) > 0) {
-            //   Print(str_marjor+text);
-            //}
+            
+            if (tfData.isHighTF) {
+               gl_getIdmSell = false;
+               gl_getIdmBuy = false;
+            }
+            
             //// BOS High by volume 
             //if (tfData.waitingArrTop == 0) {
             //   tfData.vMTrend = tfData.mTrend;
@@ -3148,6 +3154,10 @@ struct marketStructs{
                text += " | Cross IDM Uptrend M1.4";
             }
             
+            if (tfData.isHighTF) {
+               gl_getIdmBuy = true;
+            }
+            
             // Quét toàn bộ các vùng POI để Trade theo Order Block, Order Flow
             tfData.scanPoiZoneLastTime(tfData, 1);
             drawMarjorTradeZone(tfData, bar1);
@@ -3193,9 +3203,10 @@ struct marketStructs{
                text += " | CHoCH Low M1.5";
             }
             
-            //if (isComment && StringLen(text) > 0) {
-            //   Print(str_marjor+text);
-            //}
+            if (tfData.isHighTF) {
+               gl_getIdmSell = false;
+               gl_getIdmBuy = false;
+            }
             
             // CHoCH with Volume
             if (tfData.waitingArrPbLows == 0) {
@@ -3277,9 +3288,11 @@ struct marketStructs{
                text += " | Continue BOS High M1.6";
             }
             
-            //if (isComment && StringLen(text) > 0) {
-            //   Print(str_marjor+text);
-            //}
+            if (tfData.isHighTF) {
+               gl_getIdmSell = false;
+               gl_getIdmBuy = false;
+            }
+            
             // CHoCH High with Volume
             if (tfData.waitingArrPbHigh == 0) {
                tfData.vMTrend = tfData.mTrend;
@@ -3354,9 +3367,11 @@ struct marketStructs{
                text += " | CHoCH up M2.1";
             }
             
-            //if (isComment && StringLen(text) > 0) {
-            //   Print(str_marjor+text);
-            //}
+            if (tfData.isHighTF) {
+               gl_getIdmSell = false;
+               gl_getIdmBuy = false;
+            }
+            
             // CHoCH High with Volume
             if (tfData.waitingArrPbHigh == 0) {
                tfData.vSTrend = tfData.sTrend;
@@ -3399,9 +3414,11 @@ struct marketStructs{
                text += " | CHoCH Down M2.2";
             }
             
-            //if (isComment && StringLen(text) > 0) {
-            //   Print(str_marjor+text);
-            //}
+            if (tfData.isHighTF) {
+               gl_getIdmSell = false;
+               gl_getIdmBuy = false;
+            }
+            
             // CHoCH Low with Volume
             if (tfData.waitingArrPbHigh == 0) {
                tfData.vSTrend = tfData.sTrend;
@@ -3447,10 +3464,12 @@ struct marketStructs{
             
             // update waiting arr top
             tfData.waitingArrTop = 0;
-//            
-//            if (isComment && StringLen(text) > 0) {
-//               Print(str_marjor+text);
-//            }
+            
+            if (tfData.isHighTF) {
+               gl_getIdmSell = false;
+               gl_getIdmBuy = false;
+            }
+            
             //// Bos Low with Volume
             //if (tfData.waitingArrBot == 0) {
             //   tfData.vSTrend = tfData.sTrend;
@@ -3554,6 +3573,9 @@ struct marketStructs{
                text += " | Cross IDM Uptrend M-3.4";
             }
             
+            if (tfData.isHighTF) {
+               gl_getIdmSell = true;
+            }
             // Quét toàn bộ các vùng POI để Trade theo Order Block, Order Flow
             tfData.scanPoiZoneLastTime(tfData, -1);
             drawMarjorTradeZone(tfData, bar1);
@@ -3597,9 +3619,10 @@ struct marketStructs{
                text += " | CHoCH High M-3.5";
             }
             
-            //if (isComment && StringLen(text) > 0) {
-            //   Print(str_marjor+text);
-            //}
+            if (tfData.isHighTF) {
+               gl_getIdmSell = false;
+               gl_getIdmBuy = false;
+            }
             
             // CHoCH High with Volume
             if (tfData.waitingArrPbHigh == 0) {
@@ -3682,9 +3705,10 @@ struct marketStructs{
                text += " | Continue BOS Low M-3.6";
             }
             
-            //if (isComment && StringLen(text) > 0) {
-            //   Print(str_marjor+text);
-            //}
+            if (tfData.isHighTF) {
+               gl_getIdmSell = false;
+               gl_getIdmBuy = false;
+            }
             
             // CHoCH with Volume
             if (tfData.waitingArrPbLows == 0) {
@@ -3761,9 +3785,11 @@ struct marketStructs{
                text += " | CHoCH Low M-4.1";
             }
             
-            //if (isComment && StringLen(text) > 0) {
-            //   Print(str_marjor+text);
-            //}
+            if (tfData.isHighTF) {
+               gl_getIdmSell = false;
+               gl_getIdmBuy = false;
+            }
+            
             // CHoCH Low with Volume
             if (tfData.waitingArrPbLows == 0) {
                tfData.vSTrend = tfData.sTrend;
@@ -3808,9 +3834,11 @@ struct marketStructs{
                text += " | CHoCH up M-4.2";
             }
             
-            //if (isComment && StringLen(text) > 0) {
-            //   Print(str_marjor+text);
-            //}
+            if (tfData.isHighTF) {
+               gl_getIdmSell = false;
+               gl_getIdmBuy = false;
+            }
+            
             // CHoCH Low with Volume
             if (tfData.waitingArrPbHigh == 0) {
                tfData.vSTrend = tfData.sTrend;
@@ -3857,9 +3885,6 @@ struct marketStructs{
          if (StringLen(text) > 0) {
             textall += str_marjor+text;
          }
-      }
-      if (isComment == false) {
-         textall = "";
       }
       return textall;
    } //--- End Ham cap nhat cau truc thi truong : updatePointTopBot
@@ -4747,6 +4772,6 @@ string getValueTrend(TimeFrameData& tfData) {
    text += "\n($) Global Trend: ss_ITrend: " + (string) ss_ITrend +"; ss_vITrend: "+ (string) ss_vITrend + "; ss_iStoploss: " +DoubleToString(ss_iStoploss,digits) + 
             "; ss_iOrderBlock: "+ DoubleToString(ss_iOrderBlock, digits) +"; ss_iSnR: "+ DoubleToString (ss_iSnR, digits) + "; ss_iTarget: "+ DoubleToString( ss_iTarget, digits)
             + "; ss_mitigate_iOrderFlow: "+ (string) ss_mitigate_iOrderFlow + "; ss_mitigate_iOrderBlock: "+ (string) ss_mitigate_iOrderBlock;
-   text += "\n($) HTF: sTrend: "+(string) gl_sTrend+"("+(string) gl_vSTrend+") ; mTrend: "+(string) gl_mTrend+"("+(string) gl_vMTrend+") ; iTrend: "+(string) gl_iTrend+"("+(string) gl_vITrend+")";
+   text += "\n($) HTF: sTrend: "+(string) gl_sTrend+"("+(string) gl_vSTrend+") ; mTrend: "+(string) gl_mTrend+"("+(string) gl_vMTrend+") ; iTrend: "+(string) gl_iTrend+"("+(string) gl_vITrend+")"+") ; getIdmBuy: "+(string) gl_getIdmBuy+"- getIdmSell: "+(string) gl_getIdmSell;
    return text;
 }
