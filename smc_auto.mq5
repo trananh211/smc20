@@ -1725,7 +1725,7 @@ struct marketStructs{
          Print(textall);
       }
       //// For develop
-      //showPoiComment(tfData);
+      showPoiComment(tfData);
       
       // Gọi hàm vào lệnh
       if (tfData.isHighTF == false) {
@@ -1744,69 +1744,110 @@ struct marketStructs{
       // 2. Kiểm tra tồn tại OB hoặc OF hay không
       if (ss_iStoploss == 0 || ss_iTarget == 0) return;
       if (ArraySize(zArrPoiZoneLTFBearishBelongHighTF) == 0 && ArraySize(zArrPoiZoneLTFBullishBelongHighTF)== 0) return;
-      // 3. Bắt đầu kiểm tra điều kiện vào lệnh
+      // 3. Bắt đầu kiểm tra điều kiện vào lệnh      
       if (gl_iTrend == tfData.iTrend && tfData.iTrend == tfData.vItrend) {
-         if (gl_mTrend == gl_iTrend) {
-            // Option 1: tuyệt đối
-            if (gl_iTrend == tfData.mTrend ) {
-               if (gl_iTrend == gl_vITrend) {
-                  if (tfData.mTrend == tfData.vMTrend) { // x1 + y1 + z1
-                     checkPositionAccessForTrade(tfData, 3, "x1 + y1 + z1");
-                  } else { // x2?
-                     checkPositionAccessForTrade(tfData, 1, "x2 ?");
+         // 3.1 kiểm tra xem đã get IDM High TF hay chưa
+         // Neu chua get IDM HTF thi duoc phep mua ban theo Internal HTF
+         if (gl_getIdmBuy == false && gl_getIdmSell == false) {
+            if (gl_mTrend == gl_iTrend) { // I va III: thuan trend
+               if (gl_iTrend == tfData.mTrend) { // Option 1: I. tuyệt đối
+                  if (tfData.mTrend == tfData.vMTrend) { // X1 + X3
+                     if (gl_iTrend == gl_vITrend) { // x1
+                        checkPositionAccessForTrade(tfData, 3, "xyz1 Not get IDM");
+                     } else { // x3
+                        checkPositionAccessForTrade(tfData, 2, "xy3 Not get IDM");
+                     }
+                  } else { // X2 + X4
+                     if (gl_iTrend == gl_vITrend) {
+                        checkPositionAccessForTrade(tfData, 1, "x2 Not get IDM");
+                     } else {
+                        checkPositionAccessForTrade(tfData, 1, "x4 Not get IDM");
+                     }
+                     
                   }
-               } else {
-                  if (tfData.mTrend == tfData.vMTrend) { // x3 + y3
-                     checkPositionAccessForTrade(tfData, 2, "x3 + y3");
-                  } else { // x4?
-                     checkPositionAccessForTrade(tfData, 1, "x4 ?");
-                  }
-               }
-            }
-            // Option 2: ko chắc
-            else if (gl_iTrend != tfData.mTrend) {
-               if (gl_iTrend == gl_vITrend) {
-                  if (tfData.mTrend != tfData.vMTrend) { // x5?
-                     checkPositionAccessForTrade(tfData, 1, "x5 ?");
-                  }
-               } else {
-                  if (tfData.mTrend != tfData.vMTrend) { // x6
-                     checkPositionAccessForTrade(tfData, 1, "x6");
-                  }
-               }
-            }
-            
-         } else { // gl_mTrend != gl_iTrend
-            
-            // Option 3: ko chắc
-            if (gl_iTrend != tfData.mTrend) {
-               if (gl_iTrend == gl_vITrend) {
-                  if (tfData.mTrend != tfData.vMTrend) { // x8
-                     checkPositionAccessForTrade(tfData, 1, "x8");
-                  }
-               } else {
-                  if (tfData.mTrend != tfData.vMTrend) { // x7
-                     checkPositionAccessForTrade(tfData, 1, "x7");
+               } else if (gl_iTrend != tfData.mTrend) { // option III: Không chắc 2
+                  if (tfData.mTrend != tfData.vMTrend) { // X6 + X8
+                     if (gl_iTrend == gl_vITrend) {
+                        checkPositionAccessForTrade(tfData, 1, "x6 Not get IDM");
+                     } else {
+                        checkPositionAccessForTrade(tfData, 1, "x8 Not get IDM");
+                     }
+                     
+                  } else { // X7 + X9
+                     if (gl_iTrend == gl_vITrend) { //x7
+                        //checkPositionAccessForTrade(tfData, 1, "x7 Not get IDM");
+                     } else { // x9
+                        //checkPositionAccessForTrade(tfData, 1, "x9 Not get IDM");
+                     }
                   }
                }
             }
-            // Option 4: Tương đối
-            else if (gl_iTrend == tfData.mTrend) {
-               if (gl_iTrend == gl_vITrend) {
-                  if (tfData.mTrend == tfData.vMTrend) { // x12 + y12
-                     checkPositionAccessForTrade(tfData, 2, "x12 + y12");
-                  } else { // x11 ?
-                     checkPositionAccessForTrade(tfData, 1, "x11 ?");
+         } else { // Nếu đã get IDM HTF rồi 
+            if (gl_mTrend == gl_iTrend) { // I va III: thuan trend
+               if (tfData.mTrend == gl_iTrend) {
+                  if (tfData.mTrend == tfData.vMTrend) { // X1 + X3
+                     if (gl_iTrend == gl_vITrend) {
+                        checkPositionAccessForTrade(tfData, 3, "xyz1 Geted IDM");
+                     } else {
+                        checkPositionAccessForTrade(tfData, 2, "xy3 Geted IDM");
+                     }
+                     
+                  } else { // X2 + X4
+                     if (gl_iTrend == gl_vITrend) {
+                        checkPositionAccessForTrade(tfData, 1, "x2 Geted IDM");
+                     } else {
+                        checkPositionAccessForTrade(tfData, 1, "x4 Geted IDM");
+                     }
                   }
                } else {
-                  if (tfData.mTrend == tfData.vMTrend) { // x10 + y 10 
-                     checkPositionAccessForTrade(tfData, 2, "x10 + y 10");
-                  } else { // x9 ?
-                     checkPositionAccessForTrade(tfData, 1, "x9 ?");
+                  if (tfData.mTrend != tfData.vMTrend) { // X6 + X8
+                     if (gl_iTrend == gl_vITrend) { // x6
+                        checkPositionAccessForTrade(tfData, 1, "x6 Geted IDM");
+                     } else { // x8
+                        checkPositionAccessForTrade(tfData, 1, "x8 Geted IDM");
+                     }
+                  } else { // X7 + X9
+                     if (gl_iTrend == gl_vITrend) {
+                        //checkPositionAccessForTrade(tfData, 1, "x7 Geted IDM");
+                     } else {
+                        //checkPositionAccessForTrade(tfData, 1, "x9 Geted IDM");
+                     }
+                  }
+               }
+            } else { // VI va VIII: nguoc trend
+               if (tfData.mTrend != gl_iTrend) { // VI: Khong chac 3
+                  if (tfData.mTrend != tfData.vMTrend) { // X13 + X15
+                     if (gl_iTrend == gl_vITrend) { // x15
+                        checkPositionAccessForTrade(tfData, 1, "x15 Geted IDM");
+                     } else { // x13
+                        checkPositionAccessForTrade(tfData, 1, "x13 Geted IDM");
+                     }
+                  } else { // X14 + X12
+                     if (gl_iTrend == gl_vITrend) { // x14
+                        //checkPositionAccessForTrade(tfData, 1, "x14 Geted IDM");
+                     } else { // x12
+                        //checkPositionAccessForTrade(tfData, 1, "x12 Geted IDM");
+                     }
+                  }
+               } else { // VIII: Tuong doi 4
+                  if (tfData.mTrend != tfData.vMTrend) { // X17 + X19
+                     if (gl_iTrend != gl_vITrend) { // x17
+                        checkPositionAccessForTrade(tfData, 1, "x17 Geted IDM");
+                     } else { // x19
+                        checkPositionAccessForTrade(tfData, 1, "x19 Geted IDM");
+                     }
+                  } else { // X18 + X20
+                     if (gl_iTrend != gl_vITrend) { // x18
+                        checkPositionAccessForTrade(tfData, 2, "x18 Geted IDM");
+                     } else { // x20
+                        checkPositionAccessForTrade(tfData, 2, "x20 Geted IDM");
+                     }
                   }
                }
             }
          }
+         
+         
       }
    }
    
@@ -1868,7 +1909,8 @@ struct marketStructs{
    
    // Hàm scan PoiZone hợp lệ để đồng pha với điều kiện dành cho mục đích trade
    void checkAccessZoneForTrade(TimeFrameData& tfData, PoiZone& zone[], int type = 0, string str_options = "") {
-      int key = -1; 
+      int key = -1;
+      string result_str = "";
       if (ArraySize(zone) > 0) {
          for(int i=0;i<ArraySize(zone);i++) {
             if (zone[i].mitigated == 1) {
@@ -1876,14 +1918,19 @@ struct marketStructs{
                break;
             }
          }
-         if (key >= 0) {
-            
+         if (key >= 0 
+            || key < 0
+            ) {
             if (type == 1) {
-               Print("======================================================================================================> BUY  BUY BUY "+ str_options);
+               result_str = "BUY: với SL = "+((key >= 0)? DoubleToString(zone[key].low, _Digits) : DoubleToString(ss_iStoploss,_Digits)) + "; TP = " + DoubleToString(ss_iTarget, _Digits);
+               //if (gl_getIdmBuy) result_str += "; Dừng Buy vì đã get Global IDM Buy";
             } else if (type == -1) {
-               Print("======================================================================================================> SEL SELL SELL "+ str_options);
+               result_str = "SELL: với SL = "+ ((key >= 0)? DoubleToString(zone[key].high, _Digits) : DoubleToString(ss_iStoploss,_Digits)) + "; TP = " + DoubleToString(ss_iTarget, _Digits);
+               //if (gl_getIdmSell) result_str += "; Dừng Sell vì đã get Global IDM Sell";
             }
+            Print(result_str + " " + str_options);
             Print(getValueTrend(tfData));
+            
          }
       }
    }
@@ -4237,6 +4284,11 @@ int OnInit()
    prewLowTFStruct.originalDefinition(lowTimeFrame);
 //---
    
+   double Ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   double Bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   
+   //CurrentSpread = NormalizeDouble(Ask - Bid, _Digits);
+   
    return(INIT_SUCCEEDED);
 }
 
@@ -4246,19 +4298,25 @@ void OnTick()
    //demoOntick();
    
    // Kiểm tra nến mới cho M5
-    if(IsNewBar(lowTimeFrame)) {
-        lowTFStruct.realTimeDefinition(lowTimeFrame);
-        // Thêm logic xử lý tại đây
-    }
-    
+   if(IsNewBar(lowTimeFrame)) {
+     lowTFStruct.realTimeDefinition(lowTimeFrame);
+     // Thêm logic xử lý tại đây
+   }
+   
    // Kiểm tra nến mới cho H1
-    if(IsNewBar(highTimeFrame)) {
-        highTFStruct.realTimeDefinition(highTimeFrame);
-        // Thêm logic xử lý tại đây
-    }
-    
-    // ham hien thi thong tin struct len chart
-    showInfoStruct();
+   if(IsNewBar(highTimeFrame)) {
+     highTFStruct.realTimeDefinition(highTimeFrame);
+     // Thêm logic xử lý tại đây
+   }
+   
+   // ham hien thi thong tin struct len chart
+   showInfoStruct();
+   
+   double Ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   double Bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   
+   // Update spread history array
+   double newSpread = NormalizeDouble(Ask - Bid, _Digits);
 }
 
 // OnDeinit function
@@ -4683,41 +4741,41 @@ bool DrawDirectionalSegment(
 void showPoiComment(TimeFrameData& tfData) {
    bool show = false;
    string text = "Timeframe: "+ (string) tfData.isTimeframe;
-   
-   if (tfData.sTrend == 1 
-      //|| tfData.sTrend == -1
-      ) {
-      //show = true;
-      //Print("zLows: "); ArrayPrint(tfData.zLows);
-      //Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
-      
-      //Print("zArrPbLow"); ArrayPrint(tfData.zArrPbLow);
-      //Print("zArrIntBullish: "); ArrayPrint(tfData.zArrIntBullish);
-      //Print("zArrPoiZoneBullish: "); ArrayPrint(tfData.zArrPoiZoneBullish);
-   }
-   if (tfData.sTrend == -1 
-      //|| tfData.sTrend == 1
-      ) {
-      //show = true;
-      //Print("zHighs: "); ArrayPrint(tfData.zHighs);
-      //Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
-      
-      //Print("zArrPbHigh"); ArrayPrint(tfData.zArrPbHigh); 
-      //Print("zArrIntBearish: "); ArrayPrint(tfData.zArrIntBearish);
-      //Print("zArrPoiZoneBearish: "); ArrayPrint(tfData.zArrPoiZoneBearish);
-   }
-   
-   if (ss_ITrend == 1) {
-      show = true;
-      //Print("zArrIntBullish: "); ArrayPrint(tfData.zArrIntBullish);
-      Print("zArrPoiZoneLTFBullishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBullishBelongHighTF);
-   }
-   
-   if (ss_ITrend == -1) {
-      show = true;
-      //Print("zArrIntBearish: "); ArrayPrint(tfData.zArrIntBearish);
-      Print("zArrPoiZoneLTFBearishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBearishBelongHighTF);
-   }
+   show =  true;
+//   if (tfData.sTrend == 1 
+//      //|| tfData.sTrend == -1
+//      ) {
+//      //show = true;
+//      //Print("zLows: "); ArrayPrint(tfData.zLows);
+//      //Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
+//      
+//      //Print("zArrPbLow"); ArrayPrint(tfData.zArrPbLow);
+//      //Print("zArrIntBullish: "); ArrayPrint(tfData.zArrIntBullish);
+//      //Print("zArrPoiZoneBullish: "); ArrayPrint(tfData.zArrPoiZoneBullish);
+//   }
+//   if (tfData.sTrend == -1 
+//      //|| tfData.sTrend == 1
+//      ) {
+//      //show = true;
+//      //Print("zHighs: "); ArrayPrint(tfData.zHighs);
+//      //Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
+//      
+//      //Print("zArrPbHigh"); ArrayPrint(tfData.zArrPbHigh); 
+//      //Print("zArrIntBearish: "); ArrayPrint(tfData.zArrIntBearish);
+//      //Print("zArrPoiZoneBearish: "); ArrayPrint(tfData.zArrPoiZoneBearish);
+//   }
+//   
+//   if (ss_ITrend == 1) {
+//      show = true;
+//      //Print("zArrIntBullish: "); ArrayPrint(tfData.zArrIntBullish);
+//      Print("zArrPoiZoneLTFBullishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBullishBelongHighTF);
+//   }
+//   
+//   if (ss_ITrend == -1) {
+//      show = true;
+//      //Print("zArrIntBearish: "); ArrayPrint(tfData.zArrIntBearish);
+//      Print("zArrPoiZoneLTFBearishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBearishBelongHighTF);
+//   }
    
    //text += "\nEND Timeframe: "+ EnumToString(tfData.timeFrame);
    if (show) {
