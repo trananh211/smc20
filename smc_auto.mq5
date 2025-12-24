@@ -4805,3 +4805,38 @@ string getValueTrend(TimeFrameData& tfData) {
    text += "\n($) HTF: sTrend: "+(string) gl_sTrend+"("+(string) gl_vSTrend+") ; mTrend: "+(string) gl_mTrend+"("+(string) gl_vMTrend+") ; iTrend: "+(string) gl_iTrend+"("+(string) gl_vITrend+")"+") ; getIdmBuy: "+(string) gl_getIdmBuy+"- getIdmSell: "+(string) gl_getIdmSell;
    return text;
 }
+
+
+double calcLots(double slPoints) {
+   double lots = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   
+   double AccountBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+   double EquityBalance = AccountInfoDouble(ACCOUNT_EQUITY);
+   double FreeMargin = AccountInfoDouble(ACCOUNT_MARGIN_FREE);
+   
+   double risk = 0;
+   switch(LotType) {
+      case 0: lots = Fixed_lot; return lots;
+      case 1: risk = AccountBalance * RiskPercent / 100; break;
+      case 2: risk = EquityBalance * RiskPercent / 100; break;
+      case 3: risk = FreeMargin * RiskPercent / 100;      
+   }
+   
+   double ticksize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
+   double tickvalue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+   double lotstep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   
+   double monneyPerLotstep = slPoints / ticksize * tickvalue * lotstep;
+   lots = MathFloor(risk / monneyPerLotstep) * lotstep;
+   
+   double minvolume = SymbolInfoDouble(Symbol(), SYMBOL_VOLUME_MIN);
+   double maxvolume = SymbolInfoDouble(Symbol(), SYMBOL_VOLUME_MAX);
+   double volumelimit = SymbolInfoDouble(Symbol(), SYMBOL_VOLUME_LIMIT);
+   
+   if (volumelimit != 0) lots = MathMin(lots, volumelimit);
+   if (maxvolume != 0) lots = MathMin(lots, SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX));
+   if (minvolume != 0) lots = MathMax(lots, SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN));
+   lots = NormalizeDouble(lots, 2);
+   
+   return lots;
+}
