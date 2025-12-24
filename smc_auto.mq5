@@ -1725,7 +1725,7 @@ struct marketStructs{
          Print(textall);
       }
       //// For develop
-      showPoiComment(tfData);
+      //showPoiComment(tfData);
       
       // Gọi hàm vào lệnh
       if (tfData.isHighTF == false) {
