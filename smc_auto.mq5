@@ -195,6 +195,12 @@ double gl_intSLowHTFRealTime;
 PoiZone zArrHTFPoiZoneHighs[];
 PoiZone zArrHTFPoiZoneLows[];
 
+// Swing Internal LTF tạm thời sau khi break Internal ở HTF. AF After Break
+double gl_H_AF_LTFRealTime;
+double gl_L_AF_LTFRealTime;
+int gl_findH;
+int gl_findL;
+
 // Poi zone low timeframe thuộc vùng trade zone High Timeframe khi High TF breakout
 PoiZone zArrPoiZoneLTFBullishBelongHighTF[]; // Poi zone Bullish
 PoiZone zArrPoiZoneLTFBearishBelongHighTF[]; // Poi zone Bearish
@@ -308,12 +314,6 @@ public:
    double L_idmHigh;
    double lastH;
    double lastL;
-   double H_lastH;
-   double L_lastHH;
-   double H_lastLL;
-   double L_lastL;
-   double motherHigh;
-   double motherLow;
    double findHigh;
    double findLow;
    MqlRates L_bar;
@@ -377,16 +377,10 @@ public:
       L_idmHigh = 0.0;
       lastH = 0.0;
       lastL = 0.0;
-      H_lastH = 0.0;
-      L_lastHH = 0.0;
-      H_lastLL = 0.0;
-      L_lastL = 0.0;
       waitingArrTop = 0;
       waitingArrBot = 0;
       waitingArrPbHigh = 0;
       waitingArrPbLows = 0;
-      motherHigh = 0.0;
-      motherLow = 0.0;
       findHigh = 0.0;
       findLow = 0.0;
       idmLowTime = 0;
@@ -1382,6 +1376,12 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
 				ss_iTargetTime = 0;
 				ss_mitigate_iOrderFlow = -1;
 				ss_mitigate_iOrderBlock = -1;
+				
+				// Reset gl_find H or L
+				gl_findH = -1;
+				gl_findL = -1;
+				gl_H_AF_LTFRealTime = -1;
+				gl_L_AF_LTFRealTime = -1;
 				// xoa du lieu de tranh vao lenh lien tuc sau khi dat target
 				tfData.ClearPoiZoneArray(zArrPoiZoneLTFBullishBelongHighTF);
 				tfData.ClearPoiZoneArray(zArrPoiZoneLTFBearishBelongHighTF);
@@ -1738,8 +1738,8 @@ struct marketStructs{
       if (StringLen(text) > 0) {
          Print(textall);
       }
-      //// For develop
-      //showPoiComment(tfData);
+      // For develop
+      showPoiComment(tfData);
       
       // Gọi hàm vào lệnh
       if (tfData.isHighTF == false) {
@@ -2161,12 +2161,6 @@ struct marketStructs{
          if(StringLen(textGannHigh) > 0) {
             text_all += str_gann+" (Swing) "+textGannHigh;
          }
-         //if (isComment) {
-         //   Print(str_gann+textGannHigh);
-         //   //ArrayPrint(tfData.Highs);
-         //   //ArrayPrint(tfData.volHighs);
-         //}
-         
          
          // Internal Structure
          str_internal_high += "\n--->Swing High: "+DoubleToString(bar2.high,_Digits) +".#SS iTrend: " +(string) tfData.iTrend+", LastSwingInternal: "+(string) tfData.LastSwingInternal;
@@ -2193,6 +2187,11 @@ struct marketStructs{
                tfData.iTargetTime = tfData.intSHighTime[0];
                tfData.iFindTarget = 0;
                textInternalHigh += " | Update High 1,2";
+               // Phan cap nhat find L cua LTF thi xac dinh duoc HighTF iTarget
+               if(tfData.isHighTF) {
+                  gl_findL = 1;
+                  gl_findH = 0;
+               } 
             }
             
             if (tfData.iFindTarget == 1) {
@@ -2200,6 +2199,11 @@ struct marketStructs{
                tfData.iTargetTime = tfData.intSHighTime[0];
                tfData.iFindTarget = 0;
                textInternalHigh += " | New High 1,1";
+               // Phan cap nhat find L cua LTF thi xac dinh duoc HighTF iTarget
+               if(tfData.isHighTF) {
+                  gl_findL = 1;
+                  gl_findH = 0;
+               } 
             }
             
             // them Zone
@@ -2211,7 +2215,9 @@ struct marketStructs{
             // Cap nhat target Internal Zone Bullish
             tfData.UpdatePoiZoneArray(tfData.zArrIntBullish,0,tfData.zIntSLows[0]);
             // Scan poizone low timeframe thuộc Internal Break high timeframe Bullish
-            if(tfData.isHighTF) ss_IntScanActive = true;
+            if(tfData.isHighTF) {
+               ss_IntScanActive = true;
+            } 
          }
          
          // HH 2
@@ -2236,6 +2242,11 @@ struct marketStructs{
                tfData.iTargetTime = tfData.intSHighTime[0];
                tfData.iFindTarget = 0;
                textInternalHigh += " | Update High 2,2";
+               // Phan cap nhat find L cua LTF thi xac dinh duoc HighTF iTarget
+               if(tfData.isHighTF) {
+                  gl_findL = 1;
+                  gl_findH = 0;
+               } 
             }
             
             if (tfData.iFindTarget == 1) {
@@ -2243,6 +2254,11 @@ struct marketStructs{
                tfData.iTargetTime = tfData.intSHighTime[0];
                tfData.iFindTarget = 0;
                textInternalHigh += " | New High 2,1";
+               // Phan cap nhat find L cua LTF thi xac dinh duoc HighTF iTarget
+               if(tfData.isHighTF) {
+                  gl_findL = 1;
+                  gl_findH = 0;
+               } 
             }
                         
             // cap nhat Zone
@@ -2257,7 +2273,9 @@ struct marketStructs{
             // Thêm mới thông số Global Target 
             setGlobalValueLowToHighTF(tfData);
             // Scan poizone low timeframe thuộc Internal Break high timeframe bullish
-            if(tfData.isHighTF) ss_IntScanActive = true;
+            if(tfData.isHighTF) {
+               ss_IntScanActive = true;
+            }
          }
                   
          // DONE 4 
@@ -2324,6 +2342,11 @@ struct marketStructs{
                tfData.iTargetTime = tfData.intSHighTime[0];
                tfData.iFindTarget = 0;
                textInternalHigh += " | New High 6";
+               // Phan cap nhat find L cua LTF thi xac dinh duoc HighTF iTarget
+               if(tfData.isHighTF) {
+                  gl_findL = 1;
+                  gl_findH = 0;
+               } 
             }
                                     
             // them Zone
@@ -2335,18 +2358,14 @@ struct marketStructs{
             // Cap nhat target Internal Zone Bullish
             tfData.UpdatePoiZoneArray(tfData.zArrIntBullish,0,tfData.zIntSLows[0]);
             // Scan poizone low timeframe thuộc Internal Break high timeframe bullish
-            if(tfData.isHighTF) ss_IntScanActive = true;
+            if(tfData.isHighTF) {
+               ss_IntScanActive = true;
+            }
          }
                   
          if(StringLen(textInternalHigh) > 0) {
             text_all += str_internal+" (Swing) "+str_internal_high+textInternalHigh;
          }
-         //if( isComment) {
-         //   Print(str_internal+textInternalHigh);
-         //   //ArrayPrint(tfData.intSHighs);
-         //   //ArrayPrint(tfData.volIntSHighs);
-         //}
-         
       }
    //   
    //   // swing low
@@ -2396,11 +2415,6 @@ struct marketStructs{
          if(StringLen(textGannLow) > 0) {
             text_all += str_gann+" (Swing) "+textGannLow;
          }
-         //if (isComment) {
-         //   Print(str_gann+textGannLow);
-         //   //ArrayPrint(tfData.Lows);
-         //   //ArrayPrint(tfData.volLows);
-         //}
          
          // Internal Structure 
          str_internal_low += "\n--->Swing Low: "+ DoubleToString(bar2.low, _Digits) +".#SS iTrend: " +(string) tfData.iTrend+", LastSwingInternal: "+(string) tfData.LastSwingInternal;
@@ -2426,6 +2440,11 @@ struct marketStructs{
                tfData.iTargetTime = tfData.intSLowTime[0];
                tfData.iFindTarget = 0;
                textInternalLow += " | Update Low -1,2";
+               // Phan cap nhat find H cua LTF thi xac dinh duoc HighTF iTarget
+               if(tfData.isHighTF) {
+                  gl_findL = 0;
+                  gl_findH = 1;
+               } 
             }
             
             if (tfData.iFindTarget == -1) {
@@ -2433,6 +2452,11 @@ struct marketStructs{
                tfData.iTargetTime = tfData.intSLowTime[0];
                tfData.iFindTarget = 0;
                textInternalLow += " | New Low -1,1";
+               // Phan cap nhat find H cua LTF thi xac dinh duoc HighTF iTarget
+               if(tfData.isHighTF) {
+                  gl_findL = 0;
+                  gl_findH = 1;
+               } 
             }
             
             // Them Zone
@@ -2444,7 +2468,9 @@ struct marketStructs{
             // Cap nhat target Internal Zone Bearish
             tfData.UpdatePoiZoneArray(tfData.zArrIntBearish,0,tfData.zIntSHighs[0]);
             // Scan poizone low timeframe thuộc Internal Break high timeframe Bearish
-            if(tfData.isHighTF) ss_IntScanActive = true;
+            if(tfData.isHighTF) {
+               ss_IntScanActive = true;
+            }
          }
          
          // LL
@@ -2470,6 +2496,11 @@ struct marketStructs{
                tfData.iTargetTime = tfData.intSLowTime[0];
                tfData.iFindTarget = 0;
                textInternalLow += " | Update Low -2,2";
+               // Phan cap nhat find H cua LTF thi xac dinh duoc HighTF iTarget
+               if(tfData.isHighTF) {
+                  gl_findL = 0;
+                  gl_findH = 1;
+               } 
             }
             
             if (tfData.iFindTarget == -1) {
@@ -2477,6 +2508,11 @@ struct marketStructs{
                tfData.iTargetTime = tfData.intSLowTime[0];
                tfData.iFindTarget = 0;
                textInternalLow += " | New Low -2,1";
+               // Phan cap nhat find H cua LTF thi xac dinh duoc HighTF iTarget
+               if(tfData.isHighTF) {
+                  gl_findL = 0;
+                  gl_findH = 1;
+               } 
             }
             
             // cap nhat Zone
@@ -2491,7 +2527,9 @@ struct marketStructs{
             // Thêm mới thông số Global Target 
             setGlobalValueLowToHighTF(tfData);
             // Scan poizone low timeframe thuộc Internal Break high timeframe Bearish
-            if(tfData.isHighTF) ss_IntScanActive = true;
+            if(tfData.isHighTF) {
+               ss_IntScanActive = true;
+            }
          }
          
          // DONE 4
@@ -2558,6 +2596,11 @@ struct marketStructs{
                tfData.iTargetTime = tfData.intSLowTime[0];
                tfData.iFindTarget = 0;
                textInternalLow += " | New Low 6";
+               // Phan cap nhat find H cua LTF thi xac dinh duoc HighTF iTarget
+               if(tfData.isHighTF) {
+                  gl_findL = 0;
+                  gl_findH = 1;
+               } 
             }
             
             // them Zone
@@ -2569,18 +2612,14 @@ struct marketStructs{
             // Cap nhat target Internal Zone Bearish
             tfData.UpdatePoiZoneArray(tfData.zArrIntBearish,0,tfData.zIntSHighs[0]);
             // Scan poizone low timeframe thuộc Internal Break high timeframe Bearish
-            if(tfData.isHighTF) ss_IntScanActive = true;
+            if(tfData.isHighTF) {
+               ss_IntScanActive = true;
+            }
          }
          
          if(StringLen(textInternalLow) > 0) { 
             text_all += str_internal+" (Swing) "+str_internal_low+textInternalLow;
-         }
-         //if(isComment) {
-         //   Print(str_internal+textInternalLow);
-         //   //ArrayPrint(tfData.intSLows);
-         //   //ArrayPrint(tfData.volIntSLows);
-         //}
-         
+         }         
       }
       
       // CHOCH or BOS
@@ -2682,7 +2721,9 @@ struct marketStructs{
             // Ve poizone Internal Bullish trên chart
             if(tfData.isDraw) drawBox("ePOI", tfData.zArrIntBullish[0].time, tfData.zArrIntBullish[0].high, bar1.time, tfData.zArrIntBullish[0].low,1, iColorBull, 1);
             // Kích hoạt scan Global Poi zone
-            if(tfData.isHighTF) ss_IntScanActive = true;
+            if(tfData.isHighTF) {
+               ss_IntScanActive = true;
+            }
          }
          
          //3 choch high
@@ -2734,7 +2775,9 @@ struct marketStructs{
             // Ve poizone Internal Bullish trên chart
             if(tfData.isDraw) drawBox("ePOI", tfData.zArrIntBullish[0].time, tfData.zArrIntBullish[0].high, bar1.time, tfData.zArrIntBullish[0].low,1, iColorBull, 1);
             // Kích hoạt scan Global Poi zone
-            if(tfData.isHighTF) ss_IntScanActive = true;
+            if(tfData.isHighTF) {
+               ss_IntScanActive = true;
+            }
          }
          
          // 4 choch high
@@ -2807,7 +2850,9 @@ struct marketStructs{
             // Ve poizone Internal Bullish trên chart
             if(tfData.isDraw) drawBox("ePOI", tfData.zArrIntBullish[0].time, tfData.zArrIntBullish[0].high, bar1.time, tfData.zArrIntBullish[0].low,1, iColorBull, 1);
             // Kích hoạt scan Global Poi zone
-            if(tfData.isHighTF) ss_IntScanActive = true;
+            if(tfData.isHighTF) {
+               ss_IntScanActive = true;
+            }
          }
          // show draw target line
          if ((showTargetHighTF == true && tfData.isTimeframe == highPairTF) || (showTargetLowTF == true && tfData.isTimeframe == lowPairTF)) {
@@ -2818,9 +2863,6 @@ struct marketStructs{
             }
          }
          
-         //if (isComment && StringLen(textInternalHigh) > 0) {
-         //   Print(str_internal+textInternalHigh);
-         //}
          if (StringLen(textInternalHigh) > 0) {
             text_all += str_internal+" (Break) "+textInternalHigh;
          }
@@ -2878,7 +2920,9 @@ struct marketStructs{
             // Ve poizone Internal Bearish trên chart
             if(tfData.isDraw) drawBox("ePOI", tfData.zArrIntBearish[0].time, tfData.zArrIntBearish[0].low, bar1.time, tfData.zArrIntBearish[0].high,1, iColorBear, 1);
             // Kích hoạt scan Global Poi zone
-            if(tfData.isHighTF) ss_IntScanActive = true;
+            if(tfData.isHighTF) {
+               ss_IntScanActive = true;
+            }
          }
          
          //3 choch low
@@ -2930,7 +2974,9 @@ struct marketStructs{
             // Ve poizone Internal Bearish trên chart
             if(tfData.isDraw) drawBox("ePOI", tfData.zArrIntBearish[0].time, tfData.zArrIntBearish[0].low, bar1.time, tfData.zArrIntBearish[0].high,1, iColorBear, 1);
             // Kích hoạt scan Global Poi zone
-            if(tfData.isHighTF) ss_IntScanActive = true;
+            if(tfData.isHighTF) {
+               ss_IntScanActive = true;
+            }
          }
          
          // 4+5 choch low
@@ -3005,7 +3051,9 @@ struct marketStructs{
             // Ve poizone Internal Bearish trên chart
             if(tfData.isDraw) drawBox("ePOI", tfData.zArrIntBearish[0].time, tfData.zArrIntBearish[0].low, bar1.time, tfData.zArrIntBearish[0].high,1, iColorBear, 1);
             // Kích hoạt scan Global Poi zone
-            if(tfData.isHighTF) ss_IntScanActive = true;
+            if(tfData.isHighTF) {
+               ss_IntScanActive = true;
+            }
          }
          // Show draw target line
          if ((showTargetHighTF == true && tfData.isTimeframe == highPairTF) || (showTargetLowTF == true && tfData.isTimeframe == lowPairTF)) {
@@ -3016,9 +3064,6 @@ struct marketStructs{
             }
          }
          
-         //if (isComment && StringLen(textInternalLow) > 0) {
-         //   Print(str_internal+textInternalLow);
-         //}
          if (StringLen(textInternalLow) > 0) {
             text_all += str_internal+" (Break) "+textInternalLow;
          }
@@ -3027,7 +3072,17 @@ struct marketStructs{
       if (tfData.isHighTF) {
          gl_iTrend = tfData.iTrend;
          gl_vITrend = tfData.vItrend;
-      } 
+      } else { // Set thong so co ban cho Low Timeframe
+         if (gl_findH == 1) {
+            if (gl_H_AF_LTFRealTime <= 0 || (gl_H_AF_LTFRealTime > 0 && gl_H_AF_LTFRealTime < tfData.intSHighs[0])) {
+               gl_H_AF_LTFRealTime = tfData.intSHighs[0];
+            }
+         } else if (gl_findL == 1) {
+            if (gl_L_AF_LTFRealTime <= 0 || (gl_L_AF_LTFRealTime > 0 && gl_L_AF_LTFRealTime > tfData.intSLows[0])) {
+               gl_L_AF_LTFRealTime = tfData.intSLows[0];
+            }
+         }
+      }
       
       if (isComment == false) {
          text_all = "";
@@ -3049,8 +3104,6 @@ struct marketStructs{
       //string textall = "----- updatePointTopBot -----";
       string textall = "";
       string text = "";
-      //text +=  "First: " + getValueTrend(tfData);
-      //text += "\n"+inInfoBar(bar1, bar2, bar3);
       PoiZone zone2 = CreatePoiZone( tfData,bar2.high, bar2.low, bar2.open, bar2.close, bar2.time);
       long maxVolume = 0;
       
@@ -3103,9 +3156,6 @@ struct marketStructs{
             tfData.H_bar = bar2;
             tfData.vol_H = bar2.tick_volume;
          }
-         //if (isComment && StringLen(text) > 0) {
-         //   Print(str_marjor+text);
-         //}
       }
       if (bar3.low >= bar2.low && bar2.low <= bar1.low) { // tim thay swing low 
          
@@ -3118,9 +3168,6 @@ struct marketStructs{
             tfData.L_bar = bar2;
             tfData.vol_L = bar2.tick_volume;
          }
-         //if (isComment && StringLen(text) > 0) {
-         //   Print(str_marjor+text);
-         //}
       }
       
       if(tfData.sTrend == 1 && tfData.mTrend == 1) {
@@ -3155,14 +3202,6 @@ struct marketStructs{
                gl_getIdmSell = false;
                gl_getIdmBuy = false;
             }
-            
-            //// BOS High by volume 
-            //if (tfData.waitingArrTop == 0) {
-            //   tfData.vMTrend = tfData.mTrend;
-            //   tfData.waitingArrTop = 1;
-            //   if (isCHoCHBOSVolume) tfData.vMTrend = (checkVolumeBreak(1, bar1, tfData.arrTop[0], tfData.volArrTop[0])) ? 1: -1;
-            //   tfData.vSTrend = tfData.vMTrend;
-            //}
          }
          
          if (bar3.high <= bar2.high && bar2.high >= bar1.high) { // tim thay dinh high 
@@ -3189,9 +3228,6 @@ struct marketStructs{
                } 
                
                tfData.sTrend = 1; tfData.mTrend = 1; tfData.LastSwingMajor = -1;
-               //if (isComment && StringLen(text) > 0) {
-               //   Print(str_marjor+text);
-               //}
             }
             // HH > HH 
             if (tfData.LastSwingMajor == -1 && bar2.high > tfData.arrTop[0]) {
@@ -3210,9 +3246,6 @@ struct marketStructs{
                   tfData.waitingArrTop = 0;
                }
                tfData.sTrend = 1; tfData.mTrend = 1; tfData.LastSwingMajor = -1;
-               //if (isComment && StringLen(text) > 0) {
-               //   Print(str_marjor+text);
-               //}
             }
          }
          
@@ -3264,9 +3297,6 @@ struct marketStructs{
             // Quét toàn bộ các vùng POI để Trade theo Order Block, Order Flow
             tfData.scanPoiZoneLastTime(tfData, 1);
             drawMarjorTradeZone(tfData, bar1);
-            //if (isComment && StringLen(text) > 0) {
-            //   Print(str_marjor+text);
-            //}
          }
          
          // CHoCH Low
@@ -3573,15 +3603,6 @@ struct marketStructs{
                gl_getIdmBuy = false;
             }
             
-            //// Bos Low with Volume
-            //if (tfData.waitingArrBot == 0) {
-            //   tfData.vSTrend = tfData.sTrend;
-            //   tfData.waitingArrBot = 1;
-            //   if (isCHoCHBOSVolume) {
-            //      tfData.vSTrend = (checkVolumeBreak(-1, bar1, tfData.arrBot[0], tfData.volArrBot[0])) ? -1: 1;
-            //   } 
-            //   tfData.vMTrend = tfData.vSTrend;
-            //}
          }
          
          if (bar3.low >= bar2.low && bar2.low <= bar1.low) { // tim thay swing low 
@@ -3628,10 +3649,7 @@ struct marketStructs{
                   // cap nhat waiting arrBot
                   tfData.waitingArrBot = 0;
                }
-               tfData.sTrend = -1; tfData.mTrend = -1; tfData.LastSwingMajor = 1;   
-               //if (isComment && StringLen(text) > 0) {
-               //   Print(str_marjor+text);
-               //}
+               tfData.sTrend = -1; tfData.mTrend = -1; tfData.LastSwingMajor = 1;
             }
          }
       
@@ -3682,9 +3700,6 @@ struct marketStructs{
             // Quét toàn bộ các vùng POI để Trade theo Order Block, Order Flow
             tfData.scanPoiZoneLastTime(tfData, -1);
             drawMarjorTradeZone(tfData, bar1);
-            //if (isComment && StringLen(text) > 0) {
-            //   Print(str_marjor+text);
-            //}
          }
          
          // CHoCH High
@@ -3964,15 +3979,7 @@ struct marketStructs{
             DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 3);
          }
       }
-      
-      //if(isComment && StringLen(text) > 0) {
-      //   //textall += text;
-      //   //text +=  "\n Last: "+getValueTrend(tfData);
-      //   //textall += "\n ---------- END updatePointTopBot ------------";
-      //   Print(textall);
-      //   //showComment(tfData);
-      //}
-      
+            
       // Set Global Value of High Timeframe
       if (tfData.isHighTF) {
          gl_sTrend = tfData.sTrend;
@@ -4390,30 +4397,6 @@ void defaultGlobal() {
      }
 }
 
-// Show info ontick
-void showInfoStruct() {
-   string comment = ""; 
-   comment += getInfoStruct(lowTimeFrame);
-   comment += "\n";
-   comment += getInfoStruct(highTimeFrame);
-   Comment(comment);
-}
-
-// In thong tin struct ra ngoai
-string getInfoStruct(ENUM_TIMEFRAMES timeframe) {
-   string text = "";
-   // Lấy dữ liệu cho khung H1
-   TimeFrameData* tfData = GlobalVars.GetData(timeframe);
-   text += "Timeframe: "+ EnumToString(timeframe);
-   text += " | Struct is : " + ((tfData.sTrend == 0) ? "Not defined" : ((tfData.sTrend == 1) ? "S UpTrend" : "S DownTrend")) + "( "+ (string) tfData.sTrend + " . "+ (string) tfData.vSTrend+ ")";
-   text += " | Marjor Struct is : " + ((tfData.mTrend == 0) ? "Not defined" : ((tfData.mTrend == 1) ? "m UpTrend" : "m DownTrend")) + "( "+ (string) tfData.mTrend + " . "+ (string) tfData.vMTrend+ ")";
-   text += " | Internal is : " + ((tfData.iTrend == 0) ? "Not defined" : ((tfData.iTrend == 1) ? "i UpTrend" : "i DownTrend"))+ "( "+ (string) tfData.iTrend + " . "+ (string) tfData.vItrend+ ")";
-   //text += " iFindtarget : " + (string) tfData.iFindTarget + " - iStoploss: "+ DoubleToString(tfData.iStoploss,_Digits)+ " - iTarget: "+ DoubleToString(tfData.iTarget,_Digits);
-   text += " | Gann wave is : " + ((tfData.gTrend == 0) ? "Not defined" : ((tfData.gTrend == 1) ? "g UpTrend" : " DownTrend"))+ "( "+ (string) tfData.gTrend + " . "+ (string) tfData.vGTrend+ ")";
-   text += " | H: "+ (DoubleToString(tfData.H,_Digits))+" : Internal High "+DoubleToString(tfData.intSHighs[0], _Digits)+" _ L: "+ (DoubleToString(tfData.L,_Digits))+" : Internal Low "+DoubleToString(tfData.intSLows[0],_Digits); 
-   text += " | HTF RealTime: Internal High: "+ DoubleToString(gl_intSHighHTFRealTime, _Digits) + " - Internal Low: " + DoubleToString(gl_intSLowHTFRealTime, _Digits);
-   return text;
-}
 
 //+------------------------------------------------------------------+
 //| Hàm kiểm tra nến mới cho bất kỳ khung thời gian nào               |
@@ -4457,13 +4440,6 @@ bool IsNewBar(ENUM_TIMEFRAMES timeframe) {
     //ArrayPrint(_prevKeys);
     //ArrayPrint(_prevTimes);
     return false;
-}
-
-string inInfoBar(MqlRates& bar1, MqlRates& bar2, MqlRates& bar3) {
-   string text = "Bar1 (R) high: "+ DoubleToString(bar1.high,_Digits) +" - low: "+ DoubleToString(bar1.low,_Digits) + " - vol: "+ (string)  bar1.tick_volume +
-                  " --- "+" Bar2 high: "+ DoubleToString(bar2.high,_Digits) +" - low: "+ DoubleToString(bar2.low,_Digits)+ " - vol: "+ (string) bar2.tick_volume +
-                  " --- "+" Bar3 (L) high: "+ DoubleToString(bar3.high,_Digits) +" - low: "+ DoubleToString(bar3.low,_Digits)+" - vol: "+ (string) bar3.tick_volume;
-   return text;
 }
 
 //+------------------------------------------------------------------+
@@ -4764,136 +4740,6 @@ bool DrawDirectionalSegment(
 ////   ArrayPrint(h1Data.zHighs);
 //}
 
-//+------------------------------------------------------------------+
-//| End Example usage                                                |
-//+------------------------------------------------------------------+
-
-// Todo: 
-void showPoiComment(TimeFrameData& tfData) {
-   bool show = false;
-   string text = "Timeframe: "+ (string) tfData.isTimeframe;
-   show =  true;
-//   if (tfData.sTrend == 1 
-//      //|| tfData.sTrend == -1
-//      ) {
-//      //show = true;
-//      //Print("zLows: "); ArrayPrint(tfData.zLows);
-//      //Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
-//      
-//      //Print("zArrPbLow"); ArrayPrint(tfData.zArrPbLow);
-//      //Print("zArrIntBullish: "); ArrayPrint(tfData.zArrIntBullish);
-//      //Print("zArrPoiZoneBullish: "); ArrayPrint(tfData.zArrPoiZoneBullish);
-//   }
-//   if (tfData.sTrend == -1 
-//      //|| tfData.sTrend == 1
-//      ) {
-//      //show = true;
-//      //Print("zHighs: "); ArrayPrint(tfData.zHighs);
-//      //Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
-//      
-//      //Print("zArrPbHigh"); ArrayPrint(tfData.zArrPbHigh); 
-//      //Print("zArrIntBearish: "); ArrayPrint(tfData.zArrIntBearish);
-//      //Print("zArrPoiZoneBearish: "); ArrayPrint(tfData.zArrPoiZoneBearish);
-//   }
-//   
-//   if (ss_ITrend == 1) {
-//      show = true;
-//      //Print("zArrIntBullish: "); ArrayPrint(tfData.zArrIntBullish);
-//      Print("zArrPoiZoneLTFBullishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBullishBelongHighTF);
-//   }
-//   
-//   if (ss_ITrend == -1) {
-//      show = true;
-//      //Print("zArrIntBearish: "); ArrayPrint(tfData.zArrIntBearish);
-//      Print("zArrPoiZoneLTFBearishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBearishBelongHighTF);
-//   }
-   
-   //text += "\nEND Timeframe: "+ EnumToString(tfData.timeFrame);
-   if (show) {
-      Print(getValueTrend(tfData));
-      Print(text);
-   }
-}
-
-void showComment(TimeFrameData& tfData) {
-   //Print("Timeframe: "+ (string) tfData.isTimeframe);
-   
-      //Print("Highs: "); ArrayPrint(tfData.Highs);
-      //Print("Vol Highs: "); ArrayPrint(tfData.volHighs);
-      //Print("Lows: "); ArrayPrint(tfData.Lows); 
-      //Print("Vol Lows: "); ArrayPrint(tfData.volLows); 
-      //Print("zHighs: "); ArrayPrint(tfData.zHighs);
-      //Print("zLows: "); ArrayPrint(tfData.zLows);
-      
-      //Print("intSHighs: "); ArrayPrint(tfData.intSHighs);
-      //Print("Vol intSHighs: "); ArrayPrint(tfData.volIntSHighs);
-      //Print("intSLows: "); ArrayPrint(tfData.intSLows); 
-      //Print("Vol intSLows: "); ArrayPrint(tfData.volIntSLows); 
-      //Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
-      //Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
-      
-      
-      //Print("arrTop: "); ArrayPrint(tfData.arrTop); 
-      //Print("Vol arrTop: "); ArrayPrint(tfData.volArrTop);
-      //Print("arrBot: "); ArrayPrint(tfData.arrBot); 
-      //Print("Vol arrBot: "); ArrayPrint(tfData.volArrBot);
-      ////////////////Print("zArrTop: "); ArrayPrint(tfData.zArrTop);
-      ////////////////Print("zArrBot: "); ArrayPrint(tfData.zArrBot);
-      
-      
-      //Print("arrPbHigh: "); ArrayPrint(tfData.arrPbHigh); 
-      //Print("Vol arrPbHigh: "); ArrayPrint(tfData.volArrPbHigh);
-      //Print("arrPbLow: "); ArrayPrint(tfData.arrPbLow); 
-      //Print("Vol arrPbLow: "); ArrayPrint(tfData.volArrPbLow);
-      //Print("zArrPbHigh"); ArrayPrint(tfData.zArrPbHigh); 
-      //Print("zArrPbLow"); ArrayPrint(tfData.zArrPbLow);
-      
-      
-      //Print("arrDecisionalHigh: "); ArrayPrint(tfData.arrDecisionalHigh);
-      //Print("Vol arrDecisionalHigh: "); ArrayPrint(tfData.volArrDecisionalHigh);
-      //Print("arrDecisionalLow: "); ArrayPrint(tfData.arrDecisionalLow);
-      //Print("Vol arrDecisionalLow: "); ArrayPrint(tfData.volArrDecisionalLow);
-      //Print("zPoiDecisionalLow: "); ArrayPrint(tfData.zPoiDecisionalLow);
-      //Print("zPoiDecisionalHigh: "); ArrayPrint(tfData.zPoiDecisionalHigh);
-      
-      
-      //Print("arrBoHigh: "+(string) tfData.arrBoHigh[0] + " "+ (string) tfData.arrBoHighTime[0]);
-//         Print("Vol arrBoHigh: "); ArrayPrint(tfData.volArrBoHigh);
-      //Print("arrBoLow: "+(string) tfData.arrBoLow[0] + " "+ (string) tfData.arrBoLowTime[0]);
-//         Print("Vol arrBoLow: "); ArrayPrint(tfData.volArrBoLow);
-
-      
-      //Print("arrChoHigh: "+DoubleToString( tfData.arrChoHigh[0], _Digits) + " "+ (string) tfData.arrChoHighTime[0]);
-//         Print("Vol arrChoHigh: "); ArrayPrint(tfData.volArrChoHigh);
-      //Print("arrChoLow: "+(string) tfData.arrChoLow[0]  + " "+ (string) tfData.arrChoLowTime[0]);
-//         Print("Vol arrChoLow: "); ArrayPrint(tfData.volArrChoLow);
-      
-      //Print("zPoiExtremeHigh: "); ArrayPrint(tfData.zPoiExtremeHigh);
-      //Print("zPoiExtremeLow: "); ArrayPrint(tfData.zPoiExtremeLow);
-      
-      //Print("zArrPoiZoneBullish: "); ArrayPrint(tfData.zArrPoiZoneBullish);
-      //Print("zArrPoiZoneBearish: "); ArrayPrint(tfData.zArrPoiZoneBearish);
-      
-      //Print("zArrPoiZoneLTFBullishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBullishBelongHighTF);
-      //Print("zArrPoiZoneLTFBearishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBearishBelongHighTF);
-      
-} 
-
-string getValueTrend(TimeFrameData& tfData) {
-   string text =  "\n($) Struct Trend = STrend: "+ (string) tfData.sTrend + " vSTrend: "+(string) tfData.vSTrend + ". waitingStrend: pbHigh "+(string) tfData.waitingArrPbHigh + " pbLow " + (string) tfData.waitingArrPbLows +
-                     " _ Marjor Trend = mTrend: "+(string) tfData.mTrend+ " vMTrend: "+(string) tfData.vMTrend+  ". waitingMtrend: waitingArrTop "+(string) tfData.waitingArrTop + " waitingArrBot " + (string) tfData.waitingArrBot + " - LastSwingMajor: "+(string) tfData.LastSwingMajor+ 
-               "\n    findHigh: "+(string) tfData.findHigh+" - idmHigh: "+DoubleToString(tfData.idmHigh, _Digits)+ " - vol idmHigh: "+(string) tfData.vol_idmHigh+
-               " findLow: "+(string) tfData.findLow+" - idmLow: "+DoubleToString( tfData.idmLow,_Digits)+ " - vol idmLow: "+(string) tfData.vol_idmLow+
-               " _ mFindtarget: "+(string) tfData.mFindTarget + " mStoploss: " + DoubleToString(tfData.mStoploss,_Digits) + " mSnR: " + DoubleToString(tfData.mSnR,_Digits) + " mTarget: "+ DoubleToString(tfData.mTarget,_Digits) + " mFullTarget: "+ DoubleToString(tfData.mFullTarget,_Digits) +
-               "\n($) Internal Trend: iTrend: "+(string) tfData.iTrend+ " vItrend: "+(string) tfData.vItrend+ " waitingItrend: IntSHighs "+(string) tfData.waitingIntSHighs + " IntSLows " + (string) tfData.waitingIntSLows +" - LastSwingInternal: "+(string) tfData.LastSwingInternal+
-               " _ iFindtarget: "+(string) tfData.iFindTarget + " iStoploss: " + DoubleToString(tfData.iStoploss,_Digits) + " iOrderBlock: " + DoubleToString(tfData.iOrderBlock,_Digits) + " iSnR: " + DoubleToString(tfData.iSnR,_Digits) + " iTarget: "+ DoubleToString(tfData.iTarget,_Digits) + " iFullTarget: "+ DoubleToString(tfData.iFullTarget,_Digits) +
-               "\n($) Gann Trend: gTrend: "+(string) tfData.gTrend+ " vGTrend: "+(string) tfData.vGTrend+ " - LastSwingMeter: "+(string) tfData.LastSwingMeter+ " | | H: "+ DoubleToString( tfData.H, _Digits) +" - L: "+DoubleToString( tfData.L, _Digits);  
-   text += "\n($) Global Trend: ss_ITrend: " + (string) ss_ITrend +"; ss_vITrend: "+ (string) ss_vITrend + "; ss_iStoploss: " +DoubleToString(ss_iStoploss,_Digits) + 
-            "; ss_iOrderBlock: "+ DoubleToString(ss_iOrderBlock, _Digits) +"; ss_iSnR: "+ DoubleToString (ss_iSnR, _Digits) + "; ss_iTarget: "+ DoubleToString( ss_iTarget, _Digits)
-            + "; ss_mitigate_iOrderFlow: "+ (string) ss_mitigate_iOrderFlow + "; ss_mitigate_iOrderBlock: "+ (string) ss_mitigate_iOrderBlock;
-   text += "\n($) HTF: sTrend: "+(string) gl_sTrend+"("+(string) gl_vSTrend+") ; mTrend: "+(string) gl_mTrend+"("+(string) gl_vMTrend+") ; iTrend: "+(string) gl_iTrend+"("+(string) gl_vITrend+")"+") ; getIdmBuy: "+(string) gl_getIdmBuy+"- getIdmSell: "+(string) gl_getIdmSell;
-   return text;
-}
 
 //+------------------------------------------------------------------+
 //| Hàm kiểm tra xem có lệnh đang chạy hoặc lệnh chờ hay không       |
@@ -5111,4 +4957,172 @@ void ManageOrders(long magic)
             }
         }
     }
+}
+
+
+//+------------------------------------------------------------------+
+//| Tổ hợp hàm hiển thị thông tin cơ bản ra ngoài chart              |
+//+------------------------------------------------------------------+
+
+string inInfoBar(MqlRates& bar1, MqlRates& bar2, MqlRates& bar3) {
+   string text = "Bar1 (R) high: "+ DoubleToString(bar1.high,_Digits) +" - low: "+ DoubleToString(bar1.low,_Digits) + " - vol: "+ (string)  bar1.tick_volume +
+                  " --- "+" Bar2 high: "+ DoubleToString(bar2.high,_Digits) +" - low: "+ DoubleToString(bar2.low,_Digits)+ " - vol: "+ (string) bar2.tick_volume +
+                  " --- "+" Bar3 (L) high: "+ DoubleToString(bar3.high,_Digits) +" - low: "+ DoubleToString(bar3.low,_Digits)+" - vol: "+ (string) bar3.tick_volume;
+   return text;
+}
+
+
+// Show info ontick
+void showInfoStruct() {
+   string comment = ""; 
+   comment += getInfoStruct(lowTimeFrame);
+   comment += "\n";
+   comment += getInfoStruct(highTimeFrame);
+   Comment(comment);
+}
+
+// In thong tin struct ra ngoai
+string getInfoStruct(ENUM_TIMEFRAMES timeframe) {
+   string text = "";
+   // Lấy dữ liệu cho khung H1
+   TimeFrameData* tfData = GlobalVars.GetData(timeframe);
+   text += "Timeframe: "+ EnumToString(timeframe);
+   text += " | Struct is : " + ((tfData.sTrend == 0) ? "Not defined" : ((tfData.sTrend == 1) ? "S UpTrend" : "S DownTrend")) + "( "+ (string) tfData.sTrend + " . "+ (string) tfData.vSTrend+ ")";
+   text += " | Marjor Struct is : " + ((tfData.mTrend == 0) ? "Not defined" : ((tfData.mTrend == 1) ? "m UpTrend" : "m DownTrend")) + "( "+ (string) tfData.mTrend + " . "+ (string) tfData.vMTrend+ ")";
+   text += " | Internal is : " + ((tfData.iTrend == 0) ? "Not defined" : ((tfData.iTrend == 1) ? "i UpTrend" : "i DownTrend"))+ "( "+ (string) tfData.iTrend + " . "+ (string) tfData.vItrend+ ")";
+   //text += " iFindtarget : " + (string) tfData.iFindTarget + " - iStoploss: "+ DoubleToString(tfData.iStoploss,_Digits)+ " - iTarget: "+ DoubleToString(tfData.iTarget,_Digits);
+   text += " | Gann wave is : " + ((tfData.gTrend == 0) ? "Not defined" : ((tfData.gTrend == 1) ? "g UpTrend" : " DownTrend"))+ "( "+ (string) tfData.gTrend + " . "+ (string) tfData.vGTrend+ ")";
+   //text += " | H: "+ (DoubleToString(tfData.H,_Digits))+" : Internal High "+DoubleToString(tfData.intSHighs[0], _Digits)+" _ L: "+ (DoubleToString(tfData.L,_Digits))+" : Internal Low "+DoubleToString(tfData.intSLows[0],_Digits); 
+   //text += " | HTF RealTime: Internal High: "+ DoubleToString(gl_intSHighHTFRealTime, _Digits) + " - Internal Low: " + DoubleToString(gl_intSLowHTFRealTime, _Digits);
+   
+   return text;
+}
+
+// Todo: 
+void showPoiComment(TimeFrameData& tfData) {
+   bool show = false;
+   string text = "Timeframe: "+ (string) tfData.isTimeframe;
+   show =  true;
+//   if (tfData.sTrend == 1 
+//      //|| tfData.sTrend == -1
+//      ) {
+//      //show = true;
+//      //Print("zLows: "); ArrayPrint(tfData.zLows);
+//      //Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
+//      
+//      //Print("zArrPbLow"); ArrayPrint(tfData.zArrPbLow);
+//      //Print("zArrIntBullish: "); ArrayPrint(tfData.zArrIntBullish);
+//      //Print("zArrPoiZoneBullish: "); ArrayPrint(tfData.zArrPoiZoneBullish);
+//   }
+//   if (tfData.sTrend == -1 
+//      //|| tfData.sTrend == 1
+//      ) {
+//      //show = true;
+//      //Print("zHighs: "); ArrayPrint(tfData.zHighs);
+//      //Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
+//      
+//      //Print("zArrPbHigh"); ArrayPrint(tfData.zArrPbHigh); 
+//      //Print("zArrIntBearish: "); ArrayPrint(tfData.zArrIntBearish);
+//      //Print("zArrPoiZoneBearish: "); ArrayPrint(tfData.zArrPoiZoneBearish);
+//   }
+//   
+//   if (ss_ITrend == 1) {
+//      show = true;
+//      //Print("zArrIntBullish: "); ArrayPrint(tfData.zArrIntBullish);
+//      Print("zArrPoiZoneLTFBullishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBullishBelongHighTF);
+//   }
+//   
+//   if (ss_ITrend == -1) {
+//      show = true;
+//      //Print("zArrIntBearish: "); ArrayPrint(tfData.zArrIntBearish);
+//      Print("zArrPoiZoneLTFBearishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBearishBelongHighTF);
+//   }
+   
+   //text += "\nEND Timeframe: "+ EnumToString(tfData.timeFrame);
+   if (show) {
+      Print(getValueTrend(tfData));
+      Print(text);
+   }
+}
+
+void showComment(TimeFrameData& tfData) {
+   //Print("Timeframe: "+ (string) tfData.isTimeframe);
+   
+      //Print("Highs: "); ArrayPrint(tfData.Highs);
+      //Print("Vol Highs: "); ArrayPrint(tfData.volHighs);
+      //Print("Lows: "); ArrayPrint(tfData.Lows); 
+      //Print("Vol Lows: "); ArrayPrint(tfData.volLows); 
+      //Print("zHighs: "); ArrayPrint(tfData.zHighs);
+      //Print("zLows: "); ArrayPrint(tfData.zLows);
+      
+      //Print("intSHighs: "); ArrayPrint(tfData.intSHighs);
+      //Print("Vol intSHighs: "); ArrayPrint(tfData.volIntSHighs);
+      //Print("intSLows: "); ArrayPrint(tfData.intSLows); 
+      //Print("Vol intSLows: "); ArrayPrint(tfData.volIntSLows); 
+      //Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
+      //Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
+      
+      
+      //Print("arrTop: "); ArrayPrint(tfData.arrTop); 
+      //Print("Vol arrTop: "); ArrayPrint(tfData.volArrTop);
+      //Print("arrBot: "); ArrayPrint(tfData.arrBot); 
+      //Print("Vol arrBot: "); ArrayPrint(tfData.volArrBot);
+      ////////////////Print("zArrTop: "); ArrayPrint(tfData.zArrTop);
+      ////////////////Print("zArrBot: "); ArrayPrint(tfData.zArrBot);
+      
+      
+      //Print("arrPbHigh: "); ArrayPrint(tfData.arrPbHigh); 
+      //Print("Vol arrPbHigh: "); ArrayPrint(tfData.volArrPbHigh);
+      //Print("arrPbLow: "); ArrayPrint(tfData.arrPbLow); 
+      //Print("Vol arrPbLow: "); ArrayPrint(tfData.volArrPbLow);
+      //Print("zArrPbHigh"); ArrayPrint(tfData.zArrPbHigh); 
+      //Print("zArrPbLow"); ArrayPrint(tfData.zArrPbLow);
+      
+      
+      //Print("arrDecisionalHigh: "); ArrayPrint(tfData.arrDecisionalHigh);
+      //Print("Vol arrDecisionalHigh: "); ArrayPrint(tfData.volArrDecisionalHigh);
+      //Print("arrDecisionalLow: "); ArrayPrint(tfData.arrDecisionalLow);
+      //Print("Vol arrDecisionalLow: "); ArrayPrint(tfData.volArrDecisionalLow);
+      //Print("zPoiDecisionalLow: "); ArrayPrint(tfData.zPoiDecisionalLow);
+      //Print("zPoiDecisionalHigh: "); ArrayPrint(tfData.zPoiDecisionalHigh);
+      
+      
+      //Print("arrBoHigh: "+(string) tfData.arrBoHigh[0] + " "+ (string) tfData.arrBoHighTime[0]);
+//         Print("Vol arrBoHigh: "); ArrayPrint(tfData.volArrBoHigh);
+      //Print("arrBoLow: "+(string) tfData.arrBoLow[0] + " "+ (string) tfData.arrBoLowTime[0]);
+//         Print("Vol arrBoLow: "); ArrayPrint(tfData.volArrBoLow);
+
+      
+      //Print("arrChoHigh: "+DoubleToString( tfData.arrChoHigh[0], _Digits) + " "+ (string) tfData.arrChoHighTime[0]);
+//         Print("Vol arrChoHigh: "); ArrayPrint(tfData.volArrChoHigh);
+      //Print("arrChoLow: "+(string) tfData.arrChoLow[0]  + " "+ (string) tfData.arrChoLowTime[0]);
+//         Print("Vol arrChoLow: "); ArrayPrint(tfData.volArrChoLow);
+      
+      //Print("zPoiExtremeHigh: "); ArrayPrint(tfData.zPoiExtremeHigh);
+      //Print("zPoiExtremeLow: "); ArrayPrint(tfData.zPoiExtremeLow);
+      
+      //Print("zArrPoiZoneBullish: "); ArrayPrint(tfData.zArrPoiZoneBullish);
+      //Print("zArrPoiZoneBearish: "); ArrayPrint(tfData.zArrPoiZoneBearish);
+      
+      //Print("zArrPoiZoneLTFBullishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBullishBelongHighTF);
+      //Print("zArrPoiZoneLTFBearishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBearishBelongHighTF);
+      
+} 
+
+string getValueTrend(TimeFrameData& tfData) {
+   string text =  "\n($) Struct Trend = STrend: "+ (string) tfData.sTrend + " vSTrend: "+(string) tfData.vSTrend + ". waitingStrend: pbHigh "+(string) tfData.waitingArrPbHigh + " pbLow " + (string) tfData.waitingArrPbLows +
+                     " _ Marjor Trend = mTrend: "+(string) tfData.mTrend+ " vMTrend: "+(string) tfData.vMTrend+  ". waitingMtrend: waitingArrTop "+(string) tfData.waitingArrTop + " waitingArrBot " + (string) tfData.waitingArrBot + " - LastSwingMajor: "+(string) tfData.LastSwingMajor+ 
+               "\n    findHigh: "+(string) tfData.findHigh+" - idmHigh: "+DoubleToString(tfData.idmHigh, _Digits)+ " - vol idmHigh: "+(string) tfData.vol_idmHigh+
+               " findLow: "+(string) tfData.findLow+" - idmLow: "+DoubleToString( tfData.idmLow,_Digits)+ " - vol idmLow: "+(string) tfData.vol_idmLow+
+               " _ mFindtarget: "+(string) tfData.mFindTarget + " mStoploss: " + DoubleToString(tfData.mStoploss,_Digits) + " mSnR: " + DoubleToString(tfData.mSnR,_Digits) + " mTarget: "+ DoubleToString(tfData.mTarget,_Digits) + " mFullTarget: "+ DoubleToString(tfData.mFullTarget,_Digits) +
+               "\n($) Internal Trend: iTrend: "+(string) tfData.iTrend+ " vItrend: "+(string) tfData.vItrend+ " waitingItrend: IntSHighs "+(string) tfData.waitingIntSHighs + " IntSLows " + (string) tfData.waitingIntSLows +" - LastSwingInternal: "+(string) tfData.LastSwingInternal+
+               " _ iFindtarget: "+(string) tfData.iFindTarget + " iStoploss: " + DoubleToString(tfData.iStoploss,_Digits) + " iOrderBlock: " + DoubleToString(tfData.iOrderBlock,_Digits) + " iSnR: " + DoubleToString(tfData.iSnR,_Digits) + " iTarget: "+ DoubleToString(tfData.iTarget,_Digits) + " iFullTarget: "+ DoubleToString(tfData.iFullTarget,_Digits) +
+               "\n($) Gann Trend: gTrend: "+(string) tfData.gTrend+ " vGTrend: "+(string) tfData.vGTrend+ " - LastSwingMeter: "+(string) tfData.LastSwingMeter+ " | | H: "+ DoubleToString( tfData.H, _Digits) +" - L: "+DoubleToString( tfData.L, _Digits);  
+   text += "\n($) Global Trend: ss_ITrend: " + (string) ss_ITrend +"; ss_vITrend: "+ (string) ss_vITrend + "; ss_iStoploss: " +DoubleToString(ss_iStoploss,_Digits) + 
+            "; ss_iOrderBlock: "+ DoubleToString(ss_iOrderBlock, _Digits) +"; ss_iSnR: "+ DoubleToString (ss_iSnR, _Digits) + "; ss_iTarget: "+ DoubleToString( ss_iTarget, _Digits)
+            + "; ss_mitigate_iOrderFlow: "+ (string) ss_mitigate_iOrderFlow + "; ss_mitigate_iOrderBlock: "+ (string) ss_mitigate_iOrderBlock;
+   text += "\n($) HTF: sTrend: "+(string) gl_sTrend+"("+(string) gl_vSTrend+") ; mTrend: "+(string) gl_mTrend+"("+(string) gl_vMTrend+") ; iTrend: "+(string) gl_iTrend+"("+(string) gl_vITrend+")"+") ; getIdmBuy: "+(string) gl_getIdmBuy+"- getIdmSell: "+(string) gl_getIdmSell;
+   text += "\n($) HTF: Internal High = "+ DoubleToString(gl_intSHighHTFRealTime, _Digits) + " & LTF H = "+DoubleToString(gl_H_AF_LTFRealTime, _Digits) + " gl_findH = "+(string) gl_findH +
+               " ||  Internal Low = "+ DoubleToString(gl_intSLowHTFRealTime, _Digits) + " & LTF L = "+ DoubleToString(gl_L_AF_LTFRealTime, _Digits) + " gl_findL = "+ (string) gl_findL;
+   return text;
 }
