@@ -53,6 +53,9 @@ int iWingding_internal_key_low = 226;
 input group "GENERAL SETTINGS";
    input    int            InpMagic = 12345; // Magic Number
    input    int            Slippage = 1;
+   input    double         InpRR = 2.0; // Rewards/ Risk
+   input    double         InpMinLot      = 0.03; // Khối lượng tối thiểu vào lệnh (0.03)
+   input    double         InpBE = 2.0; // Break Event : Chốt lời trước 1/2
    
 input group "TIME SETTINGS";
    input    int            StartHour = 16; // START TRADING HOUR
@@ -185,6 +188,12 @@ struct PoiZone
    double priceKey;
    datetime timeKey;
 };
+
+// Swing Internal HTF tạm thời
+double gl_intSHighHTFRealTime;
+double gl_intSLowHTFRealTime;
+PoiZone zArrHTFPoiZoneHighs[];
+PoiZone zArrHTFPoiZoneLows[];
 
 // Poi zone low timeframe thuộc vùng trade zone High Timeframe khi High TF breakout
 PoiZone zArrPoiZoneLTFBullishBelongHighTF[]; // Poi zone Bullish
@@ -1376,6 +1385,8 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
 				// xoa du lieu de tranh vao lenh lien tuc sau khi dat target
 				tfData.ClearPoiZoneArray(zArrPoiZoneLTFBullishBelongHighTF);
 				tfData.ClearPoiZoneArray(zArrPoiZoneLTFBearishBelongHighTF);
+				
+				DeleteAllPendingOrders(_Symbol, InpMagic);
 			} else {
 				if (ss_ITrend == 1) {
 				   if ((ss_iTarget != 0 && bar1.high < ss_iTarget) || ( ss_iStoploss != 0 && bar1.low > ss_iStoploss) ) {
@@ -1395,7 +1406,10 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
 			}     
 		} // End ss_IntScanActive == false
 	} // End tfData.isHighTF != true
-	
+	else { // Setup cac thong so khi dang o HTF
+	   gl_intSHighHTFRealTime = tfData.intSHighs[0];
+	   gl_intSLowHTFRealTime = tfData.intSLows[0];
+	}
 	Print(text);
 } // End scanGlobalInternalPoiZone
 
@@ -1737,10 +1751,12 @@ struct marketStructs{
    void afterCheckMarketForTrade(TimeFrameData& tfData) {
       int count = 0;
       int key_actived = -1;
-      // 1. Chưa có lệnh nào đang chạy của cặp tiền này
-      int countPosition = 0;
-      countPosition = checkPositionRunning();
-      if (countPosition > 0) return;
+      // 1. Kiểm tra xem đã có lệnh nào của cặp tiền này và Magic này chưa
+       if(IsTradeExists(_Symbol, InpMagic))
+       {
+           // Nếu đã có lệnh, chúng ta thoát hàm luôn, không chạy các logic phía dưới
+           return; 
+       }
       // 2. Kiểm tra tồn tại OB hoặc OF hay không
       if (ss_iStoploss == 0 || ss_iTarget == 0) return;
       if (ArraySize(zArrPoiZoneLTFBearishBelongHighTF) == 0 && ArraySize(zArrPoiZoneLTFBullishBelongHighTF)== 0) return;
@@ -1851,12 +1867,6 @@ struct marketStructs{
       }
    }
    
-   // Hàm kiểm tra số lượng lệnh của chính cặp tiền đó đang chạy
-   int checkPositionRunning() {
-      int count = 0;
-      return count;
-   }
-   
    // Hàm kiểm tra vị trí của nến hiện tại có đủ điều kiện vào lệnh theo từng loại hay không
    void checkPositionAccessForTrade(TimeFrameData& tfData, int type = 0, string text = "") {
       string string_type = "";
@@ -1865,9 +1875,9 @@ struct marketStructs{
          if (ss_mitigate_iOrderBlock == 1) {
             // Gọi hàm với điều kiện khắt khe hơn vì chưa vào order block. Cần double break out để khẳng định
             if (gl_iTrend == 1) {
-               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBullishBelongHighTF, 1, "Only OB1 "+ text);
+               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBullishBelongHighTF, 1, "OB1 "+ text);
             } else if (gl_iTrend == -1){
-               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBearishBelongHighTF, -1, "Only OB1 "+ text);
+               checkAccessZoneForTrade(tfData, zArrPoiZoneLTFBearishBelongHighTF, -1, "OB1 "+ text);
             }
          }
       } else if (type == 2) { // Chỉ vào lệnh ở OB + OF HTF
@@ -1911,6 +1921,8 @@ struct marketStructs{
    void checkAccessZoneForTrade(TimeFrameData& tfData, PoiZone& zone[], int type = 0, string str_options = "") {
       int key = -1;
       string result_str = "";
+      double entryPrice;
+      double risk = 2.0;           // Rủi ro 2% tài khoản
       if (ArraySize(zone) > 0) {
          for(int i=0;i<ArraySize(zone);i++) {
             if (zone[i].mitigated == 1) {
@@ -1919,14 +1931,30 @@ struct marketStructs{
             }
          }
          if (key >= 0 
-            || key < 0
+            //|| key < 0
             ) {
+            // Lấy giá cao nhất và thấp nhất
+            double lastHigh = iHigh(_Symbol, tfData.timeFrame, 1);
+            double lastLow  = iLow(_Symbol, tfData.timeFrame, 1);
             if (type == 1) {
                result_str = "BUY: với SL = "+((key >= 0)? DoubleToString(zone[key].low, _Digits) : DoubleToString(ss_iStoploss,_Digits)) + "; TP = " + DoubleToString(ss_iTarget, _Digits);
                //if (gl_getIdmBuy) result_str += "; Dừng Buy vì đã get Global IDM Buy";
+               entryPrice = lastHigh;
+               // Gọi lệnh Buy Stop
+                ExecutePendingOrder(ORDER_TYPE_BUY_STOP, entryPrice, ss_iStoploss, ss_iTarget, risk, InpMagic, str_options, InpRR);
+                
+                //entryPrice = tfData.intSHighs[1];
+                //// Gọi lệnh Buy Limit
+                //ExecutePendingOrder(ORDER_TYPE_BUY_LIMIT, entryPrice, ss_iStoploss, ss_iTarget, risk, InpMagic, str_options, InpRR);
             } else if (type == -1) {
                result_str = "SELL: với SL = "+ ((key >= 0)? DoubleToString(zone[key].high, _Digits) : DoubleToString(ss_iStoploss,_Digits)) + "; TP = " + DoubleToString(ss_iTarget, _Digits);
                //if (gl_getIdmSell) result_str += "; Dừng Sell vì đã get Global IDM Sell";
+               entryPrice = lastLow;
+               ExecutePendingOrder(ORDER_TYPE_SELL_STOP, entryPrice, ss_iStoploss, ss_iTarget, risk, InpMagic, str_options, InpRR);
+               
+               //entryPrice = tfData.intSLows[1];
+               //// Gọi lệnh Buy Limit
+               //ExecutePendingOrder(ORDER_TYPE_SELL_LIMIT, entryPrice, ss_iStoploss, ss_iTarget, risk, InpMagic, str_options, InpRR);
             }
             Print(result_str + " " + str_options);
             Print(getValueTrend(tfData));
@@ -4295,6 +4323,8 @@ int OnInit()
 // OnTick function
 void OnTick()
 {
+   // 1. Quản lý các lệnh đang chạy trước
+    ManageOrders(InpMagic);
    //demoOntick();
    
    // Kiểm tra nến mới cho M5
@@ -4380,7 +4410,8 @@ string getInfoStruct(ENUM_TIMEFRAMES timeframe) {
    text += " | Internal is : " + ((tfData.iTrend == 0) ? "Not defined" : ((tfData.iTrend == 1) ? "i UpTrend" : "i DownTrend"))+ "( "+ (string) tfData.iTrend + " . "+ (string) tfData.vItrend+ ")";
    //text += " iFindtarget : " + (string) tfData.iFindTarget + " - iStoploss: "+ DoubleToString(tfData.iStoploss,_Digits)+ " - iTarget: "+ DoubleToString(tfData.iTarget,_Digits);
    text += " | Gann wave is : " + ((tfData.gTrend == 0) ? "Not defined" : ((tfData.gTrend == 1) ? "g UpTrend" : " DownTrend"))+ "( "+ (string) tfData.gTrend + " . "+ (string) tfData.vGTrend+ ")";
-   
+   text += " | H: "+ (DoubleToString(tfData.H,_Digits))+" : Internal High "+DoubleToString(tfData.intSHighs[0], _Digits)+" _ L: "+ (DoubleToString(tfData.L,_Digits))+" : Internal Low "+DoubleToString(tfData.intSLows[0],_Digits); 
+   text += " | HTF RealTime: Internal High: "+ DoubleToString(gl_intSHighHTFRealTime, _Digits) + " - Internal Low: " + DoubleToString(gl_intSLowHTFRealTime, _Digits);
    return text;
 }
 
@@ -4864,37 +4895,220 @@ string getValueTrend(TimeFrameData& tfData) {
    return text;
 }
 
+//+------------------------------------------------------------------+
+//| Hàm kiểm tra xem có lệnh đang chạy hoặc lệnh chờ hay không       |
+//| Trả về true nếu ĐÃ CÓ lệnh, false nếu CHƯA CÓ lệnh               |
+//+------------------------------------------------------------------+
+bool IsTradeExists(string symbol, long magic)
+{
+    // 1. Kiểm tra các lệnh đang chạy (Positions)
+    for(int i = PositionsTotal() - 1; i >= 0; i--)
+    {
+        ulong ticket = PositionGetTicket(i);
+        if(PositionSelectByTicket(ticket))
+        {
+            if(PositionGetString(POSITION_SYMBOL) == symbol && PositionGetInteger(POSITION_MAGIC) == magic)
+            {
+                return true; // Đã tìm thấy vị thế đang chạy
+            }
+        }
+    }
 
-double calcLots(double slPoints) {
-   double lots = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
-   
-   double AccountBalance = AccountInfoDouble(ACCOUNT_BALANCE);
-   double EquityBalance = AccountInfoDouble(ACCOUNT_EQUITY);
-   double FreeMargin = AccountInfoDouble(ACCOUNT_MARGIN_FREE);
-   
-   double risk = 0;
-   switch(LotType) {
-      case 0: lots = Fixed_lot; return lots;
-      case 1: risk = AccountBalance * RiskPercent / 100; break;
-      case 2: risk = EquityBalance * RiskPercent / 100; break;
-      case 3: risk = FreeMargin * RiskPercent / 100;      
-   }
-   
-   double ticksize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
-   double tickvalue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
-   double lotstep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
-   
-   double monneyPerLotstep = slPoints / ticksize * tickvalue * lotstep;
-   lots = MathFloor(risk / monneyPerLotstep) * lotstep;
-   
-   double minvolume = SymbolInfoDouble(Symbol(), SYMBOL_VOLUME_MIN);
-   double maxvolume = SymbolInfoDouble(Symbol(), SYMBOL_VOLUME_MAX);
-   double volumelimit = SymbolInfoDouble(Symbol(), SYMBOL_VOLUME_LIMIT);
-   
-   if (volumelimit != 0) lots = MathMin(lots, volumelimit);
-   if (maxvolume != 0) lots = MathMin(lots, SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX));
-   if (minvolume != 0) lots = MathMax(lots, SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN));
-   lots = NormalizeDouble(lots, 2);
-   
-   return lots;
+    // 2. Kiểm tra các lệnh đang chờ (Pending Orders)
+    for(int i = OrdersTotal() - 1; i >= 0; i--)
+    {
+        ulong ticket = OrderGetTicket(i);
+        if(OrderSelect(ticket))
+        {
+            if(OrderGetString(ORDER_SYMBOL) == symbol && OrderGetInteger(ORDER_MAGIC) == magic)
+            {
+                return true; // Đã tìm thấy lệnh chờ
+            }
+        }
+    }
+
+    return false; // Không tìm thấy lệnh nào
+}
+
+//+------------------------------------------------------------------+
+//| Hàm tính toán khối lượng lệnh (Lot) dựa trên rủi ro              |
+//+------------------------------------------------------------------+
+double CalculateLotSize(double riskPercent, double entryPrice, double stopLossPrice, double minUserLot = 0.03)
+{
+    double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+    double riskAmount = balance * (riskPercent / 100.0);
+    double slDistance = MathAbs(entryPrice - stopLossPrice);
+    
+    if(slDistance <= 0) return 0;
+    
+    double tickSize  = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
+    double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+    double lotStep   = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+    
+    // Tính Lot theo rủi ro
+    double lotSize = riskAmount / ((slDistance / tickSize) * tickValue);
+    lotSize = MathFloor(lotSize / lotStep) * lotStep;
+    
+    // Kiểm tra điều kiện tối thiểu 0.03 của bạn
+    if(lotSize < minUserLot) 
+    {
+        Print("Bỏ qua: Lot tính toán (", lotSize, ") < mức tối thiểu (", minUserLot, ")");
+        return 0;
+    }
+    
+    // Kiểm tra giới hạn sàn
+    double maxLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
+    if(lotSize > maxLot) lotSize = maxLot;
+    
+    return lotSize;
+}
+
+//+------------------------------------------------------------------+
+//| Hàm thực thi lệnh với bộ lọc R:R tối thiểu                       |
+//+------------------------------------------------------------------+
+void ExecutePendingOrder(ENUM_ORDER_TYPE type, 
+                         double price, 
+                         double sl, 
+                         double tp, 
+                         double riskPct, 
+                         long magic, 
+                         string comment,
+                         double minRR = 2.0) // Thêm tham số RR tối thiểu (mặc định 1:2)
+{
+    // 1. Kiểm tra tính hợp lệ của SL và TP
+    double riskDistance = MathAbs(price - sl);
+    double rewardDistance = MathAbs(tp - price);
+
+    if(riskDistance <= 0) {
+        Print("Lỗi: Khoảng cách SL không hợp lệ.");
+        return;
+    }
+
+    // 2. Tính toán tỉ lệ R:R thực tế
+    double actualRR = rewardDistance / riskDistance;
+
+    // 3. Kiểm tra điều kiện R:R tối thiểu
+    if(actualRR < minRR)
+    {
+        Print(">>> BỎ QUA LỆNH: Tỉ lệ R:R không đạt yêu cầu. (Thực tế: 1:", 
+              DoubleToString(actualRR, 2), " < Yêu cầu: 1:", DoubleToString(minRR, 2), ")");
+        return; 
+    }
+
+    // 4. Nếu đạt điều kiện R:R, bắt đầu tính Lot
+    double finalLot = CalculateLotSize(riskPct, price, sl, InpMinLot);
+    
+    if(finalLot > 0)
+    {
+        trade.SetExpertMagicNumber(magic);
+        
+        price = NormalizeDouble(price, _Digits);
+        sl    = NormalizeDouble(sl, _Digits);
+        tp    = NormalizeDouble(tp, _Digits);
+
+        bool success = false;
+        switch(type)
+        {
+            case ORDER_TYPE_BUY_STOP:   success = trade.BuyStop(finalLot, price, _Symbol, sl, tp, ORDER_TIME_GTC, 0, comment); break;
+            case ORDER_TYPE_SELL_STOP:  success = trade.SellStop(finalLot, price, _Symbol, sl, tp, ORDER_TIME_GTC, 0, comment); break;
+            case ORDER_TYPE_BUY_LIMIT:  success = trade.BuyLimit(finalLot, price, _Symbol, sl, tp, ORDER_TIME_GTC, 0, comment); break;
+            case ORDER_TYPE_SELL_LIMIT: success = trade.SellLimit(finalLot, price, _Symbol, sl, tp, ORDER_TIME_GTC, 0, comment); break;
+        }
+        
+        if(success) Print(">>> ĐÃ ĐẶT LỆNH RR OK: ", comment, " | RR: 1:", DoubleToString(actualRR, 2));
+        else Print(">>> LỖI ĐẶT LỆNH: ", GetLastError());
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Hàm xoá tất cả các lệnh chờ của cặp tiền này và Magic này        |
+//+------------------------------------------------------------------+
+void DeleteAllPendingOrders(string symbol, long magic)
+{
+    // Duyệt ngược từ cuối danh sách lệnh về đầu
+    // Lý do: Khi xoá một lệnh, chỉ số (index) của các lệnh còn lại sẽ bị thay đổi.
+    for(int i = OrdersTotal() - 1; i >= 0; i--)
+    {
+        ulong ticket = OrderGetTicket(i); // Lấy Ticket của lệnh tại vị trí i
+        
+        if(OrderSelect(ticket)) // Chọn lệnh để kiểm tra thông tin
+        {
+            string orderSymbol = OrderGetString(ORDER_SYMBOL);
+            long   orderMagic  = OrderGetInteger(ORDER_MAGIC);
+            
+            // Kiểm tra xem có đúng cặp tiền và Magic Number không
+            if(orderSymbol == symbol && orderMagic == magic)
+            {
+                // Thực hiện xoá lệnh
+                if(trade.OrderDelete(ticket))
+                {
+                    Print("Đã xoá thành công lệnh chờ Ticket #", ticket);
+                }
+                else
+                {
+                    Print("Lỗi khi xoá lệnh #", ticket, ". Mã lỗi: ", GetLastError());
+                }
+            }
+        }
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Hàm quản lý vị thế: Dời SL về Entry và Chốt 1/3 khi đạt RR 1:1   |
+//+------------------------------------------------------------------+
+void ManageOrders(long magic)
+{
+    for(int i = PositionsTotal() - 1; i >= 0; i--)
+    {
+        ulong ticket = PositionGetTicket(i);
+        if(PositionSelectByTicket(ticket))
+        {
+            // Chỉ quản lý lệnh đúng cặp tiền và đúng Magic Number
+            if(PositionGetString(POSITION_SYMBOL) == _Symbol && PositionGetInteger(POSITION_MAGIC) == magic)
+            {
+                double entryPrice = PositionGetDouble(POSITION_PRICE_OPEN);
+                double currentSL  = PositionGetDouble(POSITION_SL);
+                double currentLot = PositionGetDouble(POSITION_VOLUME);
+                double currentPrice = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY) 
+                                      ? SymbolInfoDouble(_Symbol, SYMBOL_BID) 
+                                      : SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+                
+                // 1. Tính toán khoảng cách SL ban đầu (Risk)
+                // Lưu ý: Chúng ta cần biết SL ban đầu. Nếu hiện tại SL đã bằng Entry, nghĩa là đã xử lý rồi.
+                if(currentSL == entryPrice) continue; 
+
+                double riskDistance = MathAbs(entryPrice - currentSL);
+                if(riskDistance <= 0) continue;
+
+                // 2. Kiểm tra xem giá đã đi được 1:1 chưa
+                double profitDistance = MathAbs(currentPrice - entryPrice);
+                
+                // Nếu lợi nhuận hiện tại >= rủi ro ban đầu (Tỉ lệ 1:1)
+                if(profitDistance >= riskDistance)
+                {
+                    // HÀNH ĐỘNG 1: Chốt lời 1/3 khối lượng
+                    double lotToClose = NormalizeDouble(currentLot / InpBE, 2);
+                    
+                    // Kiểm tra bước nhảy Lot của sàn để đảm bảo lotToClose hợp lệ
+                    double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+                    lotToClose = MathFloor(lotToClose / lotStep) * lotStep;
+
+                    if(lotToClose >= SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN))
+                    {
+                        Print(">>> RR 1:1 đạt được. Đang chốt 1/3 khối lượng: ", lotToClose);
+                        trade.PositionClosePartial(ticket, lotToClose);
+                    }
+
+                    // HÀNH ĐỘNG 2: Dời Stop Loss về hòa vốn (Break Even)
+                    // Thêm một chút offset nếu muốn (ví dụ + 10 point để trả phí spread)
+                    double newSL = entryPrice; 
+                    
+                    if(trade.PositionModify(ticket, newSL, PositionGetDouble(POSITION_TP)))
+                    {
+                        Print(">>> Đã dời SL về hòa vốn cho lệnh #", ticket);
+                    }
+                }
+            }
+        }
+    }
 }
