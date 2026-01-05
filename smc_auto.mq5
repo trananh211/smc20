@@ -135,6 +135,7 @@ input double WickRatio = 2.0; // Râu nến phải dài gấp ít nhất 2 lần
 
 double Ask;
 double Bid;
+int volume_style; // 1: Real Volume, 2: Tick Volume
 // End #region variale declaration
 // Value HighTimeFrame to Global setup
 int gl_sTrend;
@@ -242,6 +243,8 @@ public:
    datetime LowsTime[];
    long volHighs[];
    long volLows[];
+   long wvolHighs[];
+   long wvolLows[];
    
    int LastSwingMeter;
    int gTrend;
@@ -424,6 +427,8 @@ public:
       ArrayInitialize(LowsTime, 0);
       ArrayInitialize(volHighs, 0.0);
       ArrayInitialize(volLows, 0.0);
+      ArrayInitialize(wvolHighs, 0.0);
+      ArrayInitialize(wvolLows, 0.0);
 
       ArrayInitialize(intSHighs, 0.0);
       ArrayInitialize(intSLows, 0.0);
@@ -1568,7 +1573,7 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
 //				ss_iSnR = 0;
 //				ss_iTarget = 0;
 //				ss_iTargetTime = 0;
-//				ss_mitigate_iOrderFlow = -1;
+//				ss_mitigate_iOfrderFlow = -1;
 //				ss_mitigate_iOrderBlock = -1;
 //				
 //				// Reset gl_find H or L
@@ -1686,6 +1691,9 @@ struct marketStructs{
       if ( (tfData.isTimeframe == highPairTF && isDrawHighTF == true) || (tfData.isTimeframe == lowPairTF && isDrawLowTF == true)) {
          tfData.isDraw = true;
       }
+      // Thử lấy Real Volume trước
+      long rVol = iRealVolume(_Symbol, tfData.timeFrame, 1);
+      volume_style = (rVol > 0)? 1 : 2;
       
       // Copy toan bo Lookback = 100 Bar tu Bar hien tai vao mang waveRates
       int copied = CopyRates(_Symbol, timeframe, 0, count_lookback, waveRates);
@@ -1696,7 +1704,7 @@ struct marketStructs{
       double firstBarHigh     = waveRates[firstBar].high;
       double firstBarLow      = waveRates[firstBar].low;
       datetime firstBarTime   = waveRates[firstBar].time;
-      long firstBarVol        = waveRates[firstBar].tick_volume;
+      long firstBarVol        = (volume_style == 2)? waveRates[firstBar].tick_volume : waveRates[firstBar].real_volume;
       
       tfData.highEst = firstBarHigh;
       tfData.lowEst = firstBarLow;
@@ -1707,10 +1715,12 @@ struct marketStructs{
       tfData.AddToDoubleArray(tfData.Highs, firstBarHigh);
       tfData.AddToDateTimeArray(tfData.HighsTime, firstBarTime);
       tfData.AddToLongArray(tfData.volHighs, firstBarVol);
+      tfData.AddToLongArray(tfData.wvolHighs, firstBarVol);
       
       tfData.AddToDoubleArray(tfData.Lows, firstBarLow);
       tfData.AddToDateTimeArray(tfData.LowsTime, firstBarTime);
       tfData.AddToLongArray(tfData.volLows, firstBarVol);
+      tfData.AddToLongArray(tfData.wvolLows, firstBarVol);
 
       
       // internal structure
@@ -1928,8 +1938,8 @@ struct marketStructs{
       if (StringLen(text) > 0) {
          Print(textall);
       }
-      //// For develop
-      //showPoiComment(tfData);
+      // For develop
+      showPoiComment(tfData);
       
       // Gọi hàm vào lệnh
       if (tfData.isHighTF == false) {
@@ -2328,6 +2338,31 @@ struct marketStructs{
       }
    }
    
+   //+------------------------------------------------------------------+
+//| Hàm tính tổng Volume giữa 2 khoảng thời gian                     |
+//+------------------------------------------------------------------+
+long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES tf)
+{
+   // 1. Chuyển đổi thời gian sang chỉ số nến (index)
+   int startBar = iBarShift(_Symbol, tf, startTime);
+   int endBar   = iBarShift(_Symbol, tf, endTime);
+   
+   long totalVolume = 0;
+   
+   // 2. Xác định nến nào cũ hơn, nến nào mới hơn để chạy vòng lặp
+   // Trong MQL5, nến càng cũ thì index càng lớn
+   int highIndex = (startBar > endBar) ? startBar : endBar;
+   int lowIndex  = (startBar > endBar) ? endBar : startBar;
+   
+   // 3. Vòng lặp cộng dồn
+   for(int i = lowIndex; i <= highIndex; i++)
+   {
+      totalVolume += (volume_style == 1)? iVolume(_Symbol, tf, i) : iTickVolume(_Symbol, tf, i);
+   }
+   
+   return totalVolume;
+}
+   
    //---
    //--- Ham cap nhat ve cau truc song gann, internal struct, major struct
    //---
@@ -2358,6 +2393,7 @@ struct marketStructs{
       double line_day = 0;
       double place_start_line_draw = 0;
       
+      long wVol = 0;
       
    //    swing high
       if (bar3.high <= bar2.high && bar2.high >= bar1.high) { // tim thay dinh high
@@ -2377,7 +2413,14 @@ struct marketStructs{
             tfData.AddToDoubleArray(tfData.Highs, bar2.high, limit);
             tfData.AddToDateTimeArray(tfData.HighsTime, bar2.time, limit);
             tfData.AddToLongArray(tfData.volHighs, maxVolume, limit);
-
+            //if (ArraySize(tfData.LowsTime) > 1) {
+            //   wVol = GetCumulativeVolume(bar2.time, tfData.LowsTime[0], tfData.timeFrame);
+            //} else {
+            //   wVol = (volume_style == 1) ? bar2.real_volume : bar2.tick_volume;
+            //}
+            wVol = GetCumulativeVolume(bar2.time, tfData.LowsTime[0], tfData.timeFrame);
+            tfData.AddToLongArray(tfData.wvolHighs, wVol, limit);
+            
             drawPointStructure(tfData, 1, bar2.high, bar2.time, GANN_STRUCTURE, false, enabledDraw);
             tfData.LastSwingMeter = -1;
             // cap nhat Zone. Khong xoa (updatePointZone)
@@ -2396,6 +2439,13 @@ struct marketStructs{
                tfData.UpdateDoubleArray(tfData.Highs, 0, bar2.high);
                tfData.UpdateDateTimeArray(tfData.HighsTime, 0, bar2.time);
                tfData.UpdateLongArray(tfData.volHighs, 0, maxVolume);
+               //if (ArraySize(tfData.HighsTime) > 1) {
+               //   wVol = GetCumulativeVolume(bar2.time, tfData.HighsTime[0], tfData.timeFrame);
+               //} else {
+               //   wVol = (volume_style == 1) ? bar2.real_volume : bar2.tick_volume;
+               //}
+               wVol = GetCumulativeVolume(bar2.time, tfData.HighsTime[0], tfData.timeFrame);
+               tfData.AddToLongArray(tfData.wvolLows, wVol, limit);
 
                drawPointStructure(tfData, 1, bar2.high, bar2.time, GANN_STRUCTURE, true, enabledDraw);
                tfData.LastSwingMeter = -1;
@@ -2408,6 +2458,9 @@ struct marketStructs{
          if(StringLen(textGannHigh) > 0) {
             text_all += str_gann+" (Swing) "+textGannHigh;
          }
+         Print("Highs: "); ArrayPrint(tfData.Highs);
+         Print("wvolHighs: "); ArrayPrint(tfData.wvolHighs);
+         
          
          // Internal Structure
          str_internal_high += "\n--->Swing High: "+DoubleToString(bar2.high,_Digits) +".#SS iTrend: " +(string) tfData.iTrend+", LastSwingInternal: "+(string) tfData.LastSwingInternal;
