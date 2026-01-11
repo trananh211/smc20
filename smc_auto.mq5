@@ -2373,25 +2373,31 @@ struct marketStructs{
    //+------------------------------------------------------------------+
 //| Hàm tính tổng Volume giữa 2 khoảng thời gian                     |
 //+------------------------------------------------------------------+
-long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES tf)
+long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES tf, string str_options = "")
 {
+   string text = "#################### ["+str_options+"]: ";
+   text += "Bắt đầu tính tổng volume từ "+(string) startTime + " đến " + (string) endTime;
    // 1. Chuyển đổi thời gian sang chỉ số nến (index)
    int startBar = iBarShift(_Symbol, tf, startTime);
    int endBar   = iBarShift(_Symbol, tf, endTime);
    
    long totalVolume = 0;
-   
+   long i_Volume;
    // 2. Xác định nến nào cũ hơn, nến nào mới hơn để chạy vòng lặp
    // Trong MQL5, nến càng cũ thì index càng lớn
    int highIndex = (startBar > endBar) ? startBar : endBar;
    int lowIndex  = (startBar > endBar) ? endBar : startBar;
    
+   text += "; được tính tổng từ "+(string) ((volume_style == 1)? iVolume(_Symbol, tf, lowIndex) : iTickVolume(_Symbol, tf, lowIndex))+ 
+            " đến "+ (string) ((volume_style == 1)? iVolume(_Symbol, tf, highIndex) : iTickVolume(_Symbol, tf, highIndex));
    // 3. Vòng lặp cộng dồn
    for(int i = lowIndex; i <= highIndex; i++)
    {
-      totalVolume += (volume_style == 1)? iVolume(_Symbol, tf, i) : iTickVolume(_Symbol, tf, i);
+      i_Volume = (volume_style == 1)? iVolume(_Symbol, tf, i) : iTickVolume(_Symbol, tf, i);
+      totalVolume += i_Volume;
    }
-   
+   text += " có tổng volume bằng: "+(string) totalVolume;
+   Print(text);
    return totalVolume;
 }
    
@@ -2446,7 +2452,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             tfData.AddToDateTimeArray(tfData.HighsTime, bar2.time, limit);
             tfData.AddToLongArray(tfData.volHighs, maxVolume, limit);
             
-            wVol = GetCumulativeVolume(bar2.time, tfData.LowsTime[0], tfData.timeFrame);
+            wVol = GetCumulativeVolume(bar2.time, tfData.LowsTime[0], tfData.timeFrame, "Gann New High");
             tfData.AddToLongArray(tfData.wvolHighs, wVol, limit);
             tfData.AddToDateTimeArray(tfData.wvolHighTime, bar2.time, limit);
             
@@ -2469,7 +2475,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                tfData.UpdateDateTimeArray(tfData.HighsTime, 0, bar2.time);
                tfData.UpdateLongArray(tfData.volHighs, 0, maxVolume);
                
-               wVol = GetCumulativeVolume(bar2.time, tfData.LowsTime[0], tfData.timeFrame);
+               wVol = GetCumulativeVolume(bar2.time, tfData.LowsTime[0], tfData.timeFrame, "Gann Update High");
                tfData.UpdateLongArray(tfData.wvolHighs, 0, wVol);
                tfData.UpdateDateTimeArray(tfData.wvolHighTime, 0, bar2.time);
 
@@ -2500,7 +2506,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             tfData.AddToDateTimeArray(tfData.intSHighTime, bar2.time);
             tfData.AddToLongArray(tfData.volIntSHighs, maxVolume);
             
-            wVol = GetCumulativeVolume(bar2.time, tfData.intSLowTime[0], tfData.timeFrame);
+            wVol = GetCumulativeVolume(bar2.time, tfData.intSLowTime[0], tfData.timeFrame, "Internal Break High");
             tfData.AddToLongArray(tfData.wvolIntSHighs, wVol, limit);
             tfData.AddToDateTimeArray(tfData.wvolIntSHighTime, bar2.time);
 
@@ -2560,7 +2566,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             tfData.UpdateDateTimeArray(tfData.intSHighTime, 0, bar2.time);
             tfData.UpdateLongArray(tfData.volIntSHighs, 0, maxVolume);
             
-            wVol = GetCumulativeVolume(bar2.time, tfData.intSLowTime[0], tfData.timeFrame);
+            wVol = GetCumulativeVolume(bar2.time, tfData.intSLowTime[0], tfData.timeFrame, "Internal Update High");
             tfData.UpdateLongArray(tfData.wvolIntSHighs, 0,wVol);
             tfData.UpdateDateTimeArray(tfData.wvolIntSHighTime, 0, bar2.time);
             
@@ -2621,7 +2627,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             tfData.AddToDateTimeArray(tfData.intSHighTime, bar2.time);
             tfData.AddToLongArray(tfData.volIntSHighs, maxVolume);
             
-            wVol = GetCumulativeVolume(bar2.time, tfData.intSLowTime[0], tfData.timeFrame);
+            wVol = GetCumulativeVolume(bar2.time, tfData.intSLowTime[0], tfData.timeFrame, "Internal New High");
             tfData.AddToLongArray(tfData.wvolIntSHighs, wVol, limit);
             tfData.AddToDateTimeArray(tfData.wvolIntSHighTime, bar2.time);
                         
@@ -2646,7 +2652,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             tfData.UpdateDateTimeArray(tfData.intSHighTime, 0, bar2.time);
             tfData.UpdateLongArray(tfData.volIntSHighs, 0, maxVolume);
             
-            wVol = GetCumulativeVolume(bar2.time, tfData.intSLowTime[0], tfData.timeFrame);
+            wVol = GetCumulativeVolume(bar2.time, tfData.intSLowTime[0], tfData.timeFrame, "Internal Update High");
             tfData.UpdateLongArray(tfData.wvolIntSHighs, 0, wVol);
             tfData.UpdateDateTimeArray(tfData.wvolIntSHighTime, 0, bar2.time);
             
@@ -2674,7 +2680,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             tfData.AddToDateTimeArray(tfData.intSHighTime, bar2.time);
             tfData.AddToLongArray(tfData.volIntSHighs, maxVolume);
             
-            wVol = GetCumulativeVolume(bar2.time, tfData.intSLowTime[0], tfData.timeFrame);
+            wVol = GetCumulativeVolume(bar2.time, tfData.intSLowTime[0], tfData.timeFrame, "Internal Break High");
             tfData.AddToLongArray(tfData.wvolIntSHighs, wVol, limit);
             tfData.AddToDateTimeArray(tfData.wvolIntSHighTime, bar2.time);
             
@@ -2733,7 +2739,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             tfData.AddToDateTimeArray(tfData.LowsTime, bar2.time);
             tfData.AddToLongArray(tfData.volLows, maxVolume);
             
-            wVol = GetCumulativeVolume(bar2.time, tfData.HighsTime[0], tfData.timeFrame);
+            wVol = GetCumulativeVolume(bar2.time, tfData.HighsTime[0], tfData.timeFrame, "Gann New Low");
             tfData.AddToLongArray(tfData.wvolLows, wVol, limit);
             tfData.AddToDateTimeArray(tfData.wvolLowTime, bar2.time);
             
@@ -2756,7 +2762,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                tfData.UpdateDateTimeArray(tfData.LowsTime, 0, bar2.time);
                tfData.UpdateLongArray(tfData.volLows, 0, maxVolume);
                
-               wVol = GetCumulativeVolume(bar2.time, tfData.HighsTime[0], tfData.timeFrame);
+               wVol = GetCumulativeVolume(bar2.time, tfData.HighsTime[0], tfData.timeFrame, "Gann Update Low");
                tfData.UpdateLongArray(tfData.wvolLows, 0, wVol);
                tfData.UpdateDateTimeArray(tfData.wvolLowTime, 0, bar2.time);
                
@@ -2785,7 +2791,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             tfData.AddToDateTimeArray(tfData.intSLowTime, bar2.time);
             tfData.AddToLongArray(tfData.volIntSLows, maxVolume);
             
-            wVol = GetCumulativeVolume(bar2.time, tfData.intSHighTime[0], tfData.timeFrame);
+            wVol = GetCumulativeVolume(bar2.time, tfData.intSHighTime[0], tfData.timeFrame, "Internal New Low");
             tfData.AddToLongArray(tfData.wvolIntSLows, wVol, limit);
             tfData.AddToDateTimeArray(tfData.wvolIntSLowTime, bar2.time);
             
@@ -2846,7 +2852,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             tfData.UpdateDateTimeArray(tfData.intSLowTime, 0, bar2.time);
             tfData.UpdateLongArray(tfData.volIntSLows, 0, maxVolume);
             
-            wVol = GetCumulativeVolume(bar2.time, tfData.intSHighTime[0], tfData.timeFrame);
+            wVol = GetCumulativeVolume(bar2.time, tfData.intSHighTime[0], tfData.timeFrame, "Internal Update Low");
             tfData.UpdateLongArray(tfData.wvolIntSLows, 0, wVol);
             tfData.UpdateDateTimeArray(tfData.wvolIntSLowTime, 0, bar2.time);
             
@@ -2908,7 +2914,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             tfData.AddToDateTimeArray(tfData.intSLowTime, bar2.time);
             tfData.AddToLongArray(tfData.volIntSLows, maxVolume);
             
-            wVol = GetCumulativeVolume(bar2.time, tfData.intSHighTime[0], tfData.timeFrame);
+            wVol = GetCumulativeVolume(bar2.time, tfData.intSHighTime[0], tfData.timeFrame, "Internal New Low");
             tfData.AddToLongArray(tfData.wvolIntSLows, wVol, limit);
             tfData.AddToDateTimeArray(tfData.wvolIntSLowTime, bar2.time);
             
@@ -2932,7 +2938,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             tfData.UpdateDateTimeArray(tfData.intSLowTime, 0, bar2.time);
             tfData.UpdateLongArray(tfData.volIntSLows, 0, maxVolume);
             
-            wVol = GetCumulativeVolume(bar2.time, tfData.intSHighTime[0], tfData.timeFrame);
+            wVol = GetCumulativeVolume(bar2.time, tfData.intSHighTime[0], tfData.timeFrame, "Internal Update Low");
             tfData.UpdateLongArray(tfData.wvolIntSLows, 0, wVol);
             tfData.UpdateDateTimeArray(tfData.wvolIntSLowTime, 0, bar2.time);
             
@@ -2960,7 +2966,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             tfData.AddToDateTimeArray(tfData.intSLowTime, bar2.time);
             tfData.AddToLongArray(tfData.volIntSLows, maxVolume);
             
-            wVol = GetCumulativeVolume(bar2.time, tfData.intSHighTime[0], tfData.timeFrame);
+            wVol = GetCumulativeVolume(bar2.time, tfData.intSHighTime[0], tfData.timeFrame, "Internal New Low");
             tfData.AddToLongArray(tfData.wvolIntSLows, wVol, limit);
             tfData.AddToDateTimeArray(tfData.wvolIntSLowTime, bar2.time);
             
@@ -3469,11 +3475,15 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
          }
       }
       
+      if(StringLen(text_all) > 0) {
+         // For Deverlop
+         showComment(tfData);
+      }
+      
       if (isComment == false) {
          text_all = "";
       }
-      // For Deverlop
-      showComment(tfData);
+      
       
       return text_all;
    } //--- End Ham cap nhat cau truc song Gann
@@ -3659,7 +3669,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                tfData.AddToLongArray( tfData.volArrPbHigh, tfData.volArrTop[0]);
                
                //if (ArraySize(tfData.arrPbHigh) == ArraySize(tfData.arrPbLow)) {
-                  wVol = GetCumulativeVolume(tfData.arrPbHTime[0], tfData.wvolArrPbLowTime[0], tfData.timeFrame);
+                  wVol = GetCumulativeVolume(tfData.arrPbHTime[0], tfData.wvolArrPbLowTime[0], tfData.timeFrame, "Marjor New High");
                   tfData.AddToLongArray( tfData.wvolArrPbHigh, wVol);
                   tfData.AddToDateTimeArray( tfData.wvolArrPbHighTime, tfData.arrPbHTime[0]);
                //}
@@ -3788,7 +3798,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                tfData.AddToDateTimeArray( tfData.arrPbLTime, tfData.LTime);
                tfData.AddToLongArray( tfData.volArrPbLow, tfData.vol_L);
                
-               wVol = GetCumulativeVolume(tfData.arrPbLTime[0], tfData.wvolArrPbHighTime[0], tfData.timeFrame);
+               wVol = GetCumulativeVolume(tfData.arrPbLTime[0], tfData.wvolArrPbHighTime[0], tfData.timeFrame, "Marjor BOS High");
                tfData.AddToLongArray( tfData.wvolArrPbLow, wVol);
                tfData.AddToDateTimeArray( tfData.wvolArrPbLowTime, tfData.arrPbLTime[0]);
                
@@ -3875,7 +3885,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                tfData.AddToDateTimeArray( tfData.arrPbLTime, tfData.LTime);
                tfData.AddToLongArray( tfData.volArrPbLow, tfData.vol_L);
                            
-               wVol = GetCumulativeVolume(tfData.arrPbLTime[0], tfData.wvolArrPbHighTime[0], tfData.timeFrame);
+               wVol = GetCumulativeVolume(tfData.arrPbLTime[0], tfData.wvolArrPbHighTime[0], tfData.timeFrame, "Marjor CHoCH High");
                tfData.AddToLongArray( tfData.wvolArrPbLow, wVol);
                tfData.AddToDateTimeArray( tfData.wvolArrPbLowTime, tfData.arrPbLTime[0]);
                
@@ -4080,7 +4090,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                tfData.AddToLongArray( tfData.volArrPbLow, tfData.volArrBot[0]);
                
                //if (ArraySize(tfData.arrPbHigh) == ArraySize(tfData.arrPbLow)) {
-                  wVol = GetCumulativeVolume(tfData.arrPbLTime[0], tfData.wvolArrPbHighTime[0], tfData.timeFrame);
+                  wVol = GetCumulativeVolume(tfData.arrPbLTime[0], tfData.wvolArrPbHighTime[0], tfData.timeFrame, "Marjor New Low");
                   tfData.AddToLongArray( tfData.wvolArrPbLow, wVol);
                   tfData.AddToDateTimeArray( tfData.wvolArrPbLowTime, tfData.arrPbLTime[0]);
                //}
@@ -4207,7 +4217,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                tfData.AddToDateTimeArray( tfData.arrPbHTime, tfData.HTime);
                tfData.AddToLongArray( tfData.volArrPbHigh, tfData.vol_H);
                
-               wVol = GetCumulativeVolume(tfData.arrPbHTime[0], tfData.wvolArrPbLowTime[0], tfData.timeFrame);
+               wVol = GetCumulativeVolume(tfData.arrPbHTime[0], tfData.wvolArrPbLowTime[0], tfData.timeFrame, "Marjor BOS Low");
                tfData.AddToLongArray( tfData.wvolArrPbHigh, wVol);
                tfData.AddToDateTimeArray( tfData.wvolArrPbHighTime, tfData.arrPbHTime[0]);
                
@@ -4295,7 +4305,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                tfData.AddToDateTimeArray( tfData.arrPbHTime, tfData.HTime);
                tfData.AddToLongArray( tfData.volArrPbHigh, tfData.vol_H);
                
-               wVol = GetCumulativeVolume(tfData.arrPbHTime[0], tfData.wvolArrPbLowTime[0], tfData.timeFrame);
+               wVol = GetCumulativeVolume(tfData.arrPbHTime[0], tfData.wvolArrPbLowTime[0], tfData.timeFrame, "Marjor CHoCH Low");
                tfData.AddToLongArray( tfData.wvolArrPbHigh, wVol);
                tfData.AddToDateTimeArray( tfData.wvolArrPbHighTime, tfData.arrPbHTime[0]);
                
@@ -4416,7 +4426,12 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
          gl_H_arrPBHigh_LTF = tfData.arrPbHigh[0];
          gl_L_arrPBLow_LTF = tfData.arrPbLow[0];
       }
- 
+      
+      if(StringLen(text) > 0) {
+         // For Deverlop
+         showComment(tfData);
+      }
+      
       if (isComment == false) {
          textall = "";
       } else {
@@ -4424,8 +4439,6 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             textall += str_marjor+text;
          }
       }
-      //// For Deverlop
-      //showComment(tfData);
       
       return textall;
    } //--- End Ham cap nhat cau truc thi truong : updatePointTopBot
@@ -5612,11 +5625,11 @@ void showComment(TimeFrameData& tfData) {
       ////////////////Print("zArrBot: "); ArrayPrint(tfData.zArrBot);
       
       
-      Print("arrPbHigh: "); ArrayPrint(tfData.arrPbHigh);
-      Print("wvolArrPbHigh: "); ArrayPrint(tfData.wvolArrPbHigh);
+      Print("arrPbHigh ("+(string)ArraySize(tfData.arrPbHigh)+"): "); ArrayPrint(tfData.arrPbHigh);
+      Print("wvolArrPbHigh ("+(string)ArraySize(tfData.wvolArrPbHigh)+"): "); ArrayPrint(tfData.wvolArrPbHigh);
       //Print("Vol arrPbHigh: "); ArrayPrint(tfData.volArrPbHigh);
-      Print("arrPbLow: "); ArrayPrint(tfData.arrPbLow); 
-      Print("wvolArrPbLow: "); ArrayPrint(tfData.wvolArrPbLow); 
+      Print("arrPbLow ("+(string)ArraySize(tfData.arrPbLow)+"): "); ArrayPrint(tfData.arrPbLow); 
+      Print("wvolArrPbLow ("+(string)ArraySize(tfData.arrPbHigh)+"): ");; ArrayPrint(tfData.wvolArrPbLow); 
       //Print("Vol arrPbLow: "); ArrayPrint(tfData.volArrPbLow);
       //Print("zArrPbHigh"); ArrayPrint(tfData.zArrPbHigh); 
       //Print("zArrPbLow"); ArrayPrint(tfData.zArrPbLow);
