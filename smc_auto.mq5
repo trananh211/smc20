@@ -276,6 +276,7 @@ public:
    int LastSwingInternal;
    int iTrend;
    int vItrend;
+   int wvItrend;
    int waitingIntSHighs; // Chờ nến phá vỡ đỉnh internal swing highs. default = 0
    int waitingIntSLows;  // Chờ nến phá vỡ đỉnh internal swing lows.  default = 0
 
@@ -389,9 +390,9 @@ public:
       hightime = 0;
       lowtime = 0;
       LastSwingMeter = 0;
-      gTrend = 0; vGTrend = 0;
+      gTrend = 0; vGTrend = 0; 
       LastSwingInternal = 0;
-      iTrend = 0; vItrend = 0;
+      iTrend = 0; vItrend = 0; wvItrend = 0;
       mTrend = 0; vMTrend = 0;
       sTrend = 0; vSTrend = 0;
       waitingHighs = 0;
@@ -2455,7 +2456,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             wVol = GetCumulativeVolume(bar2.time, tfData.LowsTime[0], tfData.timeFrame, "Gann New High");
             tfData.AddToLongArray(tfData.wvolHighs, wVol, limit);
             tfData.AddToDateTimeArray(tfData.wvolHighTime, bar2.time, limit);
-            
+                        
             drawPointStructure(tfData, 1, bar2.high, bar2.time, GANN_STRUCTURE, false, enabledDraw);
             tfData.LastSwingMeter = -1;
             // cap nhat Zone. Khong xoa (updatePointZone)
@@ -2478,7 +2479,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                wVol = GetCumulativeVolume(bar2.time, tfData.LowsTime[0], tfData.timeFrame, "Gann Update High");
                tfData.UpdateLongArray(tfData.wvolHighs, 0, wVol);
                tfData.UpdateDateTimeArray(tfData.wvolHighTime, 0, bar2.time);
-
+               
                drawPointStructure(tfData, 1, bar2.high, bar2.time, GANN_STRUCTURE, true, enabledDraw);
                tfData.LastSwingMeter = -1;
                // cap nhat Zone. Xoa 0 (updatePointZone)
@@ -2509,7 +2510,12 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             wVol = GetCumulativeVolume(bar2.time, tfData.intSLowTime[0], tfData.timeFrame, "Internal Break High");
             tfData.AddToLongArray(tfData.wvolIntSHighs, wVol, limit);
             tfData.AddToDateTimeArray(tfData.wvolIntSHighTime, bar2.time);
-
+            
+            // Setup wave volume
+            if (tfData.wvItrend == 0 && tfData.wvolIntSHighTime[0] > tfData.wvolIntSLowTime[0]) {
+               tfData.wvItrend = (tfData.wvolIntSHighs[0] > tfData.wvolIntSLows[0]) ? 1 : -1;
+            }
+            
             drawPointStructure(tfData, 1, bar2.high, bar2.time, INTERNAL_STRUCTURE, false, enabledDraw);
             
             tfData.iTrend = 1;
@@ -2569,6 +2575,11 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             wVol = GetCumulativeVolume(bar2.time, tfData.intSLowTime[0], tfData.timeFrame, "Internal Update High");
             tfData.UpdateLongArray(tfData.wvolIntSHighs, 0,wVol);
             tfData.UpdateDateTimeArray(tfData.wvolIntSHighTime, 0, bar2.time);
+            
+            // Setup wave volume
+            if (tfData.wvItrend != 0 && tfData.wvolIntSHighTime[0] > tfData.wvolIntSLowTime[0]) {
+               tfData.wvItrend = (tfData.wvolIntSHighs[0] > tfData.wvolIntSLows[0]) ? 1 : -1;
+            }
             
             drawPointStructure(tfData, 1, bar2.high, bar2.time, INTERNAL_STRUCTURE, true, enabledDraw);
             
@@ -2742,7 +2753,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             wVol = GetCumulativeVolume(bar2.time, tfData.HighsTime[0], tfData.timeFrame, "Gann New Low");
             tfData.AddToLongArray(tfData.wvolLows, wVol, limit);
             tfData.AddToDateTimeArray(tfData.wvolLowTime, bar2.time);
-            
+                        
             drawPointStructure(tfData, -1, bar2.low, bar2.time, GANN_STRUCTURE, false, enabledDraw);
             tfData.LastSwingMeter = 1;
             // Them Zone.
@@ -2794,6 +2805,11 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             wVol = GetCumulativeVolume(bar2.time, tfData.intSHighTime[0], tfData.timeFrame, "Internal New Low");
             tfData.AddToLongArray(tfData.wvolIntSLows, wVol, limit);
             tfData.AddToDateTimeArray(tfData.wvolIntSLowTime, bar2.time);
+            
+            // Setup wave volume
+            if (tfData.wvItrend == 0 && tfData.wvolIntSLowTime[0] > tfData.wvolIntSHighTime[0]) {
+               tfData.wvItrend = (tfData.wvolIntSLows[0] > tfData.wvolIntSHighs[0]) ? -1 : 1;
+            }
             
             drawPointStructure(tfData, -1, bar2.low, bar2.time, INTERNAL_STRUCTURE, false, enabledDraw);
                      
@@ -2855,6 +2871,11 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             wVol = GetCumulativeVolume(bar2.time, tfData.intSHighTime[0], tfData.timeFrame, "Internal Update Low");
             tfData.UpdateLongArray(tfData.wvolIntSLows, 0, wVol);
             tfData.UpdateDateTimeArray(tfData.wvolIntSLowTime, 0, bar2.time);
+            
+            // Setup wave volume
+            if (tfData.wvItrend != 0 && tfData.wvolIntSLowTime[0] > tfData.wvolIntSHighTime[0]) {
+               tfData.wvItrend = (tfData.wvolIntSLows[0] > tfData.wvolIntSHighs[0]) ? -1 : 1;
+            }
             
             drawPointStructure(tfData, -1, bar2.low, bar2.time, INTERNAL_STRUCTURE, true, enabledDraw);
                      
@@ -3061,6 +3082,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
          if (tfData.iTrend == 1 && tfData.LastSwingInternal == 1 && bar1.high > tfData.intSHighs[0]) {
             tfData.iTrend = 1;
             tfData.vItrend = tfData.iTrend;
+            tfData.wvItrend = 0;
             tfData.LastSwingInternal = 1;
             tfData.waitingIntSHighs = 1;
                         
@@ -3116,6 +3138,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
          if (tfData.iTrend == -1 && tfData.LastSwingInternal == 1 && bar1.high > tfData.intSHighs[0]) {
             tfData.iTrend = 1;
             tfData.vItrend = tfData.iTrend;
+            tfData.wvItrend = 0;
             tfData.LastSwingInternal = 1;
             tfData.waitingIntSHighs = 1;
                         
@@ -3172,6 +3195,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                   ArraySize(tfData.intSHighs) > 1 && bar1.high > tfData.intSHighs[0] && bar1.high > tfData.intSHighs[1]) {
             tfData.iTrend = 1;
             tfData.vItrend = tfData.iTrend;
+            tfData.wvItrend = 0;
             tfData.LastSwingInternal = 1;
             tfData.waitingIntSHighs = 1;
                         
@@ -3262,6 +3286,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
          if (tfData.iTrend == -1 && tfData.LastSwingInternal == -1 && bar1.low < tfData.intSLows[0]) {
             tfData.iTrend = -1;
             tfData.vItrend = tfData.iTrend;
+            tfData.wvItrend = 0;
             tfData.LastSwingInternal = -1;
             tfData.waitingIntSLows = 1;
             
@@ -3318,6 +3343,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
          if (tfData.iTrend == 1 && tfData.LastSwingInternal == -1 && bar1.low < tfData.intSLows[0]) {
             tfData.iTrend = -1;
             tfData.vItrend = tfData.iTrend;
+            tfData.wvItrend = 0;
             tfData.LastSwingInternal = -1;
             tfData.waitingIntSLows = 1;
                         
@@ -3374,6 +3400,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                 ArraySize(tfData.intSLows) > 1 && bar1.low < tfData.intSLows[0] && bar1.low < tfData.intSLows[1]) {
             tfData.iTrend = -1;
             tfData.vItrend = tfData.iTrend;
+            tfData.wvItrend = 0;
             tfData.LastSwingInternal = -1;
             tfData.waitingIntSLows = 1;
                         
@@ -5528,7 +5555,7 @@ string getInfoStruct(ENUM_TIMEFRAMES timeframe) {
    text += "Timeframe: "+ EnumToString(timeframe);
    text += " | Struct is : " + ((tfData.sTrend == 0) ? "Not defined" : ((tfData.sTrend == 1) ? "S UpTrend" : "S DownTrend")) + "( "+ (string) tfData.sTrend + " . "+ (string) tfData.vSTrend+ ")";
    text += " | Marjor Struct is : " + ((tfData.mTrend == 0) ? "Not defined" : ((tfData.mTrend == 1) ? "m UpTrend" : "m DownTrend")) + "( "+ (string) tfData.mTrend + " . "+ (string) tfData.vMTrend+ ")";
-   text += " | Internal is : " + ((tfData.iTrend == 0) ? "Not defined" : ((tfData.iTrend == 1) ? "i UpTrend" : "i DownTrend"))+ "( "+ (string) tfData.iTrend + " . "+ (string) tfData.vItrend+ ")";
+   text += " | Internal is : " + ((tfData.iTrend == 0) ? "Not defined" : ((tfData.iTrend == 1) ? "i UpTrend" : "i DownTrend"))+ "( "+ (string) tfData.iTrend + " . "+ (string) tfData.vItrend + " . "+ (string) tfData.wvItrend+ ")";
    //text += " iFindtarget : " + (string) tfData.iFindTarget + " - iStoploss: "+ DoubleToString(tfData.iStoploss,_Digits)+ " - iTarget: "+ DoubleToString(tfData.iTarget,_Digits);
    text += " | Gann wave is : " + ((tfData.gTrend == 0) ? "Not defined" : ((tfData.gTrend == 1) ? "g UpTrend" : " DownTrend"))+ "( "+ (string) tfData.gTrend + " . "+ (string) tfData.vGTrend+ ")";
    //text += " | H: "+ (DoubleToString(tfData.H,_Digits))+" : Internal High "+DoubleToString(tfData.intSHighs[0], _Digits)+" _ L: "+ (DoubleToString(tfData.L,_Digits))+" : Internal Low "+DoubleToString(tfData.intSLows[0],_Digits); 
@@ -5629,7 +5656,7 @@ void showComment(TimeFrameData& tfData) {
       Print("wvolArrPbHigh ("+(string)ArraySize(tfData.wvolArrPbHigh)+"): "); ArrayPrint(tfData.wvolArrPbHigh);
       //Print("Vol arrPbHigh: "); ArrayPrint(tfData.volArrPbHigh);
       Print("arrPbLow ("+(string)ArraySize(tfData.arrPbLow)+"): "); ArrayPrint(tfData.arrPbLow); 
-      Print("wvolArrPbLow ("+(string)ArraySize(tfData.arrPbHigh)+"): ");; ArrayPrint(tfData.wvolArrPbLow); 
+      Print("wvolArrPbLow ("+(string)ArraySize(tfData.wvolArrPbLow)+"): ");; ArrayPrint(tfData.wvolArrPbLow); 
       //Print("Vol arrPbLow: "); ArrayPrint(tfData.volArrPbLow);
       //Print("zArrPbHigh"); ArrayPrint(tfData.zArrPbHigh); 
       //Print("zArrPbLow"); ArrayPrint(tfData.zArrPbLow);
@@ -5671,7 +5698,7 @@ string getValueTrend(TimeFrameData& tfData) {
                "\n    findHigh: "+(string) tfData.findHigh+" - idmHigh: "+DoubleToString(tfData.idmHigh, _Digits)+ " - vol idmHigh: "+(string) tfData.vol_idmHigh+
                " findLow: "+(string) tfData.findLow+" - idmLow: "+DoubleToString( tfData.idmLow,_Digits)+ " - vol idmLow: "+(string) tfData.vol_idmLow+
                " _ mFindtarget: "+(string) tfData.mFindTarget + " mStoploss: " + DoubleToString(tfData.mStoploss,_Digits) + " mSnR: " + DoubleToString(tfData.mSnR,_Digits) + " mTarget: "+ DoubleToString(tfData.mTarget,_Digits) + " mFullTarget: "+ DoubleToString(tfData.mFullTarget,_Digits) +
-               "\n($) Internal Trend: iTrend: "+(string) tfData.iTrend+ " vItrend: "+(string) tfData.vItrend+ " waitingItrend: IntSHighs "+(string) tfData.waitingIntSHighs + " IntSLows " + (string) tfData.waitingIntSLows +" - LastSwingInternal: "+(string) tfData.LastSwingInternal+
+               "\n($) Internal Trend: iTrend: "+(string) tfData.iTrend+ " vItrend: "+(string) tfData.vItrend + " wvItrend: "+(string) tfData.wvItrend + " waitingItrend: IntSHighs "+(string) tfData.waitingIntSHighs + " IntSLows " + (string) tfData.waitingIntSLows +" - LastSwingInternal: "+(string) tfData.LastSwingInternal+
                " _ iFindtarget: "+(string) tfData.iFindTarget + " iStoploss: " + DoubleToString(tfData.iStoploss,_Digits) + " iOrderBlock: " + DoubleToString(tfData.iOrderBlock,_Digits) + " iSnR: " + DoubleToString(tfData.iSnR,_Digits) + " iTarget: "+ DoubleToString(tfData.iTarget,_Digits) + " iFullTarget: "+ DoubleToString(tfData.iFullTarget,_Digits) +
                "\n($) Gann Trend: gTrend: "+(string) tfData.gTrend+ " vGTrend: "+(string) tfData.vGTrend+ " - LastSwingMeter: "+(string) tfData.LastSwingMeter+ " | | H: "+ DoubleToString( tfData.H, _Digits) +" - L: "+DoubleToString( tfData.L, _Digits);  
    text += "\n($) Global Trend: ss_ITrend: " + (string) ss_ITrend +"; ss_vITrend: "+ (string) ss_vITrend + "; ss_iStoploss: " +DoubleToString(ss_iStoploss,_Digits) + 
