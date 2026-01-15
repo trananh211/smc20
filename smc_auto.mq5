@@ -294,6 +294,7 @@ public:
    int sTrend; // struct Trend normal
    int vMTrend; // marjor Trend with volume
    int vSTrend; // struct Trend with volume
+   int wvMtrend;
    datetime arrPbHTime[];
    double arrPbHigh[];
    datetime arrPbLTime[];
@@ -393,7 +394,7 @@ public:
       gTrend = 0; vGTrend = 0; 
       LastSwingInternal = 0;
       iTrend = 0; vItrend = 0; wvItrend = 0;
-      mTrend = 0; vMTrend = 0;
+      mTrend = 0; vMTrend = 0; wvMtrend = 0;
       sTrend = 0; vSTrend = 0;
       waitingHighs = 0;
       waitingLows = 0;
@@ -3695,12 +3696,15 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                tfData.AddToDateTimeArray( tfData.arrPbHTime, tfData.arrTopTime[0]);
                tfData.AddToLongArray( tfData.volArrPbHigh, tfData.volArrTop[0]);
                
-               //if (ArraySize(tfData.arrPbHigh) == ArraySize(tfData.arrPbLow)) {
-                  wVol = GetCumulativeVolume(tfData.arrPbHTime[0], tfData.wvolArrPbLowTime[0], tfData.timeFrame, "Marjor New High");
-                  tfData.AddToLongArray( tfData.wvolArrPbHigh, wVol);
-                  tfData.AddToDateTimeArray( tfData.wvolArrPbHighTime, tfData.arrPbHTime[0]);
-               //}
-               
+               wVol = GetCumulativeVolume(tfData.arrPbHTime[0], tfData.wvolArrPbLowTime[0], tfData.timeFrame, "Marjor New High");
+               tfData.AddToLongArray( tfData.wvolArrPbHigh, wVol);
+               tfData.AddToDateTimeArray( tfData.wvolArrPbHighTime, tfData.arrPbHTime[0]);
+
+               // Setup wave volume
+               if (tfData.wvMtrend == 0 && tfData.wvolArrPbHighTime[0] > tfData.wvolArrPbLowTime[0]) {
+                  tfData.wvMtrend = (tfData.wvolArrPbHigh[0] > tfData.wvolArrPbLow[0]) ? 1 : -1;
+               }
+            
                // add new zone
                tfData.AddToPoiZoneArray( tfData.zArrPbHigh, tfData.zArrTop[0], limit); 
                // cap nhat waiting pb high
@@ -3829,6 +3833,11 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                tfData.AddToLongArray( tfData.wvolArrPbLow, wVol);
                tfData.AddToDateTimeArray( tfData.wvolArrPbLowTime, tfData.arrPbLTime[0]);
                
+               // Setup wave volume
+               if (tfData.wvMtrend != 0 && tfData.wvolArrPbHighTime[0] < tfData.wvolArrPbLowTime[0]) {
+                  tfData.wvMtrend = 0;
+               }
+
                // Add new zone
                MqlRates bar_tmp = tfData.L_bar;
                PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
@@ -3916,6 +3925,11 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                tfData.AddToLongArray( tfData.wvolArrPbLow, wVol);
                tfData.AddToDateTimeArray( tfData.wvolArrPbLowTime, tfData.arrPbLTime[0]);
                
+               // Setup wave volume
+               if (tfData.wvMtrend != 0 && tfData.wvolArrPbHighTime[0] < tfData.wvolArrPbLowTime[0]) {
+                  tfData.wvMtrend = 0;
+               }
+
                // Add new zone
                MqlRates bar_tmp = tfData.L_bar;
                PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
@@ -4116,11 +4130,14 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                tfData.AddToDateTimeArray( tfData.arrPbLTime, tfData.arrBotTime[0]);
                tfData.AddToLongArray( tfData.volArrPbLow, tfData.volArrBot[0]);
                
-               //if (ArraySize(tfData.arrPbHigh) == ArraySize(tfData.arrPbLow)) {
-                  wVol = GetCumulativeVolume(tfData.arrPbLTime[0], tfData.wvolArrPbHighTime[0], tfData.timeFrame, "Marjor New Low");
-                  tfData.AddToLongArray( tfData.wvolArrPbLow, wVol);
-                  tfData.AddToDateTimeArray( tfData.wvolArrPbLowTime, tfData.arrPbLTime[0]);
-               //}
+               wVol = GetCumulativeVolume(tfData.arrPbLTime[0], tfData.wvolArrPbHighTime[0], tfData.timeFrame, "Marjor New Low");
+               tfData.AddToLongArray( tfData.wvolArrPbLow, wVol);
+               tfData.AddToDateTimeArray( tfData.wvolArrPbLowTime, tfData.arrPbLTime[0]);
+
+               // Setup wave volume
+               if (tfData.wvMtrend == 0 && tfData.wvolArrPbLowTime[0] > tfData.wvolArrPbHighTime[0]) {
+                  tfData.wvMtrend = (tfData.wvolArrPbLow[0] > tfData.wvolArrPbHigh[0]) ? -1 : 1;
+               }
                
                // Add new zone
                tfData.AddToPoiZoneArray( tfData.zArrPbLow, tfData.zArrBot[0], limit);
@@ -4248,6 +4265,10 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                tfData.AddToLongArray( tfData.wvolArrPbHigh, wVol);
                tfData.AddToDateTimeArray( tfData.wvolArrPbHighTime, tfData.arrPbHTime[0]);
                
+               // Setup wave volume
+               if (tfData.wvMtrend != 0 && tfData.wvolArrPbLowTime[0] < tfData.wvolArrPbHighTime[0]) {
+                  tfData.wvMtrend = 0;
+               }
                
                // Add new zone
                MqlRates bar_tmp = tfData.H_bar;
@@ -4336,6 +4357,11 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                tfData.AddToLongArray( tfData.wvolArrPbHigh, wVol);
                tfData.AddToDateTimeArray( tfData.wvolArrPbHighTime, tfData.arrPbHTime[0]);
                
+               // Setup wave volume
+               if (tfData.wvMtrend != 0 && tfData.wvolArrPbLowTime[0] < tfData.wvolArrPbHighTime[0]) {
+                  tfData.wvMtrend = 0;
+               }
+
                // Add new zone
                MqlRates bar_tmp = tfData.H_bar;
                PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
@@ -5554,7 +5580,7 @@ string getInfoStruct(ENUM_TIMEFRAMES timeframe) {
    TimeFrameData* tfData = GlobalVars.GetData(timeframe);
    text += "Timeframe: "+ EnumToString(timeframe);
    text += " | Struct is : " + ((tfData.sTrend == 0) ? "Not defined" : ((tfData.sTrend == 1) ? "S UpTrend" : "S DownTrend")) + "( "+ (string) tfData.sTrend + " . "+ (string) tfData.vSTrend+ ")";
-   text += " | Marjor Struct is : " + ((tfData.mTrend == 0) ? "Not defined" : ((tfData.mTrend == 1) ? "m UpTrend" : "m DownTrend")) + "( "+ (string) tfData.mTrend + " . "+ (string) tfData.vMTrend+ ")";
+   text += " | Marjor Struct is : " + ((tfData.mTrend == 0) ? "Not defined" : ((tfData.mTrend == 1) ? "m UpTrend" : "m DownTrend")) + "( "+ (string) tfData.mTrend + " . "+ (string) tfData.vMTrend+" . "+ (string) tfData.wvMtrend+ ")";
    text += " | Internal is : " + ((tfData.iTrend == 0) ? "Not defined" : ((tfData.iTrend == 1) ? "i UpTrend" : "i DownTrend"))+ "( "+ (string) tfData.iTrend + " . "+ (string) tfData.vItrend + " . "+ (string) tfData.wvItrend+ ")";
    //text += " iFindtarget : " + (string) tfData.iFindTarget + " - iStoploss: "+ DoubleToString(tfData.iStoploss,_Digits)+ " - iTarget: "+ DoubleToString(tfData.iTarget,_Digits);
    text += " | Gann wave is : " + ((tfData.gTrend == 0) ? "Not defined" : ((tfData.gTrend == 1) ? "g UpTrend" : " DownTrend"))+ "( "+ (string) tfData.gTrend + " . "+ (string) tfData.vGTrend+ ")";
@@ -5694,7 +5720,7 @@ void showComment(TimeFrameData& tfData) {
 
 string getValueTrend(TimeFrameData& tfData) {
    string text =  "\n($) Struct Trend = STrend: "+ (string) tfData.sTrend + " vSTrend: "+(string) tfData.vSTrend + ". waitingStrend: pbHigh "+(string) tfData.waitingArrPbHigh + " pbLow " + (string) tfData.waitingArrPbLows +
-                     " _ Marjor Trend = mTrend: "+(string) tfData.mTrend+ " vMTrend: "+(string) tfData.vMTrend+  ". waitingMtrend: waitingArrTop "+(string) tfData.waitingArrTop + " waitingArrBot " + (string) tfData.waitingArrBot + " - LastSwingMajor: "+(string) tfData.LastSwingMajor+ 
+                     " _ Marjor Trend = mTrend: "+(string) tfData.mTrend+ " vMTrend: "+(string) tfData.vMTrend+ " wvMtrend: "+(string) tfData.wvMtrend +  ". waitingMtrend: waitingArrTop "+(string) tfData.waitingArrTop + " waitingArrBot " + (string) tfData.waitingArrBot + " - LastSwingMajor: "+(string) tfData.LastSwingMajor+ 
                "\n    findHigh: "+(string) tfData.findHigh+" - idmHigh: "+DoubleToString(tfData.idmHigh, _Digits)+ " - vol idmHigh: "+(string) tfData.vol_idmHigh+
                " findLow: "+(string) tfData.findLow+" - idmLow: "+DoubleToString( tfData.idmLow,_Digits)+ " - vol idmLow: "+(string) tfData.vol_idmLow+
                " _ mFindtarget: "+(string) tfData.mFindTarget + " mStoploss: " + DoubleToString(tfData.mStoploss,_Digits) + " mSnR: " + DoubleToString(tfData.mSnR,_Digits) + " mTarget: "+ DoubleToString(tfData.mTarget,_Digits) + " mFullTarget: "+ DoubleToString(tfData.mFullTarget,_Digits) +
