@@ -142,8 +142,11 @@ int gl_sTrend;
 int gl_vSTrend;
 int gl_mTrend;
 int gl_vMTrend;
+int gl_wvMTrend;
 int gl_iTrend;
 int gl_vITrend;
+int gl_wvITrend;
+
 bool gl_getIdmBuy;
 bool gl_getIdmSell;
 
@@ -3491,6 +3494,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
       if (tfData.isHighTF) {
          gl_iTrend = tfData.iTrend;
          gl_vITrend = tfData.vItrend;
+         gl_wvITrend = tfData.wvItrend;
       } else { // Set thong so co ban cho Low Timeframe
          if (gl_findH == 1) {
             if (gl_H_AF_LTFRealTime <= 0 || (gl_H_AF_LTFRealTime > 0 && gl_H_AF_LTFRealTime < tfData.intSHighs[0])) {
@@ -4475,6 +4479,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
          
          gl_mTrend = tfData.mTrend;
          gl_vMTrend = tfData.vMTrend;
+         gl_wvMTrend = tfData.wvMtrend;
       } else { // set thong so co ban LTF
          gl_H_arrPBHigh_LTF = tfData.arrPbHigh[0];
          gl_L_arrPBLow_LTF = tfData.arrPbLow[0];
@@ -5563,7 +5568,6 @@ string inInfoBar(MqlRates& bar1, MqlRates& bar2, MqlRates& bar3) {
    return text;
 }
 
-
 // Show info ontick
 void showInfoStruct() {
    string comment = ""; 
@@ -5730,7 +5734,7 @@ string getValueTrend(TimeFrameData& tfData) {
    text += "\n($) Global Trend: ss_ITrend: " + (string) ss_ITrend +"; ss_vITrend: "+ (string) ss_vITrend + "; ss_iStoploss: " +DoubleToString(ss_iStoploss,_Digits) + 
             "; ss_iOrderBlock: "+ DoubleToString(ss_iOrderBlock, _Digits) +"; ss_iSnR: "+ DoubleToString (ss_iSnR, _Digits) + "; ss_iTarget: "+ DoubleToString( ss_iTarget, _Digits)
             + "; ss_mitigate_iOrderFlow: "+ (string) ss_mitigate_iOrderFlow + "; ss_mitigate_iOrderBlock: "+ (string) ss_mitigate_iOrderBlock;
-   text += "\n($) HTF: sTrend: "+(string) gl_sTrend+"("+(string) gl_vSTrend+") ; mTrend: "+(string) gl_mTrend+"("+(string) gl_vMTrend+") ; iTrend: "+(string) gl_iTrend+"("+(string) gl_vITrend+")"+") ; getIdmBuy: "+(string) gl_getIdmBuy+"- getIdmSell: "+(string) gl_getIdmSell;
+   text += "\n($) HTF: sTrend: "+(string) gl_sTrend+"("+(string) gl_vSTrend+") ; mTrend: "+(string) gl_mTrend+"("+(string) gl_vMTrend+" . "+(string) gl_wvMTrend+") ; iTrend: "+(string) gl_iTrend+"("+(string) gl_vITrend+" . "+(string) gl_wvITrend+")"+") ; getIdmBuy: "+(string) gl_getIdmBuy+"- getIdmSell: "+(string) gl_getIdmSell;
    text += "\n($) HTF: Internal High = "+ DoubleToString(gl_intSHighHTFRealTime, _Digits) + " && LTF: gl_H = "+DoubleToString(gl_H_AF_LTFRealTime, _Digits) + " marjor H = "+DoubleToString(gl_H_arrPBHigh_LTF, _Digits)+" gl_findH = "+(string) gl_findL+ " - Signal Sell: " + (string) gl_H_pattern_signal+
                " ||  \nInternal Low = "+ DoubleToString(gl_intSLowHTFRealTime, _Digits) + " && LTF: gl_L = "+ DoubleToString(gl_L_AF_LTFRealTime, _Digits) + " marjor L = "+DoubleToString(gl_L_arrPBLow_LTF, _Digits)+" gl_findL = "+ (string) gl_findH + " - Signal Buy: " + (string) gl_L_pattern_signal;
    return text;
