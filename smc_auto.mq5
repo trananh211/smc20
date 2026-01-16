@@ -227,6 +227,8 @@ PoiZone zArrPoiZoneInternalBearishHTF[];
 // PoiZone global thuộc marjor structure
 PoiZone zGTradeZoneBullishHTF[];
 PoiZone zGTradeZoneBearishHTF[];
+PoiZone zGTradeZoneInternalBullishHTF[];
+PoiZone zGTradeZoneInternalBearishHTF[];
 
 //+------------------------------------------------------------------+
 //| TimeFrameData class                                              |
@@ -1403,6 +1405,80 @@ void scanMarjorTradeZoneHighTF(TimeFrameData& tfData) {
    }
 }
 
+// Phương thức scan mảng từ Gann thành Poizone to Trade theo Internal struct
+void scanInternalTradeZoneHighTF(TimeFrameData& tfData) {
+   // string text = "";
+   bool isFound = false;
+   // Nếu HTF Internal đang là xu hướng tăng
+   if (tfData.iTrend == 1) {
+      // ArrayPrint(tfData.zLows);
+      // ArrayPrint(zGTradeZoneInternalBullishHTF);
+      for(int i=ArraySize(tfData.zLows) -1; i >= 0 ; i--) {
+         // Kiem tra neu zone khong thuoc thoi gian chi dinh thi bo qua
+         if (tfData.zLows[i].time < tfData.intSLowTime[0]) continue;
+         
+         // Kiểm tra nếu zone đã bị phá qua rồi thì bỏ qua
+         if (tfData.zLows[i].mitigated == -1) continue;
+         isFound = false;
+         // Kiểm tra nếu đã tồn tại zone rồi thì bỏ qua
+         for (int j=0; j< ArraySize(zGTradeZoneInternalBullishHTF); j++) {
+            if (tfData.zLows[i].time == zGTradeZoneInternalBullishHTF[j].time 
+               && MathAbs(tfData.zLows[i].high - zGTradeZoneInternalBullishHTF[j].high) < 0.00001 
+               && MathAbs(tfData.zLows[i].low - zGTradeZoneInternalBullishHTF[j].low) < 0.00001) {
+               if (tfData.zLows[i].mitigated != zGTradeZoneInternalBullishHTF[j].mitigated) {
+                  // Cập nhật trạng thái mitigated mới
+                  zGTradeZoneInternalBullishHTF[j].mitigated = tfData.zLows[i].mitigated;
+               }
+               isFound = true;
+               // Đã tồn tại zone
+               break;
+            }
+         }
+         if (isFound) continue;  // ← Bỏ qua nếu đã tìm thấy trong Trade Zone
+         // Kiểm tra Extreme zone
+         tfData.zLows[i].isTypeZone = (tfData.zLows[i].low == tfData.intSLows[0] && tfData.zLows[i].time == tfData.intSLowTime[0])? 1 : 2;
+         // Them zone zLows vao zGTradeZoneInternalBullishHTF
+         tfData.AddToPoiZoneArray(zGTradeZoneInternalBullishHTF, tfData.zLows[i], poi_limit);
+         text += "\nThêm zone Internal Bullish HTF: Time - " + TimeToString(tfData.zLows[i].time) + " High - " + DoubleToString(tfData.zLows[i].high, _Digits) + " Low - " + DoubleToString(tfData.zLows[i].low, _Digits);
+      }
+   } else if(tfData.iTrend == -1) { // Nếu HTF Internal đang là xu hướng giảm
+      // ArrayPrint(tfData.zHighs);
+      // ArrayPrint(zGTradeZoneInternalBearishHTF);
+      for(int i=ArraySize(tfData.zHighs) -1; i >= 0 ; i--) {
+         // Kiem tra neu zone khong thuoc thoi gian chi dinh thi bo qua
+         if (tfData.zHighs[i].time < tfData.intSHighTime[0]) continue;
+         
+         // Kiểm tra nếu zone đã bị phá qua rồi thì bỏ qua
+         if (tfData.zHighs[i].mitigated == -1) continue;
+         isFound = false;
+         // Kiểm tra nếu đã tồn tại zone rồi thì bỏ qua
+         for (int j=0; j< ArraySize(zGTradeZoneInternalBearishHTF); j++) {
+            if (tfData.zHighs[i].time == zGTradeZoneInternalBearishHTF[j].time 
+               && MathAbs(tfData.zHighs[i].high - zGTradeZoneInternalBearishHTF[j].high) < 0.00001 
+               && MathAbs(tfData.zHighs[i].low - zGTradeZoneInternalBearishHTF[j].low) < 0.00001) {
+               if( tfData.zHighs[i].mitigated != zGTradeZoneInternalBearishHTF[j].mitigated) {
+                  // Cập nhật trạng thái mitigated mới
+                  zGTradeZoneInternalBearishHTF[j].mitigated = tfData.zHighs[i].mitigated;
+               }
+               // Đã tồn tại zone
+               isFound = true;
+               break;
+            }
+         }
+         if (isFound) continue;  // ← Bỏ qua nếu đã tìm thấy trong Trade Zone
+         // Kiểm tra Extreme zone
+         tfData.zHighs[i].isTypeZone = (tfData.zHighs[i].high == tfData.intSHighs[0] && tfData.zHighs[i].time == tfData.intSHighTime[0])? 1 : 2;
+         // Them zone zHighs vao zGTradeZoneInternalBearishHTF
+         tfData.AddToPoiZoneArray(zGTradeZoneInternalBearishHTF, tfData.zHighs[i], poi_limit);
+         // text += "\nThêm zone Internal Bearish HTF: Time - " + TimeToString(tfData.zHighs[i].time) + " High - " + DoubleToString(tfData.zHighs[i].high, _Digits) + " Low - " + DoubleToString(tfData.zHighs[i].low, _Digits);
+      }
+   }
+   // if (StringLen(text) > 0) {
+   //    Print(text);
+   //    Print("-------------------------------------------------------");
+   // }
+}
+
 // Phương thức duyệt mảng chỉ định làm POI Internal Zone Lowtimeframe từ khoảng giá trị highest và lowest của Internal High Timeframe
 void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& Select_zone[], PoiZone& Target_zone[], int type, MqlRates& bar1){
    string text = "";
@@ -2364,6 +2440,16 @@ struct marketStructs{
          getIsMitigatedZone(bar1, zArrPoiZoneInternalBearishHTF, -1);
       }
       
+      // ----------------------------------------------------------- //
+      // Hàm check mitigate của Trade Zone thuộc Internal Structure HighTF
+      if( ArraySize(zGTradeZoneInternalBullishHTF) > 0) {
+         getIsMitigatedZone(bar1, zGTradeZoneInternalBullishHTF, 1);
+      }
+
+      if (ArraySize(zGTradeZoneInternalBearishHTF) > 0) {
+         getIsMitigatedZone(bar1, zGTradeZoneInternalBearishHTF, -1);
+      }
+
       // Hàm check mitigate của Trade Zone thuộc Marjor Structure HighTF
       if( ArraySize(zGTradeZoneBearishHTF) > 0) {
          getIsMitigatedZone(bar1, zGTradeZoneBearishHTF, -1);
@@ -2643,6 +2729,8 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             if(tfData.isHighTF) {
                ss_IntScanActive = true;
                ss_IntScanActive_HTF = true;
+               // Scan lại các zone Internal Trade Zone HighTF
+               scanInternalTradeZoneHighTF(tfData);
             } 
          }
          
@@ -2711,7 +2799,8 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             if(tfData.isHighTF) {
                ss_IntScanActive = true;
                ss_IntScanActive_HTF = true;
-               
+               // Scan lại các zone Internal Trade Zone HighTF
+               scanInternalTradeZoneHighTF(tfData);
             }
          }
                   
@@ -2810,7 +2899,8 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             if(tfData.isHighTF) {
                ss_IntScanActive = true;
                ss_IntScanActive_HTF = true;
-               
+               // Scan lại các zone Internal Trade Zone HighTF
+               scanInternalTradeZoneHighTF(tfData);
             }
          }
                   
@@ -2940,7 +3030,8 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             if(tfData.isHighTF) {
                ss_IntScanActive = true;
                ss_IntScanActive_HTF = true;
-               
+               // Scan lại các zone Internal Trade Zone HighTF
+               scanInternalTradeZoneHighTF(tfData);
             }
          }
          
@@ -3010,7 +3101,8 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             if(tfData.isHighTF) {
                ss_IntScanActive = true;
                ss_IntScanActive_HTF = true;
-               
+               // Scan lại các zone Internal Trade Zone HighTF
+               scanInternalTradeZoneHighTF(tfData);
             }
          }
          
@@ -3109,7 +3201,8 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             if(tfData.isHighTF) {
                ss_IntScanActive = true;
                ss_IntScanActive_HTF = true;
-               
+               // Scan lại các zone Internal Trade Zone HighTF
+               scanInternalTradeZoneHighTF(tfData);
             }
          }
          
@@ -3221,7 +3314,11 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             if(tfData.isHighTF) {
                ss_IntScanActive = true;
                ss_IntScanActive_HTF = true;
-               
+               // Reset PoiZone Trade Zone belong to Internal structure
+               tfData.ClearPoiZoneArray(zGTradeZoneInternalBearishHTF);
+               tfData.ClearPoiZoneArray(zGTradeZoneInternalBullishHTF);
+               // Scan lại các zone Internal Trade Zone HighTF
+               scanInternalTradeZoneHighTF(tfData);
             }
          }
          
@@ -3278,7 +3375,11 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             if(tfData.isHighTF) {
                ss_IntScanActive = true;
                ss_IntScanActive_HTF = true;
-               
+               // Reset PoiZone Trade Zone belong to Internal structure
+               tfData.ClearPoiZoneArray(zGTradeZoneInternalBearishHTF);
+               tfData.ClearPoiZoneArray(zGTradeZoneInternalBullishHTF);
+               // Scan lại các zone Internal Trade Zone HighTF
+               scanInternalTradeZoneHighTF(tfData);
             }
          }
          
@@ -3356,7 +3457,11 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             if(tfData.isHighTF) {
                ss_IntScanActive = true;
                ss_IntScanActive_HTF = true;
-               
+               // Reset PoiZone Trade Zone belong to Internal structure
+               tfData.ClearPoiZoneArray(zGTradeZoneInternalBearishHTF);
+               tfData.ClearPoiZoneArray(zGTradeZoneInternalBullishHTF);
+               // Scan lại các zone Internal Trade Zone HighTF
+               scanInternalTradeZoneHighTF(tfData);
             }
          }
          // show draw target line
@@ -3429,7 +3534,11 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             if(tfData.isHighTF) {
                ss_IntScanActive = true;
                ss_IntScanActive_HTF = true;
-               
+               // Reset PoiZone Trade Zone belong to Internal structure
+               tfData.ClearPoiZoneArray(zGTradeZoneInternalBearishHTF);
+               tfData.ClearPoiZoneArray(zGTradeZoneInternalBullishHTF);
+               // Scan lại các zone Internal Trade Zone HighTF
+               scanInternalTradeZoneHighTF(tfData);
             }
          }
          
@@ -3486,7 +3595,11 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             if(tfData.isHighTF) {
                ss_IntScanActive = true;
                ss_IntScanActive_HTF = true;
-               
+               // Reset PoiZone Trade Zone belong to Internal structure
+               tfData.ClearPoiZoneArray(zGTradeZoneInternalBearishHTF);
+               tfData.ClearPoiZoneArray(zGTradeZoneInternalBullishHTF);
+               // Scan lại các zone Internal Trade Zone HighTF
+               scanInternalTradeZoneHighTF(tfData);
             }
          }
          
@@ -3566,7 +3679,11 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             if(tfData.isHighTF) {
                ss_IntScanActive = true;
                ss_IntScanActive_HTF = true;
-               
+               // Reset PoiZone Trade Zone belong to Internal structure
+               tfData.ClearPoiZoneArray(zGTradeZoneInternalBearishHTF);
+               tfData.ClearPoiZoneArray(zGTradeZoneInternalBullishHTF);
+               // Scan lại các zone Internal Trade Zone HighTF
+               scanInternalTradeZoneHighTF(tfData);
             }
          }
          // Show draw target line
@@ -5757,6 +5874,7 @@ void showPoiComment(TimeFrameData& tfData) {
       show = true;
       Print("zLows: "); ArrayPrint(tfData.zLows);
       // Print("zArrPoiZoneInternalBullishHTF: "); ArrayPrint(zArrPoiZoneInternalBullishHTF);
+      Print("zGTradeZoneInternalBullishHTF: "); ArrayPrint(zGTradeZoneInternalBullishHTF);
       Print("zGTradeZoneBullishHTF: "); ArrayPrint(zGTradeZoneBullishHTF);
       //Print("zIntSLows: "); ArrayPrint(tfData.zIntSLows);
       
@@ -5770,6 +5888,7 @@ void showPoiComment(TimeFrameData& tfData) {
       show = true;
       Print("zHighs: "); ArrayPrint(tfData.zHighs);
       // Print("zArrPoiZoneInternalBearishHTF: "); ArrayPrint(zArrPoiZoneInternalBearishHTF);
+      Print("zGTradeZoneInternalBearishHTF: "); ArrayPrint(zGTradeZoneInternalBearishHTF);
       Print("zGTradeZoneBearishHTF: "); ArrayPrint(zGTradeZoneBearishHTF);
       //Print("zIntSHighs: "); ArrayPrint(tfData.zIntSHighs);
       
