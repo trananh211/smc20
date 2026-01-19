@@ -1482,6 +1482,9 @@ void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& zGlobal
    datetime target_time = (ss_iTarget != 0) ? ss_iTargetTime : bar1.time;
    color gl_color;
    PoiZone zFilterdZone[];
+   // Print("zGlobalInternalZone size: "+ (string) ArraySize(zGlobalInternalZone)); ArrayPrint(zGlobalInternalZone);
+   // Print("Select_zone size: "+ (string) ArraySize(Select_zone)); ArrayPrint(Select_zone);
+   
    // Lọc zone từ Select_zone là tập con của zGlobalInternalZone
    for(int i=ArraySize(zGlobalInternalZone) - 1; i >= 0 ; i--) {
       for(int j=0; j< ArraySize(Select_zone); j++) {
@@ -1489,14 +1492,14 @@ void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& zGlobal
          if ( zGlobalInternalZone[i].time > Select_zone[j].time) continue;
          if (type == 1 && zGlobalInternalZone[i].low <= Select_zone[j].low && zGlobalInternalZone[i].high >= Select_zone[j].low) {
             // Thêm zone vào mảng tạm zFilterdZone
-            tfData.AddToPoiZoneArray( zFilterdZone, zGlobalInternalZone[i]);
+            tfData.AddToPoiZoneArray( zFilterdZone, Select_zone[j]);
          } else if (type == -1 && zGlobalInternalZone[i].high >= Select_zone[j].high && zGlobalInternalZone[i].low <= Select_zone[j].high) {
             // Thêm zone vào mảng tạm zFilterdZone
-            tfData.AddToPoiZoneArray( zFilterdZone, zGlobalInternalZone[i]);
+            tfData.AddToPoiZoneArray( zFilterdZone, Select_zone[j]);
          }
       }
    }
-
+   // Print("zFilterdZone size: "+ (string) ArraySize(zFilterdZone)); ArrayPrint(zFilterdZone);
    // check Zone exits before
    bool next;
    //PoiZone exist_zones[] = Target_zone;
@@ -1516,7 +1519,7 @@ void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& zGlobal
       // Kiểm tra đã tồn tại trong target zone hay chưa. Nếu tồn tại rồi thì bỏ qua
       next = false;
       for(int j=0; j<ArraySize(Target_zone); j++) {
-         if( Select_zone[i].iStoploss == Target_zone[j].iStoploss) {
+         if( zFilterdZone[i].high == Target_zone[j].high && zFilterdZone[i].low == Target_zone[j].low && zFilterdZone[i].time == Target_zone[j].time) {
             next = true;
             text += "\nx.x Zone "+ (string) i +" - "+(string) j + " đã tồn tại trong Global Zone. Break."+str_info_row;
             break;
@@ -1531,7 +1534,7 @@ void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& zGlobal
       }
       
       // Neu La Extreme zone
-      if (Select_zone[i].iStoploss == ss_iStoploss) {
+      if (zFilterdZone[i].iStoploss == ss_iStoploss) {
          // Them zone zIntSlow vao zArrPoiZoneBullish voi isTypeZone = 1
          isTypezone = 1;
       } else { // khong phai extreme zone
@@ -1556,9 +1559,9 @@ void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& zGlobal
       }      
       
    }
-   Print(text);
-   ArrayPrint(Target_zone);
-   Print("\n-------------------------------------------------------");
+   // Print(text);
+   // ArrayPrint(Target_zone);
+   // Print("\n-------------------------------------------------------");
 }
 
 // Hàm đặt trong real wave
