@@ -122,7 +122,7 @@ input color color_HTF_Internal_Bearish_Zone = clrPaleVioletRed; // High Internal
 input color color_LTF_Internal_Bullish_Zone = clrLavender; // Low Internal bullish
 input color color_LTF_Internal_Bearish_Zone = clrLavenderBlush; // Low Internal bearish
 
-input group "=== PoiZone Global POI Trade Zone color ==="
+input group "=== PoiZone Global POI Trade Zone colors ==="
 input color color_Global_Internal_Bullish_Zone_LTF = clrOliveDrab; // Low Internal bullish
 input color color_Global_Internal_Bearish_Zone_LTF = clrFireBrick; // Low Internal bearish
 
@@ -1059,7 +1059,7 @@ public:
          ArrayResize(m_timeframes, m_total + 10);
       }
 
-      // Create new timeframe data
+      // Create news timeframe data
       m_timeframeData[m_total] = new TimeFrameData();
       m_timeframes[m_total] = timeframe;
       m_total++;
@@ -1395,7 +1395,7 @@ void scanMarjorTradeZoneHighTF(TimeFrameData& tfData) {
    }
 }
 
-// Phương thức scan mảng từ Gann thành Poizone to Trade theo Internal struct
+// Phương thức scan mảng từ Gann thành Poizone to Trade theo Internal structs
 void scanInternalTradeZoneHighTF(TimeFrameData& tfData) {
    // string text = "";
    bool isFound = false;
@@ -1988,16 +1988,175 @@ struct marketStructs{
       if (StringLen(text) > 0) {
          Print(textall);
       }
-      // For develop
-      showPoiComment(tfData);
+      // // For develop
+      // showPoiComment(tfData);
       
       // Gọi hàm vào lệnh
       if (tfData.isHighTF == false) {
          afterCheckMarketForTrade(tfData);
+         CheckMarketForTradeByWaveVolume(tfData)
       }
    }
    
-   // Hàm vào lệnh theo điều kiện của EA
+   // Hàm vào lệnh theo điều kiện của EA bởi volume Wave
+   void CheckMarketForTradeByWaveVolume(TimeFrameData& tfData){
+      // Kiểm tra điều kiện vào lệnh theo volume wave
+      int type_trade = 0; // 1: buy, -1: sell
+      int option_trade = 0;
+      bool conditions_typeA = false;
+      bool callFunctionTrade = false;
+      // 1. Kiểm tra xem đã có lệnh nào của cặp tiền này và Magic này chưa
+       if(IsTradeExists(_Symbol, InpMagic))
+       {
+           // Nếu đã có lệnh, chúng ta thoát hàm luôn, không chạy các logic phía dưới
+           return; 
+       }
+      // 2. Kiểm tra tồn tại OB hoặc OF hay không
+      if (ss_iStoploss == 0 || ss_iTarget == 0) return;
+      if (ArraySize(zArrPoiZoneLTFBearishBelongHighTF) == 0 && ArraySize(zArrPoiZoneLTFBullishBelongHighTF)== 0) return;
+      // 3. Bắt đầu kiểm tra điều kiện vào lệnh      
+      if (tfData.iTrend == tfData.wvItrend) {
+         // 3.1 kiểm tra xem đã get IDM High TF hay chưa
+         conditions_typeA = (gl_getIdmBuy == false && gl_getIdmSell == false)? false : true;
+
+         // Tầng 0: HTF thuan trend. marjor == internal. Option: I II III IV và XIII XIV XV XVI
+         if (gl_mTrend == gl_iTrend ) { 
+            // Tầng 1: Phần I II + XV XVI : HTF marjor == HTF internal && HTF Internal trend = wave volume HTF Internal Trend
+            if (gl_iTrend == gl_wvITrend) { 
+               // Tầng 2: I.1-4 + và XVI.61-64
+               if (gl_wvItrend == tfData.iTrend) { 
+                  // Tầng 3: I.1 - I.4 và XVI.64 - XVI.61
+                  if (tfData.mTrend == tfData.vMTrend) {
+                     // I.1 - XVI.64 : gl_mTrend; = gl_iTrend; = gl_wvItrend; = iTrend; = mTrend; = wvMTrend;
+                     if (tfData.iTrend == tfData.mTrend) {
+                        callFunctionTrade = true;
+                        option_trade = (tfData.iTrend == 1)? 1 : 64;
+                     // I.4 - XVI.61 : gl_mTrend; = gl_iTrend; = gl_wvItrend; != iTrend; != mTrend; != wvMTrend;
+                     } else {
+                        callFunctionTrade = true;
+                        option_trade = (tfData.iTrend == 1)? 4 : 61;
+                     }
+                  // Tầng 3: I.2 - I.3 và XVI.62 - XVI.63
+                  } else {
+                     // I.2 - XVI.63 : gl_mTrend; = gl_iTrend; = gl_wvItrend; = iTrend; = mTrend; != wvMTrend;
+                     if (tfData.iTrend == tfData.mTrend) {
+                        callFunctionTrade = true;
+                        option_trade = (tfData.iTrend == 1)? 2 : 63;
+                     // I.3 - XVI.62: gl_mTrend; = gl_iTrend; = gl_wvItrend; = iTrend; != mTrend; = wvMTrend;
+                     } else {
+                        callFunctionTrade = true;
+                        option_trade = (tfData.iTrend == 1)? 3 : 62;
+                     }
+                     
+                  }
+               // Phần II.5-8 + XV.57-60
+               } else { 
+                  // Khong lam gi ca
+               }
+            //Tầng 1: Phần III IV + XIII XIV : HTF marjor == HTF internal && HTF Internal trend != wave volume HTF Internal Trend
+            } else { 
+               // Tầng 2: Phần IV.13-16 + XIII.49-52
+               if (gl_wvItrend == tfData.iTrend) { 
+                  // Tầng 3: IV.13 - IV.16 và XIII.49 - XIII.52
+                  if (tfData.mTrend == tfData.vMTrend) {
+                     // IV.16 - XIII.49 : gl_mTrend; = gl_iTrend; != gl_wvItrend; != iTrend; != mTrend; != wvMTrend;
+                     if (tfData.iTrend == tfData.mTrend) {
+                        callFunctionTrade = true;
+                        option_trade = (tfData.iTrend == -1)? 16 : 49;
+                     // IV.13 - XIII.52: gl_mTrend; = gl_iTrend; != gl_wvItrend; != iTrend; = mTrend; != wvMTrend;
+                     } else {
+                        // Không làm gì
+                     }
+                  // Tầng 3: IV.14 - IV.15 và XIII.50 - XIII.51
+                  } else {
+                     // IV.15 - XIII.50: gl_mTrend; = gl_iTrend; != gl_wvItrend; != iTrend; != mTrend; = wvMTrend;
+                     if (tfData.iTrend == tfData.mTrend) {
+                        allFunctionTrade = true;
+                        option_trade = (tfData.iTrend == -1)? 15 : 50;
+                     // IV.14 - XIII.51: gl_mTrend; = gl_iTrend; != gl_wvItrend; != iTrend; = mTrend; != wvMTrend;
+                     } else {
+                        allFunctionTrade = true;
+                        option_trade = (tfData.iTrend == -1)? 14 : 51;
+                     }
+                  }
+               // Phần III.9-12 + XIV.53-56   
+               } else { 
+                  // Khong lam gi ca
+               }
+            }
+         // Tầng 0: HTF nghich trend. marjor != internal. Option: V VI VII VIII và IX X XI XII
+         } else { 
+            // Tầng 1: Phần V + VI + XI +XII : HTF wave Volume Internal trend != HTF Internal Trend
+            if (gl_iTrend != gl_wvITrend) { 
+               // Tầng 2: Phần V + XII
+               if (gl_wvItrend == tfData.iTrend) {
+                  // Tầng 3: V.17 - V.20 và XII.45 - XII.48
+                  if (tfData.mTrend == tfData.vMTrend) {
+                     // V.17 - XII.48: gl_mTrend; != gl_iTrend; = gl_wvItrend; = iTrend; = mTrend; = wvMTrend;
+                     if (tfData.iTrend == tfData.mTrend) {
+                        callFunctionTrade = true;
+                        option_trade = (tfData.iTrend == 1)? 17 : 48;
+                     // V.20 - XII.45: gl_mTrend; != gl_iTrend; = gl_wvItrend; = iTrend; = mTrend; != wvMTrend;
+                     } else {
+                        // Không làm gì
+                     }
+                  // Tầng 3: V.18 - V.19 và XII.46 - XII.47
+                  } else {
+                     // V.18 - XII.47: gl_mTrend; != gl_iTrend; = gl_wvItrend; = iTrend; = mTrend; != wvMTrend;
+                     if (tfData.iTrend == tfData.mTrend) {
+                        allFunctionTrade = true;
+                        option_trade = (tfData.iTrend == 1)? 18 : 47;
+                     // V.19 - XII.46: gl_mTrend; != gl_iTrend; = gl_wvItrend; = iTrend; != mTrend; = wvMTrend;
+                     } else {
+                        allFunctionTrade = true;
+                        option_trade = (tfData.iTrend == 1)? 19 : 46;
+                     }
+                  }
+               // Tầng 2: Phần VI + XI
+               } else {
+                  // Không làm gì cả
+               }
+            // Tầng 1: Phần VII + VIII + IX + X : HTF wave Volume Internal trend = HTF Internal Trend
+            } else {
+               // Tầng 2: Phần VII + X: : HTF wave Volume Internal trend != LTF Internal Trend
+               if (gl_wvItrend != tfData.iTrend) { 
+                  // Không làm gì cả
+               // Tầng 2: Phần VIII + IX : HTF wave Volume Internal trend == LTF Internal Trend
+               } else { 
+                  // Tầng 3: VIII.30 + VIII.31 - IX.34 + IX.35
+                  if (tfData.mTrend != tfData.vMTrend) {
+                     // VIII.31 - IX.34: gl_mTrend; != gl_iTrend; != gl_wvItrend; != iTrend; != mTrend; = wvMTrend;
+                     if (tfData.iTrend == tfData.mTrend) {
+                        allFunctionTrade = true;
+                        option_trade = (tfData.iTrend == -1)? 31 : 34;
+                     // VIII.30 - IX.35: gl_mTrend; != gl_iTrend; != gl_wvItrend; != iTrend; = mTrend; != wvMTrend;
+                     } else {
+                        allFunctionTrade = true;
+                        option_trade = (tfData.iTrend == -1)? 30 : 35;
+                     }
+                  // Tầng 3: VIII.29 + VIII.32 - IX.33 + IX.36
+                  } else {
+                     // VIII.32 - IX.33: gl_mTrend; != gl_iTrend; != gl_wvItrend; != iTrend; != mTrend; != wvMTrend;
+                     if (tfData.iTrend == tfData.mTrend) {
+                        allFunctionTrade = true;
+                        option_trade = (tfData.iTrend == -1)? 32 : 33;
+                     // VIII.29 - IX.36: gl_mTrend; != gl_iTrend; != gl_wvItrend; != iTrend; = mTrend; = wvMTrend;
+                     } else {
+                        allFunctionTrade = true;
+                        option_trade = (tfData.iTrend == -1)? 29 : 36;
+                     }
+                  }
+               }
+            }
+         }
+         // Nếu đạt điều kiện vào lệnh. Gọi hàm kiểm tra vào lệnh
+         if (callFunctionTrade) {
+            CheckMarketForTradeByPredefinedOptions(tfData, tfData.iTrend, option_trade, conditions_typeA);
+         }
+      }   // End ifs (tfData.iTrend == tfData.wvItrend)
+   }
+   
+   // Hàm vào lệnh theo điều kiện của EA bởi volume Bar breakout
    void afterCheckMarketForTrade(TimeFrameData& tfData) {
       int count = 0;
       int key_actived = -1;
@@ -2117,6 +2276,238 @@ struct marketStructs{
       }
    }
    
+   // Hàm lọc dữ liệu đầu vào để quyết định vào lệnh theo kiểu nào được định sẵn
+   void CheckMarketForTradeByPredefinedOptions(TimeFrameData& tfData, int direction_trade, int option_trade, bool getIDM = false){
+       if (direction_trade == 1) {
+         if (option_trade == 1 || option_trade == 2 || option_trade ==3 || option_trade ==4) {
+            if (getIDM) {
+               // -HTF:
+               //    - Internal High:
+               //       ○ Không được sweep Internal High[1] 
+               //    - Internal Low:
+               //    - Wave volume:
+               //       ○ wvIntHIgh[0] > wvIntHigh[1]
+               //       ○ wvIntHigh[0] > wvIntLow[1]
+               //    - SL & TP:
+               //       ○ SL: Internal Low[0]
+               //       ○ TP: Internal High[0]
+               //    - Nếu Internal Low[1] chạm vào POI Marjor:
+               //       ○ -SL: có thể đặt tại arrPBLow[0] LTF
+               //          TP: Internal High[0] và arrPBHigh[0] HTF
+            } else {
+               // -HTF:
+               //    - Internal High[0]:
+               //       ○ Không được sweep Internal High[1] 
+               //    - Internal Low:
+               //    - Wave volume:
+               //       ○ wvIntHIgh[0] > wvIntHigh[1]
+               //       ○ wvIntHigh[0] > wvIntLow[1]
+               //    - SL & TP:
+               //       ○ SL: 
+               //          § Internal Low[0]
+               //          § SL phải là Internal Swing Low HTF( Nếu xa quá, chờ sweep Internal Swing Low LTF)
+               //       ○ TP: Internal High[0]
+  
+            }
+         }
+
+         else if (option_trade == 17 || option_trade == 18 || option_trade == 19) {
+            if (getIDM) {
+               // HTF:
+               // - Internal High:
+               // - Internal Low[0]:
+               //    • Option 1: Bắt buộc internal Low[0] phải sweept :
+               //       ○ Internal Low[1]
+               //       ○ Hoặc  POI Marjor
+               //    • Option 2: Bắt buộc Internal Low[0] phải nằm trong POI Marjor
+               // - Wave volume:
+               //    • wvInternalLow[0] < wvInternalHigh[1]
+               //    • wvInternanlLow[0] < wvInternalLow[1]
+               // - SL & TP:
+               //    • SL: InternalLow[0] HTF hoặc arrPbLow[0] LTF
+               //    • TP:
+               //       ○ Options 1: InternalHigh[1]
+               //       ○ Options 2: arrPBHigh[0]
+
+            } else {
+               // Khong lam gi
+            }
+         }
+
+         else if (option_trade == 33 || option_trade ==34 || option_trade ==35) {
+            if (getIDM) {
+               // -HTF:
+               //    - Internal High[0]:
+               //       ○ không được mitigated POI marjor
+               //       ○ không được sweep Internal High[1]
+               //       ○ không được hình thành bộ nến sweep hoặc nến EG
+               //    - Wave volume:
+               //       ○ wvIntHigh[0] > wvIntHigh[1]
+               //       ○ wvIntHigh[0] > wvIntLow[1]
+               //    - SL & TP:
+               //       ○ SL: Đặt ở LTF arrPBLow[0]
+               // TP: Đặt ở HTF intHigh[0]
+            } else {
+               // Khong lam gi ca
+            }
+         }
+
+         else if (option_trade == 49 || option_trade ==50 || option_trade ==51) {
+            if (getIDM) {
+               // HTF:
+               //    - Internal High[0]:
+               //       ○ Bắt buộc không được nằm trong POI marjor
+               //       ○ Bắt buộc không được sweep POI marjor
+               //    - Internal Low[0]:
+               //       ○ Bắt buộc phải tạo cặp EG hoặc bộ nến sweep
+               //       ○ Bắt buộc phải sweep:
+               //          § Internal Low[1] Hoặc
+               //          § POI marjor Low
+               //       ○ Hoặc bắt buộc phải chạm POI Marjor
+               //    - Wave vol:
+               //       ○ InternalLow[0] < InternalHigh[1]
+               //       ○ InternalLow[0] < InternalLow[1]
+               //    - SL & TP:
+               //       ○ SL: Internal Low[0]
+               // TP: Internal High[0] ; Nếu chạm POI marjor hoặc sweep POI marjor thì đặt arrPBHigh[0]
+            } else {
+               // HTF:
+               //    - Internal High[0]:
+               //       ○ Bắt buộc không nằm trong Marjor POI
+               //    - Internal Low[0]
+               //       ○ Bắt  buộc phải sweep Internal Low[1] 
+               //       ○ Bắt buộc phải tạo cặp EG hoặc bộ nến sweep
+               //    - Wave vol:
+               //       ○ wvInternalLow[0] < wvInternnalHigh[1]
+               //       ○ wvInternalLow[0] < wvinternalLow[1]
+               //    - SL & TP:
+               //       ○ SL: Internal Low[0]
+               // TP: Internal High[0] 
+            }
+         }
+
+      } else if (direction_trade == -1) {
+         if (option_trade == 61 || option_trade ==62 || option_trade ==63 || option_trade ==64) {
+            if (getIDM) {
+               // -HTF:
+               //    - Internal High[0]:
+               //       ○ Bắt buộc phải là bộ nến EG hoặc sweep
+               //    - Internal Low[0]:
+               //       ○ bắt buộc không là bộ nến EG hoặc sweep
+               //       ○ Bắt buộc không được sweept Internal Low[1]
+               //    - Wave vol: 
+               //       ○ Internal Low[0] > Internal High[1]
+               //       ○ Internal Low[0] > Internal Low[1]
+               //    - SL & TP:
+               //       ○ SL : Internal High[1] && có thể sử dụng arrPbHigh[0] của LTF nếu Internal High[1] chạm POI của marjor 
+               // TP: Internal Low[0] && Nếu Internal High[1] chạm POI của marjor thì arrPBLow[0]
+            } else {
+            //    HTF:
+            //    - Internal High[0]:
+            //       ○ Bắt buộc phải là bộ nến EG hoặc sweep
+            //    - Internal Low[0]:
+            //       ○ bắt buộc không là bộ nến EG hoặc sweep
+            //       ○ Bắt buộc không được sweept Internal Low[1]
+            //    - Wave vol: 
+            //       ○ Internal Low[0] > Internal High[1]
+            //       ○ Internal Low[0] > Internal Low[1]
+            //    - SL & TP:
+            //       ○ SL : Internal High[1]
+            // TP: Internal Low[0]
+            }
+         }
+         
+         else if (option_trade == 46 || option_trade == 47 || option_trade == 48) {
+            if (getIDM) {
+               // - HTF:
+               //    Options 1: b1:
+               //       - Internal High[0]:
+               //          ○ Phải sweept Internal High[1]
+               //          ○ Phải hình thành bộ nến sweept hoặc EG
+               //          ○ Mitigated POI Marjor hoặc không
+               //       - Wave volume:
+               //          ○ wvIntHigh[0] < wvIntLow[1]
+               //          ○ wvIntHIgh[0] < wvIntHigh[1]
+               //       - SL & TP:
+               //          ○ SL : Đặt tại intHIgh[0]
+               //          ○ TP:
+               //             § Chưa mitigated POI Marjor: Đặt tại intLow[0]
+               //             § Mitigated POI Marjor: Đặt tại intLow[0] && arrPBLow[0]
+               //    Options 2: b2:
+               //       - Internal High[0]:
+               //          ○ Phải hình thành bộ nến sweep hoặc EG
+               //          ○ Phải mitigated POI của Marjor
+               //       - Wave volume:
+               //          ○ wvIntHIgh[0] < wvIntLow[0]
+               //          ○ wvIntHigh[0] < wvIntHigh[1]
+               //       - SL & TP:
+               //          ○ SL: Đặt tại intHigh[0] or POI Marjor High
+               //    TP: IntLow[1] HTF && arrPBLow[0] HTF
+            } else {
+               // Khong lam gi ca
+            }
+         }
+
+         else if (option_trade == 30 || option_trade ==31 || option_trade ==32) {
+            if (getIDM) {
+               // HTF:
+               //    - Internal High[0]:
+               //    - Internal Low[0]:
+               //       • Không được nằm trong POI Marjor
+               //       • Không được sweep:
+               //          ○ InternalLow[1]
+               //          ○ POI Marjor
+               //    - Wave volume:
+               //       • wvInternalLow[0] > wvInternalLow[1]
+               //       • wvInternalLow[0] > wvInternalHigh[1]
+               //    - SL & TP:
+               //       • SL: Internal High[0] or arrPBHigh[0] LTF
+               //       • TP: Internnal Low[0]
+
+            } else {
+                  // Khong lam gi ca
+            }
+         }
+
+         else if (option_trade == 14 || option_trade == 15 || option_trade == 16) {
+            if (getIDM) {
+               // HTF:
+               // - Internal High[0]: 
+               //    • phải sweept High[1]
+               //    • Phải tạo thành cặp nến EG hoặc bộ nến sweep
+               //    •  Internal High[0] === LTF arrPBHigh[0]
+               // - Internal Low[1]:
+               //    • Phải không được chạm POI marjor or sweep Poi Marjor
+               // - Wave volume:
+               //    • wvInternal High[0] < wvInternal High[1]
+               //    • wvInternalHigh[0] < wvInternalLow[0]
+               // - SL & TP:
+               //    • SL: InternalHIgh[0]
+               //    • TP: Internal Low[0]
+
+               // - 
+               // - Giá phải mitigated POI HTF BB Bearsih hoặc sweept High[1] HTF???
+
+            } else {
+               // HTF:
+            //    - Internal High[0]: 
+            //       • phải sweept High[1]
+            //       • Phải tạo thành cặp nến EG hoặc bộ nến sweep
+            //       •  Internal High[0] === LTF arrPBHigh[0]
+            //    - Internal Low[1]:
+            //       • Phải không được chạm POI marjor or sweep Poi Marjor
+            //    - Wave volume:
+            //       • wvInternal High[0] < wvInternal High[1]
+            //       • wvInternalHigh[0] < wvInternalLow[0]
+            //    - SL & TP:
+            //       • SL: InternalHIgh[0]
+            //    TP: Internal Low[0]
+            }
+            
+         } 
+      }
+   }
+
    // Hàm kiểm tra vị trí của nến hiện tại có đủ điều kiện vào lệnh theo từng loại hay không
    void checkPositionAccessForTrade(TimeFrameData& tfData, int type = 0, string text = "") {
       string string_type = "";
@@ -2134,7 +2525,7 @@ struct marketStructs{
       
       if (type == 1) { // Chỉ vào lệnh ở OB HTF
          if (ss_mitigate_iOrderBlock == 1) {
-            // Gọi hàm với điều kiện khắt khe hơn vì chưa vào order block. Cần double break out để khẳng định
+            // Gọi hàm với điều kiện khắt khe hơn vì chưa vào order block. Cần double breakout để khẳng định
             if (gl_iTrend == 1) {
                checkAccessZoneForTrade(tfData, zArrBuy, 1, "OB1 "+ text);
             } else if (gl_iTrend == -1){
@@ -2256,6 +2647,7 @@ struct marketStructs{
    // Todo: Kiểm tra lần lượt zone đã mitigate hay chưa
    void checkMitigateZone(TimeFrameData& tfData, MqlRates& bar1) {
       // Hàm luôn phải chạy không được dừng để check mitigate còn loại POI ra khỏi vùng scan zone.
+      // Gann Structure Highs và Lows
       if (ArraySize(tfData.zHighs) > 0) {
          getIsMitigatedZone(bar1, tfData.zHighs, -1);
       }
@@ -2264,6 +2656,7 @@ struct marketStructs{
          getIsMitigatedZone(bar1, tfData.zLows, 1);
       }
       
+      // Internal Structure Highs và Lows
       if (ArraySize(tfData.zArrIntBearish) > 0) {
          getIsMitigatedZone(bar1, tfData.zArrIntBearish, -1);
       }
@@ -3151,7 +3544,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                line_target = tfData.vItrend;
             }
             isDrawTarget = true;
-            // Set new value target zone
+            // Set news value target zone
             beginSetValueToPoiZone(tfData, tfData.zIntSLows[0], "InternalZone");
             // Thêm mới thông số Global Target 
             setGlobalValueLowToHighTF(tfData);
@@ -3211,7 +3604,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                line_target = tfData.vItrend;
             }
             isDrawTarget = true;
-            // Set new value target zone
+            // Set news value target zone
             beginSetValueToPoiZone(tfData, tfData.zIntSLows[0], "InternalZone");
             // Thêm mới thông số Global Target 
             setGlobalValueLowToHighTF(tfData);
@@ -3292,7 +3685,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                line_target = tfData.vItrend;
             }
             isDrawTarget = true;
-            // Set new value target zone
+            // Set news value target zone
             beginSetValueToPoiZone(tfData, tfData.zIntSLows[0], "InternalZone");
             // Thêm mới thông số Global Target 
             setGlobalValueLowToHighTF(tfData);
@@ -3368,7 +3761,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             }
             isDrawTarget = true;
             
-            // Set new value target zone
+            // Set news value target zone
             beginSetValueToPoiZone(tfData, tfData.zIntSHighs[0], "InternalZone");
             // Thêm mới thông số Global Target 
             setGlobalValueLowToHighTF(tfData);
@@ -3428,7 +3821,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                line_target = tfData.vItrend;
             }
             isDrawTarget = true;
-            // Set new value target zone
+            // Set news value target zone
             beginSetValueToPoiZone(tfData, tfData.zIntSHighs[0], "InternalZone");
             // Thêm mới thông số Global Target 
             setGlobalValueLowToHighTF(tfData);
@@ -3511,7 +3904,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                line_target = tfData.vItrend;
             }
             isDrawTarget = true;
-            // Set new value target zone
+            // Set news value target zone
             beginSetValueToPoiZone(tfData, tfData.zIntSHighs[0], "InternalZone");
             // Thêm mới thông số Global Target 
             setGlobalValueLowToHighTF(tfData);
