@@ -1210,6 +1210,76 @@ CGlobalVariables GlobalVars;
 //+------------------------------------------------------------------+
 //| Utility Functions                                                |
 //+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//| Hàm tạo PoiZone tối ưu - Kiểm tra nến hiện tại trước             |
+//+------------------------------------------------------------------+
+PoiZone createpoizone_optimized(ENUM_TIMEFRAMES tf, int indexAnchor, int type)
+{
+   PoiZone zone;
+   ZeroMemory(zone);
+   string symbol = _Symbol;
+
+   // Lấy thông số nến hiện tại (nến neo)
+   double openAnchor  = iOpen(symbol, tf, indexAnchor);
+   double closeAnchor = iClose(symbol, tf, indexAnchor);
+   double highAnchor  = iHigh(symbol, tf, indexAnchor);
+   double lowAnchor   = iLow(symbol, tf, indexAnchor);
+
+   if(type == 1) // --- CHIẾN LƯỢC BULLISH ---
+   {
+      zone.low = lowAnchor; // Low luôn lấy từ nến neo
+      
+      // Nếu nến hiện tại là nến GIẢM, lấy luôn High của nó
+      if(closeAnchor < openAnchor) 
+      {
+         zone.high = highAnchor;
+      }
+      else // Nếu không, mới bắt đầu tìm ngược về quá khứ
+      {
+         zone.high = highAnchor; // Giá trị dự phòng
+         for(int i = indexAnchor + 1; i < indexAnchor + 50; i++)
+         {
+            if(iClose(symbol, tf, i) < iOpen(symbol, tf, i)) // Tìm nến giảm
+            {
+               zone.high = iHigh(symbol, tf, i);
+               break;
+            }
+         }
+      }
+   }
+   else if(type == -1) // --- CHIẾN LƯỢC BEARISH ---
+   {
+      zone.high = highAnchor; // High luôn lấy từ nến neo
+      
+      // Nếu nến hiện tại là nến TĂNG, lấy luôn Low của nó
+      if(closeAnchor > openAnchor)
+      {
+         zone.low = lowAnchor;
+      }
+      else // Nếu không, mới bắt đầu tìm ngược về quá khứ
+      {
+         zone.low = lowAnchor; // Giá trị dự phòng
+         for(int i = indexAnchor + 1; i < indexAnchor + 50; i++)
+         {
+            if(iClose(symbol, tf, i) > iOpen(symbol, tf, i)) // Tìm nến tăng
+            {
+               zone.low = iLow(symbol, tf, i);
+               break;
+            }
+         }
+      }
+   }
+
+   // Các thông số khác của Zone
+   zone.time  = iTime(symbol, tf, indexAnchor);
+   zone.open  = openAnchor;
+   zone.close = closeAnchor;
+   zone.mitigated = 0;
+
+   return zone;
+}
+
 //Todo: Hàm tạo PoiZone từ giá
 PoiZone CreatePoiZone(TimeFrameData& tfData, double high, double low, double open, double close, datetime time, 
                       int mitigated = 0, double priceKey = -1, datetime timeKey = -1)
@@ -1994,7 +2064,7 @@ struct marketStructs{
       // Gọi hàm vào lệnh
       if (tfData.isHighTF == false) {
          afterCheckMarketForTrade(tfData);
-         CheckMarketForTradeByWaveVolume(tfData)
+         CheckMarketForTradeByWaveVolume(tfData);
       }
    }
    
@@ -2817,7 +2887,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
       totalVolume += i_Volume;
    }
    text += " có tổng volume bằng: "+(string) totalVolume;
-   Print(text);
+   //Print(text);
    return totalVolume;
 }
    
@@ -2856,8 +2926,10 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
    //    swing high
       if (bar3.high <= bar2.high && bar2.high >= bar1.high) { // tim thay dinh high
          textGannHigh += "\n--->Gann: Find High: "+DoubleToString(bar2.high, _Digits) +" + Highest: "+ DoubleToString(tfData.highEst, _Digits) ;
-         // set Zone
-         PoiZone zone2 = CreatePoiZone( tfData,bar2.high, bar2.low, bar2.open, bar2.close, bar2.time);
+         // set Zone bearish
+         // Gọi hàm với nến số 2 làm điểm neo
+         PoiZone mZone = createpoizone_optimized(_Period, 2, -1);
+         PoiZone zone_bearish = CreatePoiZone( tfData, mZone.high, mZone.low, bar2.open, bar2.close, bar2.time);
          if (typeTickVolume == 1) {
             maxVolume = bar2.tick_volume;
          } else {
@@ -2879,7 +2951,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             drawPointStructure(tfData, 1, bar2.high, bar2.time, GANN_STRUCTURE, false, enabledDraw);
             tfData.LastSwingMeter = -1;
             // cap nhat Zone. Khong xoa (updatePointZone)
-            tfData.AddToPoiZoneArray(tfData.zHighs, zone2, limit);
+            tfData.AddToPoiZoneArray(tfData.zHighs, zone_bearish, limit);
             // cap nhat waiting bos highs ve 0
             tfData.waitingHighs = 0;
          }
@@ -2902,7 +2974,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                drawPointStructure(tfData, 1, bar2.high, bar2.time, GANN_STRUCTURE, true, enabledDraw);
                tfData.LastSwingMeter = -1;
                // cap nhat Zone. Xoa 0 (updatePointZone)
-               tfData.UpdatePoiZoneArray(tfData.zHighs, 0, zone2);
+               tfData.UpdatePoiZoneArray(tfData.zHighs, 0, zone_bearish);
                // cap nhat waiting bos highs ve 0
                tfData.waitingHighs = 0;
             }
@@ -2966,7 +3038,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             }
             
             // them Zone
-            tfData.AddToPoiZoneArray(tfData.zIntSHighs, zone2, poi_limit);
+            tfData.AddToPoiZoneArray(tfData.zIntSHighs, zone_bearish, poi_limit);
             // cap nhat waiting bos intSHighs ve 0
             tfData.waitingIntSHighs = 0;
             // Cap nhat target zone Low
@@ -3032,7 +3104,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             }
                         
             // cap nhat Zone
-            tfData.UpdatePoiZoneArray(tfData.zIntSHighs, 0, zone2);
+            tfData.UpdatePoiZoneArray(tfData.zIntSHighs, 0, zone_bearish);
             //// cap nhat waiting bos intSHighs ve 0
             tfData.waitingIntSHighs = 0;
             // Cap nhat target zone Low
@@ -3069,7 +3141,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             resultStructure = 4;
                         
             // them Zone
-            tfData.AddToPoiZoneArray(tfData.zIntSHighs, zone2, poi_limit);
+            tfData.AddToPoiZoneArray(tfData.zIntSHighs, zone_bearish, poi_limit);
             // cap nhat waiting bos intSHighs ve 0
             tfData.waitingIntSHighs = 0;
          }
@@ -3095,7 +3167,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             resultStructure = 5;
             
             // cap nhat Zone
-            tfData.UpdatePoiZoneArray(tfData.zIntSHighs, 0, zone2);
+            tfData.UpdatePoiZoneArray(tfData.zIntSHighs, 0, zone_bearish);
             textInternalHigh += ", (?) iTrend: "+(string) tfData.iTrend+"\n";
             //// cap nhat waiting bos intSHighs ve 0
             tfData.waitingIntSHighs = 0;
@@ -3134,7 +3206,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             }
                                     
             // them Zone
-            tfData.AddToPoiZoneArray(tfData.zIntSHighs, zone2, poi_limit);
+            tfData.AddToPoiZoneArray(tfData.zIntSHighs, zone_bearish, poi_limit);
             // cap nhat waiting bos intSHighs ve 0
             tfData.waitingIntSHighs = 0;
             // Cap nhat target zone Low
@@ -3158,7 +3230,9 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
    //   // swing low
       if (bar3.low >= bar2.low && bar2.low <= bar1.low) { // tim thay dinh low
          textGannLow += "\n--->Gann: Find Low: +" +DoubleToString(bar2.low, _Digits)+ " + Lowest: "+DoubleToString(tfData.lowEst, _Digits);
-         PoiZone zone2 = CreatePoiZone( tfData,bar2.high, bar2.low, bar2.open, bar2.close, bar2.time);
+         // set Zone bullish
+         PoiZone mZone = createpoizone_optimized(_Period, 2, 1);
+         PoiZone zone_bullish = CreatePoiZone( tfData, mZone.high, mZone.low, bar2.open, bar2.close, bar2.time);
          if (typeTickVolume == 1) {
             maxVolume = bar2.tick_volume;
          } else {
@@ -3179,7 +3253,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             drawPointStructure(tfData, -1, bar2.low, bar2.time, GANN_STRUCTURE, false, enabledDraw);
             tfData.LastSwingMeter = 1;
             // Them Zone.
-            tfData.AddToPoiZoneArray(tfData.zLows, zone2, limit);
+            tfData.AddToPoiZoneArray(tfData.zLows, zone_bullish, limit);
             // cap nhat waiting bos lows ve 0
             tfData.waitingLows = 0;
          }
@@ -3202,7 +3276,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                drawPointStructure(tfData, -1, bar2.low, bar2.time, GANN_STRUCTURE, true, enabledDraw);
                tfData.LastSwingMeter = 1;
                // cap nhat Zone
-               tfData.UpdatePoiZoneArray(tfData.zLows, 0, zone2);
+               tfData.UpdatePoiZoneArray(tfData.zLows, 0, zone_bullish);
                // cap nhat waiting bos lows ve 0
                tfData.waitingLows = 0;
             }
@@ -3264,7 +3338,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             }
             
             // Them Zone
-            tfData.AddToPoiZoneArray(tfData.zIntSLows, zone2, poi_limit);
+            tfData.AddToPoiZoneArray(tfData.zIntSLows, zone_bullish, poi_limit);
             // cap nhat waiting bos intSLows ve 0
             tfData.waitingIntSLows = 0;
             // Cap nhat target zone High
@@ -3331,7 +3405,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             }
             
             // cap nhat Zone
-            tfData.UpdatePoiZoneArray(tfData.zIntSLows, 0, zone2);
+            tfData.UpdatePoiZoneArray(tfData.zIntSLows, 0, zone_bullish);
             //// cap nhat waiting bos intSLows ve 0
             tfData.waitingIntSLows = 0;
             // Cap nhat target zone High
@@ -3368,7 +3442,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             tfData.LastSwingInternal = 1;
             resultStructure = -4;
             // Them Zone
-            tfData.AddToPoiZoneArray(tfData.zIntSLows, zone2, poi_limit);
+            tfData.AddToPoiZoneArray(tfData.zIntSLows, zone_bullish, poi_limit);
             // cap nhat waiting bos intSLows ve 0
             tfData.waitingIntSLows = 0;
          }
@@ -3394,7 +3468,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             resultStructure = -5;
             
             // cap nhat Zone
-            tfData.UpdatePoiZoneArray(tfData.zIntSLows, 0, zone2);
+            tfData.UpdatePoiZoneArray(tfData.zIntSLows, 0, zone_bullish);
             textInternalLow += ", (?) iTrend: "+(string) tfData.iTrend;
             //// cap nhat waiting bos intSLows ve 0
             tfData.waitingIntSLows = 0;
@@ -3433,7 +3507,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
             }
             
             // them Zone
-            tfData.AddToPoiZoneArray(tfData.zIntSLows, zone2, poi_limit);
+            tfData.AddToPoiZoneArray(tfData.zIntSLows, zone_bullish, poi_limit);
             // cap nhat waiting bos intSHighs ve 0
             tfData.waitingIntSLows = 0;
             // Cap nhat target zone High
@@ -3646,8 +3720,10 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                tfData.AddToDoubleArray(tfData.intSLows, bar1.low);
                tfData.AddToDateTimeArray(tfData.intSLowTime, bar1.time);
                tfData.AddToLongArray(tfData.volIntSLows, bar1.tick_volume);
-               // set Zone
-               PoiZone zone1 = CreatePoiZone( tfData,bar1.high, bar1.low, bar1.open, bar1.close, bar1.time);
+               // set Zone bullish từ bar1
+               PoiZone mZone = createpoizone_optimized(_Period, 1, 1);
+               PoiZone zone1 = CreatePoiZone( tfData, mZone.high, mZone.low, bar2.open, bar2.close, bar2.time);
+               // PoiZone zone1 = CreatePoiZone( tfData, bar1.high, bar1.low, bar1.open, bar1.close, bar1.time);
                // them Zone
                tfData.AddToPoiZoneArray(tfData.zIntSLows, zone1, poi_limit);
                tfData.waitingIntSLows = 0 ;
@@ -3864,8 +3940,11 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                tfData.AddToDateTimeArray(tfData.intSHighTime, bar1.time);
                tfData.AddToLongArray(tfData.volIntSHighs, bar1.tick_volume);
                
-               // set Zone
-               PoiZone zone1 = CreatePoiZone( tfData,bar1.high, bar1.low, bar1.open, bar1.close, bar1.time);
+               // set Zone bullish từ bar1
+               PoiZone mZone = createpoizone_optimized(_Period, 1, 1);
+               PoiZone zone1 = CreatePoiZone( tfData, mZone.high, mZone.low, bar2.open, bar2.close, bar2.time);
+               // // set Zone
+               // PoiZone zone1 = CreatePoiZone( tfData,bar1.high, bar1.low, bar1.open, bar1.close, bar1.time);
                // them Zone
                tfData.AddToPoiZoneArray(tfData.zIntSHighs, zone1, poi_limit);
                tfData.waitingIntSHighs = 0;
@@ -3979,7 +4058,15 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
       //string textall = "----- updatePointTopBot -----";
       string textall = "";
       string text = "";
-      PoiZone zone2 = CreatePoiZone( tfData,bar2.high, bar2.low, bar2.open, bar2.close, bar2.time);
+      PoiZone zone_tmp;
+      
+      // Gọi hàm với nến số 2 làm điểm neo
+      PoiZone mZone_bearish = createpoizone_optimized(_Period, 2, -1);
+      PoiZone zone_bearish = CreatePoiZone( tfData, mZone_bearish.high, mZone_bearish.low, bar2.open, bar2.close, bar2.time);
+
+      PoiZone mZone_bullish = createpoizone_optimized(_Period, 2, 1);
+      PoiZone zone_bullish = CreatePoiZone( tfData, mZone_bullish.high, mZone_bullish.low, bar2.open, bar2.close, bar2.time);
+
       long maxVolume = 0;
       
       double barHigh = bar1.high;
@@ -4106,8 +4193,8 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                   tfData.AddToDateTimeArray( tfData.arrTopTime, bar2.time);
                   tfData.AddToLongArray(tfData.volArrTop, maxVolume);
                   
-                  // add new Zone
-                  tfData.AddToPoiZoneArray( tfData.zArrTop, zone2, limit);
+                  // add new Zone Bearish
+                  tfData.AddToPoiZoneArray( tfData.zArrTop, zone_bearish, limit);
                   // cap nhat waiting top
                   tfData.waitingArrTop = 0;
                } 
@@ -4125,8 +4212,8 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                   tfData.UpdateDoubleArray(tfData.arrTop, 0, bar2.high);
                   tfData.UpdateDateTimeArray(tfData.arrTopTime, 0, bar2.time);
                   tfData.UpdateLongArray(tfData.volArrTop, 0, maxVolume);
-                  // cap nhat Zone
-                  tfData.UpdatePoiZoneArray( tfData.zArrTop, 0, zone2);
+                  // cap nhat Zone bearish
+                  tfData.UpdatePoiZoneArray( tfData.zArrTop, 0, zone_bearish);
                   // cap nhat waiting top
                   tfData.waitingArrTop = 0;
                }
@@ -4302,9 +4389,18 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                   tfData.wvMtrend = 0;
                }
 
-               // Add new zone
-               MqlRates bar_tmp = tfData.L_bar;
-               PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+               // Add New Zone Bullish
+               // 2. Tìm "điểm neo" (index) dựa trên thời gian của nến đó
+               // iBarShift trả về chỉ số của nến tại một thời điểm nhất định
+               int indexAnchor = iBarShift(_Symbol, tfData.timeFrame, tfData.L_bar.time);
+               if (indexAnchor != -1) {
+                  PoiZone barZone = createpoizone_optimized(tfData.timeFrame, indexAnchor, 1);
+                  zone_tmp = CreatePoiZone( tfData,barZone.high, barZone.low, tfData.L_bar.open, tfData.L_bar.close, tfData.L_bar.time);
+                  tfData.AddToPoiZoneArray( tfData.zArrPbLow, zone_tmp, limit);
+               } else {
+                  MqlRates bar_tmp = tfData.L_bar;
+                  zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+               }
                tfData.AddToPoiZoneArray( tfData.zArrPbLow, zone_tmp, limit);
                // update waiting arr pblow
                tfData.waitingArrPbLows = 0;
@@ -4400,9 +4496,17 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                   tfData.wvMtrend = 0;
                }
 
-               // Add new zone
-               MqlRates bar_tmp = tfData.L_bar;
-               PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+               // Add New Zone Bullish
+               // 2. Tìm "điểm neo" (index) dựa trên thời gian của nến đó
+               // iBarShift trả về chỉ số của nến tại một thời điểm nhất định
+               int indexAnchor = iBarShift(_Symbol, tfData.timeFrame, tfData.L_bar.time);
+               if (indexAnchor != -1) {
+                  PoiZone barZone = createpoizone_optimized(tfData.timeFrame, indexAnchor, 1);
+                  zone_tmp = CreatePoiZone( tfData,barZone.high, barZone.low, tfData.L_bar.open, tfData.L_bar.close, tfData.L_bar.time);
+               } else {
+                  MqlRates bar_tmp = tfData.L_bar;
+                  zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+               }
                tfData.AddToPoiZoneArray( tfData.zArrPbLow, zone_tmp, limit);
                // update waiting pb low
                tfData.waitingArrPbLows = 0;
@@ -4567,8 +4671,8 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                   tfData.AddToDoubleArray( tfData.arrBot, bar2.low);
                   tfData.AddToDateTimeArray( tfData.arrBotTime, bar2.time);
                   tfData.AddToLongArray( tfData.volArrBot, maxVolume);
-                  // Add new zone
-                  tfData.AddToPoiZoneArray( tfData.zArrBot, zone2, limit); 
+                  // Add new zone bullish
+                  tfData.AddToPoiZoneArray( tfData.zArrBot, zone_bullish, limit); 
                   // cap nhat waiting arrBot
                   tfData.waitingArrBot = 0;
                }
@@ -4586,8 +4690,8 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                   tfData.UpdateDoubleArray( tfData.arrBot, 0, bar2.low);
                   tfData.UpdateDateTimeArray( tfData.arrBotTime, 0, bar2.time);
                   tfData.UpdateLongArray( tfData.volArrBot, 0, maxVolume);
-                  // Update zone
-                  tfData.UpdatePoiZoneArray( tfData.zArrBot, 0, zone2);
+                  // Update zone bullish
+                  tfData.UpdatePoiZoneArray( tfData.zArrBot, 0, zone_bullish);
                   // cap nhat waiting arrBot
                   tfData.waitingArrBot = 0;
                }
@@ -4759,10 +4863,17 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                if (tfData.wvMtrend != 0 && tfData.wvolArrPbLowTime[0] < tfData.wvolArrPbHighTime[0]) {
                   tfData.wvMtrend = 0;
                }
-               
-               // Add new zone
-               MqlRates bar_tmp = tfData.H_bar;
-               PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+               // Add New Zone Bearish
+               // 2. Tìm "điểm neo" (index) dựa trên thời gian của nến đó
+               // iBarShift trả về chỉ số của nến tại một thời điểm nhất định
+               int indexAnchor = iBarShift(_Symbol, tfData.timeFrame, tfData.L_bar.time);
+               if (indexAnchor != -1) {
+                  PoiZone barZone = createpoizone_optimized(tfData.timeFrame, indexAnchor, -1);
+                  zone_tmp = CreatePoiZone( tfData,barZone.high, barZone.low, tfData.L_bar.open, tfData.L_bar.close, tfData.L_bar.time);
+               } else {
+                  MqlRates bar_tmp = tfData.L_bar;
+                  zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+               }
                tfData.AddToPoiZoneArray( tfData.zArrPbHigh, zone_tmp, limit);
                
                // update waiting arrPbHigh
@@ -4858,9 +4969,17 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                   tfData.wvMtrend = 0;
                }
 
-               // Add new zone
-               MqlRates bar_tmp = tfData.H_bar;
-               PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+               // Add New Zone Bearish
+               // 2. Tìm "điểm neo" (index) dựa trên thời gian của nến đó
+               // iBarShift trả về chỉ số của nến tại một thời điểm nhất định
+               int indexAnchor = iBarShift(_Symbol, tfData.timeFrame, tfData.L_bar.time);
+               if (indexAnchor != -1) {
+                  PoiZone barZone = createpoizone_optimized(tfData.timeFrame, indexAnchor, -1);
+                  zone_tmp = CreatePoiZone( tfData,barZone.high, barZone.low, tfData.L_bar.open, tfData.L_bar.close, tfData.L_bar.time);
+               } else {
+                  MqlRates bar_tmp = tfData.L_bar;
+                  zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+               }
                tfData.AddToPoiZoneArray( tfData.zArrPbHigh, zone_tmp, limit); 
                // update waiting arrPbHigh
                tfData.waitingArrPbHigh = 0;
@@ -5056,196 +5175,6 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
       return result;
    }
    
-//   void getZoneValid(TimeFrameData& tfData, bool isComment = false) {
-//      isComment = true;
-//      showComment(tfData);
-//      // Pre arr Decisional
-//      //getDecisionalValue(tfData, isComment);
-//      
-//      //// Extreme Poi
-//      //setValueToZone(tfData, 1, tfData.zArrPbHigh, tfData.zPoiExtremeHigh, isComment, "Extreme");
-//      //setValueToZone(tfData, -1, tfData.zArrPbLow, tfData.zPoiExtremeLow, isComment, "Extreme");
-//      ////// Decisional Poi
-//      //setValueToZone(tfData, 1, tfData.zArrDecisionalHigh, tfData.zPoiDecisionalHigh, isComment, "Decisional");
-//      //setValueToZone(tfData, -1, tfData.zArrDecisionalLow, tfData.zPoiDecisionalLow, isComment, "Decisional");
-//   }      
-   
-//   // Todo1: dang setup chua xong, can verify Decisinal POI moi khi chay. Luu gia tri High, Low vao 1 gia tri cố định để so sánh
-//   // 
-//   void getDecisionalValue(TimeFrameData& tfData, bool isComment = false) {
-//      string str_zone = "==> Function getDecisionalValue: ";
-//      string text = "";
-//      // High
-//      if (ArraySize(tfData.intSHighs) > 1 && tfData.arrDecisionalHigh[0] != tfData.intSHighs[1]) {
-//         text += "\n Checking intSHighs[1]: "+ DoubleToString( tfData.intSHighs[1],_Digits);
-//         // intSHigh[1] not include Extrempoi
-//         int isExist = -1;
-//         if (ArraySize(tfData.arrPbHigh) > 0) {
-//            isExist = checkExist(tfData.intSHighs[1], tfData.arrPbHigh);
-//            text += ": Tim thay vi tri "+(string) isExist+" trong arrPbHigh.";
-//         }
-//         // Neu khong phai la extreme POI. update if isExist == -1
-//         if (isExist == -1) {
-//            // add new point
-//            tfData.AddToDoubleArray(tfData.arrDecisionalHigh, tfData.intSHighs[1]);
-//            tfData.AddToDateTimeArray(tfData.arrDecisionalHighTime, tfData.intSHighTime[1]);
-//            // Get Bar Index
-//            MqlRates iBar;
-//            int indexH = iBarShift(_Symbol, tfData.timeFrame, tfData.intSHighTime[1], true);
-//            if (indexH != -1) {
-//               getValueBar(iBar, tfData.timeFrame,indexH);               
-//               // Add new zone
-//               MqlRates bar_tmp = iBar;
-//               PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
-//               tfData.AddToPoiZoneArray( tfData.zArrDecisionalHigh, zone_tmp, limit);
-//            }
-//         } else {
-//            text += "\n Da ton tai o vi tri : "+(string) isExist+" trong arrPbHigh. Bo qua.";
-//         }
-//      }
-//      
-//      // Low
-//      if (ArraySize(tfData.intSLows) > 1 && tfData.arrDecisionalLow[0] != tfData.intSLows[1]) {
-//         text += "\n Checking intSLows[1]: "+ DoubleToString( tfData.intSLows[1],_Digits);
-//         // intSLow[1] not include Extrempoi
-//         int isExist = -1;
-//         if (ArraySize(tfData.arrPbLow) > 0) {
-//            isExist = checkExist(tfData.intSLows[1], tfData.arrPbLow);
-//            text += ": Tim thay vi tri "+(string) isExist+" trong arrPbLow.";
-//         }
-//         // Neu khong phai la extreme POI. update if isExist == -1
-//         if (isExist == -1) {
-//            // add new point
-//            tfData.AddToDoubleArray(tfData.arrDecisionalLow, tfData.intSLows[1]);
-//            tfData.AddToDateTimeArray(tfData.arrDecisionalLowTime, tfData.intSLowTime[1]);
-//            // Get Bar Index
-//            MqlRates iBar;
-//            int indexL = iBarShift(_Symbol, tfData.timeFrame, tfData.intSLowTime[1], true);
-//            if (indexL != -1) {
-//               getValueBar(iBar, tfData.timeFrame, indexL);               
-//               // Add new zone
-//               MqlRates bar_tmp = iBar;
-//               PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
-//               tfData.AddToPoiZoneArray( tfData.zArrDecisionalLow, zone_tmp, limit);
-//            }
-//         } else {
-//            text += "\n Da ton tai o vi tri : "+(string) isExist+" trong arrPbLow. Bo qua.";
-//         }
-//      }
-//      if (isComment) Print(str_zone+text);
-//   }
-   
-   //int checkExist(double value, double& array[]){
-   //   int checkExist = -1;
-   //   if (ArraySize(array) > 0) {
-   //      for(int i=0;i<ArraySize(array);i++) {
-   //         if (array[i] == value) {
-   //            checkExist = i;
-   //            break;
-   //         }
-   //      }
-   //   }
-   //   return checkExist;
-   //}
-   
-//   void setValueToZone(TimeFrameData& tfData, int _type,PoiZone& zoneDefault[], PoiZone& zoneTarget[], bool isComment = false, string str_poi = ""){
-//      string text = "";
-//      // type = 1 is High, -1 is Low
-//      double priceKey = (_type == 1) ? zoneDefault[0].high : zoneDefault[0].low; // Price key => Lấy giá theo loại (1 or -1) để so sánh với zone[0] xem đã tồn tại hay chưa
-//      datetime timeKey = zoneDefault[0].time;
-//      // check default has new value?? => Kiểm tra xem phần tử đầu tiên có phải là phần tử cần thêm vào hay không
-//      if (ArraySize(zoneDefault) > 1 && priceKey != zoneTarget[0].priceKey && timeKey != zoneTarget[0].timeKey && priceKey != 0) {   
-//         text += ( "--> "+ str_poi +" "+ (( _type == 1)? "High" : "Low") +". Xuat hien value: "+DoubleToString(priceKey,5)+" co time: "+(string)timeKey+" moi. them vao "+str_poi+" "+ (( _type == 1)? "Bearish" : "Bullish") +" Zone");
-//
-//         int indexH; 
-//         MqlRates barH;
-//         
-//         int result = -1;
-//         indexH = iBarShift(_Symbol, tfData.timeFrame, timeKey, true);
-//         if (indexH != -1) {
-//            // result = -1 => is nothing; result = 0 => is Default; result = index => update
-//            result = isFVG(tfData, indexH, _type); // High is type = 1 or Low is type = -1
-//            // set Value to barH
-//            if (result != -1) {
-//               getValueBar(barH, tfData.timeFrame, (result != 0) ? result : indexH);
-//               
-//               // Add new zone
-//               MqlRates bar_tmp = barH;
-//               PoiZone zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time, 0, priceKey, timeKey);
-//               tfData.AddToPoiZoneArray( zoneTarget, zone_tmp, limit);
-//            }
-//         } else {
-//            text += ("Khong lam gi");
-//         }
-//         if(isComment) {
-//            Print(text);
-//         }
-//      }
-//   }
-      
-   ////--- Return position bar on chart
-   //int isFVG(TimeFrameData& tfData, int index, int type){ // type = 1 is High (Bearish) or type = -1 is Low (Bullish) 
-   //   string text = "-------------- Check FVG";
-   //   int indexOrigin = index;
-   //   int result = -1;
-   //   bool stop = false;
-   //   ENUM_TIMEFRAMES timeframe = tfData.timeFrame;
-   //   MqlRates bar1, bar2, bar3;
-   //   int i = 0;
-   //   while(stop == false && index >=0) {
-   //      text += "\n Number " + (string)i;
-   //      // gia tri lay tu xa ve gan 
-   //      getValueBar(bar1, timeframe, index); // Bar current
-   //      getValueBar(bar2, timeframe, index-1);
-   //      getValueBar(bar3, timeframe, index-2); 
-   //      text += "\n bar 1: "+ " High: "+ DoubleToString(bar1.high, _Digits) + " Low: "+ DoubleToString(bar1.low, _Digits);
-   //      text += "\n bar 2: "+ " High: "+ DoubleToString(bar2.high, _Digits) + " Low: "+ DoubleToString(bar2.low, _Digits);
-   //      text += "\n bar 3: "+ " High: "+ DoubleToString(bar3.high, _Digits) + " Low: "+ DoubleToString(bar3.low, _Digits);
-   //      if (( type == -1 && bar1.high > tfData.arrTop[0]) || (type == 1 && bar1.low < tfData.arrBot[0])) { // gia vuot qua dinh gan nhat. Bo qua
-   //         text += "\n gia vuot qua dinh, day gan nhat. Bo qua";
-   //         result = 0;
-   //         stop = true;
-   //         break;
-   //      }
-   //      if (type == -1) { // Bull FVG
-   //         if (  bar1.low > bar3.high && // has space
-   //               bar2.close > bar3.high && bar1.close > bar1.open && bar3.close > bar3.open // is Green Bar
-   //            ) {
-   //            result = index;
-   //            stop = true;
-   //            text += "\n Bull FVG: Tim thay nen co FVG. High= "+ DoubleToString(bar1.high, _Digits) +" Low= "+DoubleToString( bar1.low, _Digits);
-   //            break;
-   //         }
-   //      } else if (type == 1) { // Bear FVG 
-   //         if (
-   //            bar1.high < bar3.low && // has space
-   //            bar2.close < bar3.low && bar1.close < bar1.open && bar3.close < bar3.open // is Red Bar
-   //         ) {
-   //            result = index;
-   //            stop = true;
-   //            text += "\n Bear FVG: Tim thay nen co FVG. High= "+ DoubleToString(bar1.high, _Digits) +" Low= "+ DoubleToString(bar1.low, _Digits);
-   //            break;
-   //         }
-   //      }
-   //      if (stop == false) {
-   //         i++;
-   //         index--;
-   //      }
-   //   }
-   //   //Print(text);
-   //   return result;
-   //}
-   
-   ////--- Set all value Index to Bar Default
-   //void getValueBar(MqlRates& bar, ENUM_TIMEFRAMES Timeframe,int index) {
-   //   bar.high = iHigh(_Symbol, Timeframe, index);
-   //   bar.low = iLow(_Symbol, Timeframe, index);
-   //   bar.open = iOpen(_Symbol, Timeframe, index);
-   //   bar.close = iClose(_Symbol, Timeframe, index);
-   //   bar.time = iTime(_Symbol, Timeframe, index);
-   //   //Print("- Bar -"+index + " - "+ " High: "+ bar.high+" Low: "+bar.low + " Time: "+ bar.time);
-   //}
-
    // Ham ve Trade zone Marjor Struct
    void drawMarjorTradeZone(TimeFrameData& tfData, MqlRates& bar1) {
       if (tfData.isDraw) {
