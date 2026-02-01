@@ -175,6 +175,8 @@ struct PoiZone
    datetime time;
    
    int mitigated; // -1 reject order block, 0 not mitigate, 1 mitigating Order Block
+   bool isSwept;
+   color zoneColor; // THÊM DÒNG NÀY: Lưu màu sắc riêng của từng Zone
    
    // iTrend
    int iTrend;
@@ -1282,18 +1284,21 @@ PoiZone createpoizone_optimized(ENUM_TIMEFRAMES tf, int indexAnchor, int type)
 
 //Todo: Hàm tạo PoiZone từ giá
 PoiZone CreatePoiZone(TimeFrameData& tfData, double high, double low, double open, double close, datetime time, 
-                      int mitigated = 0, double priceKey = -1, datetime timeKey = -1)
+                      int mitigated = 0, double priceKey = -1, datetime timeKey = -1, color zone_color = clrWhite)
 {
    PoiZone zone;
+   ZeroMemory(zone);
+   
    zone.high = high;
    zone.low = low;
    zone.open = open;
    zone.close = close;
    zone.time = time;
    zone.mitigated = mitigated;
+   zone.isSwept = false;
    zone.priceKey = (priceKey != -1) ? priceKey : -1;
    zone.timeKey = (timeKey != -1) ? timeKey : 0;
-   
+   zone.zoneColor = zone_color;
    zone.isTypeZone = 0;
       
    zone.mTrend = (tfData.mTrend == 1 || tfData.mTrend == -1)? tfData.mTrend : 0;
@@ -2719,29 +2724,29 @@ struct marketStructs{
       // Hàm luôn phải chạy không được dừng để check mitigate còn loại POI ra khỏi vùng scan zone.
       // Gann Structure Highs và Lows
       if (ArraySize(tfData.zHighs) > 0) {
-         getIsMitigatedZone(bar1, tfData.zHighs, -1);
+         getIsMitigatedZone(tfData, bar1, tfData.zHighs, -1);
       }
       
       if (ArraySize(tfData.zLows) > 0) {
-         getIsMitigatedZone(bar1, tfData.zLows, 1);
+         getIsMitigatedZone(tfData, bar1, tfData.zLows, 1);
       }
       
       // Internal Structure Highs và Lows
       if (ArraySize(tfData.zArrIntBearish) > 0) {
-         getIsMitigatedZone(bar1, tfData.zArrIntBearish, -1);
+         getIsMitigatedZone(tfData, bar1, tfData.zArrIntBearish, -1);
       }
       
       if (ArraySize(tfData.zArrIntBullish) > 0) {
-         getIsMitigatedZone(bar1, tfData.zArrIntBullish, 1);
+         getIsMitigatedZone(tfData, bar1, tfData.zArrIntBullish, 1);
       }
       
       // Hàm check mitigate của Marjor Zone theo từng TF
       if (ArraySize(tfData.zArrPoiZoneBearish) > 0) {
-         getIsMitigatedZone(bar1, tfData.zArrPoiZoneBearish, -1);
+         getIsMitigatedZone(tfData, bar1, tfData.zArrPoiZoneBearish, -1);
       }
       
       if (ArraySize(tfData.zArrPoiZoneBullish) > 0) {
-         getIsMitigatedZone(bar1, tfData.zArrPoiZoneBullish, 1);
+         getIsMitigatedZone(tfData, bar1, tfData.zArrPoiZoneBullish, 1);
       }
       
       // Hàm check mitigate của Global Target
@@ -2751,30 +2756,30 @@ struct marketStructs{
       
       // Hàm check mitigate của Internal global zone LowTF dành cho Trade Multi TF
       if( ArraySize(zArrPoiZoneLTFBullishBelongHighTF) > 0) {
-         getIsMitigatedZone(bar1, zArrPoiZoneLTFBullishBelongHighTF, 1);
+         getIsMitigatedZone(tfData, bar1, zArrPoiZoneLTFBullishBelongHighTF, 1);
       }
       
       if (ArraySize(zArrPoiZoneLTFBearishBelongHighTF) > 0) {
-         getIsMitigatedZone(bar1, zArrPoiZoneLTFBearishBelongHighTF, -1);
+         getIsMitigatedZone(tfData, bar1, zArrPoiZoneLTFBearishBelongHighTF, -1);
       }
             
       // ----------------------------------------------------------- //
       // Hàm check mitigate của Trade Zone thuộc Internal Structure HighTF
       if( ArraySize(zGTradeZoneInternalBullishHTF) > 0) {
-         getIsMitigatedZone(bar1, zGTradeZoneInternalBullishHTF, 1);
+         getIsMitigatedZone(tfData, bar1, zGTradeZoneInternalBullishHTF, 1);
       }
 
       if (ArraySize(zGTradeZoneInternalBearishHTF) > 0) {
-         getIsMitigatedZone(bar1, zGTradeZoneInternalBearishHTF, -1);
+         getIsMitigatedZone(tfData, bar1, zGTradeZoneInternalBearishHTF, -1);
       }
 
       // Hàm check mitigate của Trade Zone thuộc Marjor Structure HighTF
       if( ArraySize(zGTradeZoneBearishHTF) > 0) {
-         getIsMitigatedZone(bar1, zGTradeZoneBearishHTF, -1);
+         getIsMitigatedZone(tfData, bar1, zGTradeZoneBearishHTF, -1);
       }
       
       if (ArraySize(zGTradeZoneBullishHTF) > 0) {
-         getIsMitigatedZone(bar1, zGTradeZoneBullishHTF, 1);
+         getIsMitigatedZone(tfData, bar1, zGTradeZoneBullishHTF, 1);
       }
    }
    
@@ -2816,50 +2821,114 @@ struct marketStructs{
       }
    }
    
-   // Hàm kiểm tra từng zone mitigate hay chưa
-   void getIsMitigatedZone(MqlRates& bar1, PoiZone& zone[], int type, int skip_key = -1) {
-      // kiem tra xem zone co du lieu hay khong
-      if (ArraySize(zone) > 0) {
-         bool isDraw = false;
-         color iColor = clrPapayaWhip;
-         // lap du lieu 
-         for(int i=0;i < ArraySize(zone);i++) {
-            isDraw = false;
-            if (i == skip_key) continue;
-            // chi kiem tra zone not mitigate va mitigating
-            if (zone[i].mitigated == -1) continue;
-            // neu dang check bullish zone
-            if (type == 1) {
-               if( bar1.low > zone[i].high) continue; 
-               // Neu gia bat dau mitigate zone
-               // neu gia van nam trong zone
-               if (bar1.low <= zone[i].high && bar1.low >= zone[i].low && zone[i].mitigated != 1) {
-                  zone[i].mitigated = 1;
-                  //drawBox("ePOI", zone[i].time, zone[i].high, bar1.time, zone[i].low,1, iColor, 1);
-               }
-               // neu gia vuot ra ngoai zone
-               if (bar1.low < zone[i].low && zone[i].mitigated != -1) {
-                  zone[i].mitigated = -1;
-               }
-            } else if (type == -1) { // neu dang check bearish zone
-               if (bar1.high < zone[i].low) continue;
-               // Neu gia bat dau mitigate zone
-               
-               // neu gia van nam trong zone
-               if (bar1.high >= zone[i].low && bar1.high <= zone[i].high && zone[i].mitigated != 1) {
-                  zone[i].mitigated = 1;
-                  //drawBox("ePOI", zone[i].time, zone[i].low, bar1.time, zone[i].high,1, iColor, 1);
-               }
-               
-               // neu gia vuot ra ngoai zone
-               if (bar1.high > zone[i].high && zone[i].mitigated != -1) {
-                  zone[i].mitigated = -1;
-               }
-            }
+   //+------------------------------------------------------------------+
+   //| Hàm kiểm tra từng zone - Sử dụng Close để xác định Break Zone    |
+   //+------------------------------------------------------------------+
+//   void getIsMitigatedZone(MqlRates& bar1, PoiZone& zone[], int type, int skip_key = -1) {
+//      // Kiểm tra xem mảng zone có dữ liệu hay không
+//      if (ArraySize(zone) > 0) {
+//         for(int i=0; i < ArraySize(zone); i++) {
+//            if (i == skip_key) continue;
+//            
+//            // Chỉ kiểm tra các zone chưa bị phá vỡ hoàn toàn (-1)
+//            if (zone[i].mitigated == -1) continue;
+//   
+//            // --- TRƯỜNG HỢP BULLISH ZONE (Vùng để BUY) ---
+//            if (type == 1) {
+//               // Nếu giá thấp nhất của nến vẫn cao hơn đỉnh POI -> Giá chưa chạm tới
+//               if(bar1.low > zone[i].high) continue; 
+//   
+//               // 1. LOGIC SWEEP (Quét râu):
+//               // Thỏa mãn khi Low thấp hơn đáy POI NHƯNG Close vẫn đóng cửa TRÊN đáy POI
+//               if (bar1.low < zone[i].low && bar1.close >= zone[i].low) {
+//                  zone[i].isSwept = true;
+//               }
+//   
+//               // 2. LOGIC MITIGATE (Chạm vùng):
+//               // Khi giá thấp nhất đã chạm vào trong vùng (nằm giữa High và Low của POI)
+//               if (bar1.low <= zone[i].high && bar1.low >= zone[i].low && zone[i].mitigated != 1) {
+//                  zone[i].mitigated = 1;
+//               }
+//   
+//               // 3. LOGIC BREAK (Phá vỡ hoàn toàn):
+//               // Vùng bị hủy CHỈ KHI nến ĐÓNG CỬA (Close) nằm dưới đáy POI
+//               if (bar1.close < zone[i].low) {
+//                  zone[i].mitigated = -1;
+//                  zone[i].isSwept = false; // Khi đã break thì trạng thái swept không còn quan trọng
+//               }
+//            } 
+//            
+//            // --- TRƯỜNG HỢP BEARISH ZONE (Vùng để SELL) ---
+//            else if (type == -1) {
+//               // Nếu giá cao nhất của nến vẫn thấp hơn đáy POI -> Giá chưa chạm tới
+//               if (bar1.high < zone[i].low) continue;
+//   
+//               // 1. LOGIC SWEEP (Quét râu):
+//               // Thỏa mãn khi High cao hơn đỉnh POI NHƯNG Close vẫn đóng cửa DƯỚI đỉnh POI
+//               if (bar1.high > zone[i].high && bar1.close <= zone[i].high) {
+//                  zone[i].isSwept = true;
+//               }
+//   
+//               // 2. LOGIC MITIGATE (Chạm vùng):
+//               if (bar1.high >= zone[i].low && bar1.high <= zone[i].high && zone[i].mitigated != 1) {
+//                  zone[i].mitigated = 1;
+//               }
+//   
+//               // 3. LOGIC BREAK (Phá vỡ hoàn toàn):
+//               // Vùng bị hủy CHỈ KHI nến ĐÓNG CỬA (Close) nằm trên đỉnh POI
+//               if (bar1.close > zone[i].high) {
+//                  zone[i].mitigated = -1;
+//                  zone[i].isSwept = false;
+//               }
+//            }
+//         }
+//      }
+//   }
+//  
+  void getIsMitigatedZone(TimeFrameData &tfData, MqlRates& bar1, PoiZone& zone[], int type, int skip_key = -1) {
+   int totalZones = ArraySize(zone);
+   if (totalZones <= 0) return;
+
+   for(int i=0; i < totalZones; i++) {
+      if (i == skip_key || zone[i].mitigated == -1) continue;
+
+      string baseName = (type == 1) ? "BullZone" : "BearZone"; 
+      string objName = baseName + TimeToString(zone[i].time);
+
+      // --- 1. LỌC THEO XU HƯỚNG ---
+      if (type != tfData.mTrend) {
+         if(ObjectFind(0, objName) >= 0) ObjectDelete(0, objName);
+         continue; 
+      }
+
+      // --- 2. LOGIC KIỂM TRA TRẠNG THÁI ---
+      if (type == 1) { // BULLISH
+         if (bar1.low < zone[i].low && bar1.close >= zone[i].low) zone[i].isSwept = true;
+         if (bar1.low <= zone[i].high && bar1.low >= zone[i].low) zone[i].mitigated = 1;
+
+         if (bar1.close < zone[i].low) { // CLOSE BREAK
+            zone[i].mitigated = -1;
+            if(ObjectFind(0, objName) >= 0) ObjectDelete(0, objName);
+            continue;
+         }
+      } 
+      else if (type == -1) { // BEARISH
+         if (bar1.high > zone[i].high && bar1.close <= zone[i].high) zone[i].isSwept = true;
+         if (bar1.high >= zone[i].low && bar1.high <= zone[i].high) zone[i].mitigated = 1;
+
+         if (bar1.close > zone[i].high) { // CLOSE BREAK
+            zone[i].mitigated = -1;
+            if(ObjectFind(0, objName) >= 0) ObjectDelete(0, objName);
+            continue;
          }
       }
+
+      // --- 3. VẼ HOẶC CẬP NHẬT ---
+      // Lấy màu trực tiếp từ zone[i].zoneColor đã lưu lúc khởi tạo
+      drawBox(baseName, zone[i].time, zone[i].high, bar1.time, zone[i].low, STYLE_SOLID, zone[i].zoneColor, 1);
    }
-   
+}
+  
    //+------------------------------------------------------------------+
 //| Hàm tính tổng Volume giữa 2 khoảng thời gian                     |
 //+------------------------------------------------------------------+
@@ -2923,6 +2992,17 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
       
       long wVol = 0;
       
+      // dinh nghia lai mau sac cua zone
+      color clr_internal_bullish;
+      color clr_internal_bearish;
+      if (tfData.isHighTF) {
+         clr_internal_bullish = color_HTF_Internal_Bullish_Zone;
+         clr_internal_bearish = color_HTF_Internal_Bearish_Zone;
+      } else {
+         clr_internal_bullish = color_LTF_Internal_Bullish_Zone;
+         clr_internal_bearish = color_LTF_Internal_Bearish_Zone;
+      }
+      
    //    swing high
       if (bar3.high <= bar2.high && bar2.high >= bar1.high) { // tim thay dinh high
          textGannHigh += "\n--->Gann: Find High: "+DoubleToString(bar2.high, _Digits) +" + Highest: "+ DoubleToString(tfData.highEst, _Digits) ;
@@ -2930,7 +3010,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
          // Gọi hàm với nến số 2 làm điểm neo
          int indexAnchor = iBarShift(_Symbol, tfData.timeFrame, bar2.time);
          PoiZone mZone = createpoizone_optimized(tfData.timeFrame, indexAnchor, -1);
-         PoiZone zone_bearish = CreatePoiZone( tfData, mZone.high, mZone.low, bar2.open, bar2.close, bar2.time);
+         PoiZone zone_bearish = CreatePoiZone( tfData, mZone.high, mZone.low, bar2.open, bar2.close, bar2.time, clr_internal_bearish);
          if (typeTickVolume == 1) {
             maxVolume = bar2.tick_volume;
          } else {
@@ -3234,7 +3314,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
          // set Zone bullish
          int indexAnchor = iBarShift(_Symbol, tfData.timeFrame, bar2.time);
          PoiZone mZone = createpoizone_optimized(tfData.timeFrame, indexAnchor, 1);
-         PoiZone zone_bullish = CreatePoiZone( tfData, mZone.high, mZone.low, bar2.open, bar2.close, bar2.time);
+         PoiZone zone_bullish = CreatePoiZone( tfData, mZone.high, mZone.low, bar2.open, bar2.close, bar2.time, clr_internal_bullish);
          if (typeTickVolume == 1) {
             maxVolume = bar2.tick_volume;
          } else {
@@ -3725,7 +3805,7 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                // set Zone bullish từ bar1
                int indexAnchor = iBarShift(_Symbol, tfData.timeFrame, bar1.time);
                PoiZone mZone = createpoizone_optimized(tfData.timeFrame, indexAnchor, 1);
-               PoiZone zone1 = CreatePoiZone( tfData, mZone.high, mZone.low, bar2.open, bar2.close, bar2.time);
+               PoiZone zone1 = CreatePoiZone( tfData, mZone.high, mZone.low, bar2.open, bar2.close, bar2.time, clr_internal_bullish);
                // PoiZone zone1 = CreatePoiZone( tfData, bar1.high, bar1.low, bar1.open, bar1.close, bar1.time);
                // them Zone
                tfData.AddToPoiZoneArray(tfData.zIntSLows, zone1, poi_limit);
@@ -3943,9 +4023,9 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                tfData.AddToDateTimeArray(tfData.intSHighTime, bar1.time);
                tfData.AddToLongArray(tfData.volIntSHighs, bar1.tick_volume);
                
-               // set Zone bullish từ bar1
-               PoiZone mZone = createpoizone_optimized(_Period, 1, 1);
-               PoiZone zone1 = CreatePoiZone( tfData, mZone.high, mZone.low, bar2.open, bar2.close, bar2.time);
+               // set Zone bearish từ bar1
+               PoiZone mZone = createpoizone_optimized(_Period, 1, -1);
+               PoiZone zone1 = CreatePoiZone( tfData, mZone.high, mZone.low, bar2.open, bar2.close, bar2.time, clr_internal_bearish);
                // // set Zone
                // PoiZone zone1 = CreatePoiZone( tfData,bar1.high, bar1.low, bar1.open, bar1.close, bar1.time);
                // them Zone
@@ -4062,14 +4142,23 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
       string textall = "";
       string text = "";
       PoiZone zone_tmp;
-      
+      // dinh nghia lai mau cua poi zone
+      color clr_marjor_bullish;
+      color clr_marjor_bearish;
+      if (tfData.isHighTF) {
+         clr_marjor_bearish = color_HTF_Decisional_Bearish_Zone;
+         clr_marjor_bullish = color_HTF_Decisional_Bullish_Zone;
+      } else {
+         clr_marjor_bearish = color_LTF_Decisional_Bearish_Zone;
+         clr_marjor_bullish = color_LTF_Decisional_Bullish_Zone;
+      }
       // Gọi hàm với nến số 2 làm điểm neo
       int indexAnchor = iBarShift(_Symbol, tfData.timeFrame, bar2.time);
       PoiZone mZone_bearish = createpoizone_optimized(tfData.timeFrame, indexAnchor, -1);
-      PoiZone zone_bearish = CreatePoiZone( tfData, mZone_bearish.high, mZone_bearish.low, bar2.open, bar2.close, bar2.time);
+      PoiZone zone_bearish = CreatePoiZone( tfData, mZone_bearish.high, mZone_bearish.low, bar2.open, bar2.close, bar2.time, clr_marjor_bearish);
 
       PoiZone mZone_bullish = createpoizone_optimized(tfData.timeFrame, indexAnchor, 1);
-      PoiZone zone_bullish = CreatePoiZone( tfData, mZone_bullish.high, mZone_bullish.low, bar2.open, bar2.close, bar2.time);
+      PoiZone zone_bullish = CreatePoiZone( tfData, mZone_bullish.high, mZone_bullish.low, bar2.open, bar2.close, bar2.time, clr_marjor_bullish);
 
       long maxVolume = 0;
       
@@ -4399,11 +4488,11 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                int indexAnchor = iBarShift(_Symbol, tfData.timeFrame, tfData.L_bar.time);
                if (indexAnchor != -1) {
                   PoiZone barZone = createpoizone_optimized(tfData.timeFrame, indexAnchor, 1);
-                  zone_tmp = CreatePoiZone( tfData,barZone.high, barZone.low, tfData.L_bar.open, tfData.L_bar.close, tfData.L_bar.time);
+                  zone_tmp = CreatePoiZone( tfData,barZone.high, barZone.low, tfData.L_bar.open, tfData.L_bar.close, tfData.L_bar.time, clr_marjor_bullish);
                   tfData.AddToPoiZoneArray( tfData.zArrPbLow, zone_tmp, limit);
                } else {
                   MqlRates bar_tmp = tfData.L_bar;
-                  zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+                  zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time, clr_marjor_bullish);
                }
                tfData.AddToPoiZoneArray( tfData.zArrPbLow, zone_tmp, limit);
                // update waiting arr pblow
@@ -4506,10 +4595,10 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                int indexAnchor = iBarShift(_Symbol, tfData.timeFrame, tfData.L_bar.time);
                if (indexAnchor != -1) {
                   PoiZone barZone = createpoizone_optimized(tfData.timeFrame, indexAnchor, 1);
-                  zone_tmp = CreatePoiZone( tfData,barZone.high, barZone.low, tfData.L_bar.open, tfData.L_bar.close, tfData.L_bar.time);
+                  zone_tmp = CreatePoiZone( tfData,barZone.high, barZone.low, tfData.L_bar.open, tfData.L_bar.close, tfData.L_bar.time, clr_marjor_bullish);
                } else {
                   MqlRates bar_tmp = tfData.L_bar;
-                  zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+                  zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time, clr_marjor_bullish);
                }
                tfData.AddToPoiZoneArray( tfData.zArrPbLow, zone_tmp, limit);
                // update waiting pb low
@@ -4873,10 +4962,10 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                int indexAnchor = iBarShift(_Symbol, tfData.timeFrame, tfData.L_bar.time);
                if (indexAnchor != -1) {
                   PoiZone barZone = createpoizone_optimized(tfData.timeFrame, indexAnchor, -1);
-                  zone_tmp = CreatePoiZone( tfData,barZone.high, barZone.low, tfData.L_bar.open, tfData.L_bar.close, tfData.L_bar.time);
+                  zone_tmp = CreatePoiZone( tfData,barZone.high, barZone.low, tfData.L_bar.open, tfData.L_bar.close, tfData.L_bar.time, clr_marjor_bearish);
                } else {
                   MqlRates bar_tmp = tfData.L_bar;
-                  zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+                  zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time, clr_marjor_bearish);
                }
                tfData.AddToPoiZoneArray( tfData.zArrPbHigh, zone_tmp, limit);
                
@@ -4979,10 +5068,10 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                int indexAnchor = iBarShift(_Symbol, tfData.timeFrame, tfData.L_bar.time);
                if (indexAnchor != -1) {
                   PoiZone barZone = createpoizone_optimized(tfData.timeFrame, indexAnchor, -1);
-                  zone_tmp = CreatePoiZone( tfData,barZone.high, barZone.low, tfData.L_bar.open, tfData.L_bar.close, tfData.L_bar.time);
+                  zone_tmp = CreatePoiZone( tfData,barZone.high, barZone.low, tfData.L_bar.open, tfData.L_bar.close, tfData.L_bar.time, clr_marjor_bearish);
                } else {
                   MqlRates bar_tmp = tfData.L_bar;
-                  zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time);
+                  zone_tmp = CreatePoiZone( tfData,bar_tmp.high, bar_tmp.low, bar_tmp.open, bar_tmp.close, bar_tmp.time, clr_marjor_bearish);
                }
                tfData.AddToPoiZoneArray( tfData.zArrPbHigh, zone_tmp, limit); 
                // update waiting arrPbHigh
@@ -5442,21 +5531,42 @@ void deleteObj(datetime time, double price, int arrowCode, string txt) {
 
 
 //+--------------------------------Draw Box ----------------------------------+
-void drawBox(string name, datetime time_start, double price_start, datetime time_end, double price_end, int style, color box_color, int width = 1) {
-   string objName = name+TimeToString(time_start);
-   if(ObjectFind(0, objName) < 0)
-      ObjectCreate(0, objName, OBJ_RECTANGLE, 0, time_start, price_start, time_end, price_end);
-   //--- set line color
-   ObjectSetInteger(0, objName, OBJPROP_COLOR, box_color);
-   //--- set line display style
-   ObjectSetInteger(0, objName, OBJPROP_STYLE, STYLE_SOLID);
-   //--- enable (true) or disable (false) the mode of filling the rectangle 
-   ObjectSetInteger(0,objName,OBJPROP_FILL, true); 
-   //--- display in the foreground (false) or background (true) 
-   ObjectSetInteger(0,objName,OBJPROP_BACK,true); 
-   //--- set line width
-   ObjectSetInteger(0, objName, OBJPROP_WIDTH, width);
+//void drawBox(string name, datetime time_start, double price_start, datetime time_end, double price_end, int style, color box_color, int width = 1) {
+//   string objName = name+TimeToString(time_start);
+//   if(ObjectFind(0, objName) < 0)
+//      ObjectCreate(0, objName, OBJ_RECTANGLE, 0, time_start, price_start, time_end, price_end);
+//   //--- set line color
+//   ObjectSetInteger(0, objName, OBJPROP_COLOR, box_color);
+//   //--- set line display style
+//   ObjectSetInteger(0, objName, OBJPROP_STYLE, STYLE_SOLID);
+//   //--- enable (true) or disable (false) the mode of filling the rectangle 
+//   ObjectSetInteger(0,objName,OBJPROP_FILL, true); 
+//   //--- display in the foreground (false) or background (true) 
+//   ObjectSetInteger(0,objName,OBJPROP_BACK,true); 
+//   //--- set line width
+//   ObjectSetInteger(0, objName, OBJPROP_WIDTH, width);
+//   
+//}
+
+void drawBox(string name, datetime time_start, double price_start, datetime time_end, double price_end, int style, color box_color, int width = 1, bool fill = true) {
+   // Giữ nguyên cách đặt tên của bạn để không xung đột với các chỗ cũ
+   string objName = name + TimeToString(time_start);
    
+   if(ObjectFind(0, objName) < 0) {
+      ObjectCreate(0, objName, OBJ_RECTANGLE, 0, time_start, price_start, time_end, price_end);
+   } else {
+      // Cập nhật lại thời gian kết thúc (để hộp dài ra theo nến mới)
+      ObjectSetInteger(0, objName, OBJPROP_TIME, 1, time_end);
+      // Cập nhật lại giá (phòng trường hợp zone có điều chỉnh)
+      ObjectSetDouble(0, objName, OBJPROP_PRICE, 0, price_start);
+      ObjectSetDouble(0, objName, OBJPROP_PRICE, 1, price_end);
+   }
+   
+   ObjectSetInteger(0, objName, OBJPROP_COLOR, box_color);
+   ObjectSetInteger(0, objName, OBJPROP_STYLE, style); // Sử dụng style truyền vào
+   ObjectSetInteger(0, objName, OBJPROP_FILL, fill);  // Cho phép bật/tắt fill màu
+   ObjectSetInteger(0, objName, OBJPROP_BACK, true);
+   ObjectSetInteger(0, objName, OBJPROP_WIDTH, width);
 }
 
 
