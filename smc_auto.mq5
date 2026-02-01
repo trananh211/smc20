@@ -137,6 +137,8 @@ input color color_Global_Internal_Bearish_Zone_LTF = clrFireBrick; // Low Intern
 input color color_Global_Internal_Bullish_Zone_HTF = clrLightSkyBlue; // High Internal bullish
 input color color_Global_Internal_Bearish_Zone_HTF = clrPlum; // High Internal bearish
 
+input color color_Mitigated_Zone = clrSilver; // Mitigated color
+
 input group "=== Chart Partent ==="
 // Tham số cấu hình
 input double WickRatio = 2.0; // Râu nến phải dài gấp ít nhất 2 lần thân nến
@@ -2746,6 +2748,7 @@ struct marketStructs{
          if (bar1.close < zone[i].low) 
          {
             zone[i].mitigated = -1;
+            zone[i].zoneColor = color_Mitigated_Zone;
             zone[i].isSwept = false;
             isBreak = true;
          }
@@ -2765,6 +2768,7 @@ struct marketStructs{
             if (zone[i].mitigated != 1) 
             {
                zone[i].mitigated = 1;
+               zone[i].zoneColor = color_Mitigated_Zone;
                isMitigated = true;
             }
          }
@@ -2800,7 +2804,7 @@ struct marketStructs{
          
          // --- XỬ LÝ VẼ VÀ KÉO DÀI BOX ---
          // Vẽ khi: Mới chạm (isMitigated), đã chạm từ trước (mitigated==1), hoặc bị quét râu (isSwept)
-         if (isMitigated ) 
+         if (isMitigated) 
          {
             color zoneColor = zone[i].zoneColor;
             
@@ -2861,6 +2865,7 @@ struct marketStructs{
                if (zone[i].mitigated != 1) 
                {
                   zone[i].mitigated = 1;
+                  zone[i].zoneColor = color_Mitigated_Zone;
                   isMitigated = true;
                }
             }
@@ -2888,6 +2893,7 @@ struct marketStructs{
                if (zone[i].mitigated != 1) 
                {
                   zone[i].mitigated = 1;
+                  zone[i].zoneColor = color_Mitigated_Zone;
                   isMitigated = true;
                }
             }
@@ -2922,7 +2928,7 @@ struct marketStructs{
          
          // --- XỬ LÝ VẼ VÀ KÉO DÀI BOX ---
          // Vẽ khi: Mới chạm (isMitigated), đã chạm từ trước (mitigated==1), hoặc bị quét râu (isSwept)
-         if (isMitigated || zone[i].mitigated || isSwept) 
+         if (isMitigated || zone[i].mitigated == 1 || isSwept) 
          {
             
             // Tùy chọn: Bạn có thể đổi màu tại đây nếu muốn phân biệt vùng Mitigated và Active
