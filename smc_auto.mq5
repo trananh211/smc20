@@ -1738,8 +1738,8 @@ struct marketStructs{
    void originalDefinition(ENUM_TIMEFRAMES timeframe) {
       // Lấy dữ liệu cho khung timeframe
       TimeFrameData* tfData = GlobalVars.GetData(timeframe);
-      definedFunction(tfData, timeframe);
-      gannWave(tfData);
+      definedFunction(*tfData, timeframe);
+      gannWave(*tfData);
    }
    
    // Ham goi boi OnTick
@@ -1747,7 +1747,7 @@ struct marketStructs{
       
       // Lấy dữ liệu cho khung timeframe
       TimeFrameData* tfData = GlobalVars.GetData(timeframe);
-      realGannWave(tfData, timeframe);
+      realGannWave(*tfData, timeframe);
       
    }
    
@@ -2094,7 +2094,7 @@ struct marketStructs{
             // Tầng 1: Phần I II + XV XVI : HTF marjor == HTF internal && HTF Internal trend = wave volume HTF Internal Trend
             if (gl_iTrend == gl_wvITrend) { 
                // Tầng 2: I.1-4 + và XVI.61-64
-               if (gl_wvItrend == tfData.iTrend) { 
+               if (gl_wvITrend == tfData.iTrend) { 
                   // Tầng 3: I.1 - I.4 và XVI.64 - XVI.61
                   if (tfData.mTrend == tfData.vMTrend) {
                      // I.1 - XVI.64 : gl_mTrend; = gl_iTrend; = gl_wvItrend; = iTrend; = mTrend; = wvMTrend;
@@ -2126,7 +2126,7 @@ struct marketStructs{
             //Tầng 1: Phần III IV + XIII XIV : HTF marjor == HTF internal && HTF Internal trend != wave volume HTF Internal Trend
             } else { 
                // Tầng 2: Phần IV.13-16 + XIII.49-52
-               if (gl_wvItrend == tfData.iTrend) { 
+               if (gl_wvITrend == tfData.iTrend) { 
                   // Tầng 3: IV.13 - IV.16 và XIII.49 - XIII.52
                   if (tfData.mTrend == tfData.vMTrend) {
                      // IV.16 - XIII.49 : gl_mTrend; = gl_iTrend; != gl_wvItrend; != iTrend; != mTrend; != wvMTrend;
@@ -2141,11 +2141,11 @@ struct marketStructs{
                   } else {
                      // IV.15 - XIII.50: gl_mTrend; = gl_iTrend; != gl_wvItrend; != iTrend; != mTrend; = wvMTrend;
                      if (tfData.iTrend == tfData.mTrend) {
-                        allFunctionTrade = true;
+                        callFunctionTrade = true;
                         option_trade = (tfData.iTrend == -1)? 15 : 50;
                      // IV.14 - XIII.51: gl_mTrend; = gl_iTrend; != gl_wvItrend; != iTrend; = mTrend; != wvMTrend;
                      } else {
-                        allFunctionTrade = true;
+                        callFunctionTrade = true;
                         option_trade = (tfData.iTrend == -1)? 14 : 51;
                      }
                   }
@@ -2159,7 +2159,7 @@ struct marketStructs{
             // Tầng 1: Phần V + VI + XI +XII : HTF wave Volume Internal trend != HTF Internal Trend
             if (gl_iTrend != gl_wvITrend) { 
                // Tầng 2: Phần V + XII
-               if (gl_wvItrend == tfData.iTrend) {
+               if (gl_wvITrend == tfData.iTrend) {
                   // Tầng 3: V.17 - V.20 và XII.45 - XII.48
                   if (tfData.mTrend == tfData.vMTrend) {
                      // V.17 - XII.48: gl_mTrend; != gl_iTrend; = gl_wvItrend; = iTrend; = mTrend; = wvMTrend;
@@ -2174,11 +2174,11 @@ struct marketStructs{
                   } else {
                      // V.18 - XII.47: gl_mTrend; != gl_iTrend; = gl_wvItrend; = iTrend; = mTrend; != wvMTrend;
                      if (tfData.iTrend == tfData.mTrend) {
-                        allFunctionTrade = true;
+                        callFunctionTrade = true;
                         option_trade = (tfData.iTrend == 1)? 18 : 47;
                      // V.19 - XII.46: gl_mTrend; != gl_iTrend; = gl_wvItrend; = iTrend; != mTrend; = wvMTrend;
                      } else {
-                        allFunctionTrade = true;
+                        callFunctionTrade = true;
                         option_trade = (tfData.iTrend == 1)? 19 : 46;
                      }
                   }
@@ -2189,7 +2189,7 @@ struct marketStructs{
             // Tầng 1: Phần VII + VIII + IX + X : HTF wave Volume Internal trend = HTF Internal Trend
             } else {
                // Tầng 2: Phần VII + X: : HTF wave Volume Internal trend != LTF Internal Trend
-               if (gl_wvItrend != tfData.iTrend) { 
+               if (gl_wvITrend != tfData.iTrend) { 
                   // Không làm gì cả
                // Tầng 2: Phần VIII + IX : HTF wave Volume Internal trend == LTF Internal Trend
                } else { 
@@ -2197,22 +2197,22 @@ struct marketStructs{
                   if (tfData.mTrend != tfData.vMTrend) {
                      // VIII.31 - IX.34: gl_mTrend; != gl_iTrend; != gl_wvItrend; != iTrend; != mTrend; = wvMTrend;
                      if (tfData.iTrend == tfData.mTrend) {
-                        allFunctionTrade = true;
+                        callFunctionTrade = true;
                         option_trade = (tfData.iTrend == -1)? 31 : 34;
                      // VIII.30 - IX.35: gl_mTrend; != gl_iTrend; != gl_wvItrend; != iTrend; = mTrend; != wvMTrend;
                      } else {
-                        allFunctionTrade = true;
+                        callFunctionTrade = true;
                         option_trade = (tfData.iTrend == -1)? 30 : 35;
                      }
                   // Tầng 3: VIII.29 + VIII.32 - IX.33 + IX.36
                   } else {
                      // VIII.32 - IX.33: gl_mTrend; != gl_iTrend; != gl_wvItrend; != iTrend; != mTrend; != wvMTrend;
                      if (tfData.iTrend == tfData.mTrend) {
-                        allFunctionTrade = true;
+                        callFunctionTrade = true;
                         option_trade = (tfData.iTrend == -1)? 32 : 33;
                      // VIII.29 - IX.36: gl_mTrend; != gl_iTrend; != gl_wvItrend; != iTrend; = mTrend; = wvMTrend;
                      } else {
-                        allFunctionTrade = true;
+                        callFunctionTrade = true;
                         option_trade = (tfData.iTrend == -1)? 29 : 36;
                      }
                   }
@@ -2928,7 +2928,8 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
          textGannHigh += "\n--->Gann: Find High: "+DoubleToString(bar2.high, _Digits) +" + Highest: "+ DoubleToString(tfData.highEst, _Digits) ;
          // set Zone bearish
          // Gọi hàm với nến số 2 làm điểm neo
-         PoiZone mZone = createpoizone_optimized(_Period, 2, -1);
+         int indexAnchor = iBarShift(_Symbol, tfData.timeFrame, bar2.time);
+         PoiZone mZone = createpoizone_optimized(tfData.timeFrame, indexAnchor, -1);
          PoiZone zone_bearish = CreatePoiZone( tfData, mZone.high, mZone.low, bar2.open, bar2.close, bar2.time);
          if (typeTickVolume == 1) {
             maxVolume = bar2.tick_volume;
@@ -3231,7 +3232,8 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
       if (bar3.low >= bar2.low && bar2.low <= bar1.low) { // tim thay dinh low
          textGannLow += "\n--->Gann: Find Low: +" +DoubleToString(bar2.low, _Digits)+ " + Lowest: "+DoubleToString(tfData.lowEst, _Digits);
          // set Zone bullish
-         PoiZone mZone = createpoizone_optimized(_Period, 2, 1);
+         int indexAnchor = iBarShift(_Symbol, tfData.timeFrame, bar2.time);
+         PoiZone mZone = createpoizone_optimized(tfData.timeFrame, indexAnchor, 1);
          PoiZone zone_bullish = CreatePoiZone( tfData, mZone.high, mZone.low, bar2.open, bar2.close, bar2.time);
          if (typeTickVolume == 1) {
             maxVolume = bar2.tick_volume;
@@ -3721,7 +3723,8 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
                tfData.AddToDateTimeArray(tfData.intSLowTime, bar1.time);
                tfData.AddToLongArray(tfData.volIntSLows, bar1.tick_volume);
                // set Zone bullish từ bar1
-               PoiZone mZone = createpoizone_optimized(_Period, 1, 1);
+               int indexAnchor = iBarShift(_Symbol, tfData.timeFrame, bar1.time);
+               PoiZone mZone = createpoizone_optimized(tfData.timeFrame, indexAnchor, 1);
                PoiZone zone1 = CreatePoiZone( tfData, mZone.high, mZone.low, bar2.open, bar2.close, bar2.time);
                // PoiZone zone1 = CreatePoiZone( tfData, bar1.high, bar1.low, bar1.open, bar1.close, bar1.time);
                // them Zone
@@ -4061,10 +4064,11 @@ long GetCumulativeVolume(datetime startTime, datetime endTime, ENUM_TIMEFRAMES t
       PoiZone zone_tmp;
       
       // Gọi hàm với nến số 2 làm điểm neo
-      PoiZone mZone_bearish = createpoizone_optimized(_Period, 2, -1);
+      int indexAnchor = iBarShift(_Symbol, tfData.timeFrame, bar2.time);
+      PoiZone mZone_bearish = createpoizone_optimized(tfData.timeFrame, indexAnchor, -1);
       PoiZone zone_bearish = CreatePoiZone( tfData, mZone_bearish.high, mZone_bearish.low, bar2.open, bar2.close, bar2.time);
 
-      PoiZone mZone_bullish = createpoizone_optimized(_Period, 2, 1);
+      PoiZone mZone_bullish = createpoizone_optimized(tfData.timeFrame, indexAnchor, 1);
       PoiZone zone_bullish = CreatePoiZone( tfData, mZone_bullish.high, mZone_bullish.low, bar2.open, bar2.close, bar2.time);
 
       long maxVolume = 0;
