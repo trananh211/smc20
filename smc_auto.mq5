@@ -2804,7 +2804,7 @@ struct marketStructs{
          
          // --- XỬ LÝ VẼ VÀ KÉO DÀI BOX ---
          // Vẽ khi: Mới chạm (isMitigated), đã chạm từ trước (mitigated==1), hoặc bị quét râu (isSwept)
-         if ((isMitigated || zone[i].mitigated == 1 || isSwept) && isReDraw) 
+         if (isMitigated || ((zone[i].mitigated == 1 || isSwept) && isReDraw) )
          {
             color zoneColor = zone[i].zoneColor;
             
