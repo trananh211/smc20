@@ -1241,10 +1241,10 @@ void scanMarjorTradeZoneHighTF(TimeFrameData& tfData, MqlRates& bar1) {
             if (tfData.zLows[i].time == zGTradeZoneBullishHTF[j].time 
                && MathAbs(tfData.zLows[i].high - zGTradeZoneBullishHTF[j].high) < 0.00001 
                && MathAbs(tfData.zLows[i].low - zGTradeZoneBullishHTF[j].low) < 0.00001) {
-               if (tfData.zLows[i].mitigated != zGTradeZoneBullishHTF[j].mitigated) {
-                  // Cập nhật trạng thái mitigated mới
-                  zGTradeZoneBullishHTF[j].mitigated = tfData.zLows[i].mitigated;
-               }
+               //if (tfData.zLows[i].mitigated != zGTradeZoneBullishHTF[j].mitigated) {
+               //   // Cập nhật trạng thái mitigated mới
+               //   zGTradeZoneBullishHTF[j].mitigated = tfData.zLows[i].mitigated;
+               //}
                isFound = true;
                // Đã tồn tại zone
                break;
@@ -1284,10 +1284,10 @@ void scanMarjorTradeZoneHighTF(TimeFrameData& tfData, MqlRates& bar1) {
             if (tfData.zHighs[i].time == zGTradeZoneBearishHTF[j].time 
                && MathAbs(tfData.zHighs[i].high - zGTradeZoneBearishHTF[j].high) < 0.00001 
                && MathAbs(tfData.zHighs[i].low - zGTradeZoneBearishHTF[j].low) < 0.00001) {
-               if( tfData.zHighs[i].mitigated != zGTradeZoneBearishHTF[j].mitigated) {
-                  // Cập nhật trạng thái mitigated mới
-                  zGTradeZoneBearishHTF[j].mitigated = tfData.zHighs[i].mitigated;
-               }
+               //if( tfData.zHighs[i].mitigated != zGTradeZoneBearishHTF[j].mitigated) {
+               //   // Cập nhật trạng thái mitigated mới
+               //   zGTradeZoneBearishHTF[j].mitigated = tfData.zHighs[i].mitigated;
+               //}
                // Đã tồn tại zone
                isFound = true;
                break;
@@ -1355,10 +1355,10 @@ void scanInternalTradeZoneHighTF(TimeFrameData& tfData, MqlRates& bar1) {
             if (tfData.zLows[i].time == zGTradeZoneInternalBullishHTF[j].time 
                && MathAbs(tfData.zLows[i].high - zGTradeZoneInternalBullishHTF[j].high) < 0.00001 
                && MathAbs(tfData.zLows[i].low - zGTradeZoneInternalBullishHTF[j].low) < 0.00001) {
-               if (tfData.zLows[i].mitigated != zGTradeZoneInternalBullishHTF[j].mitigated) {
-                  // Cập nhật trạng thái mitigated mới
-                  zGTradeZoneInternalBullishHTF[j].mitigated = tfData.zLows[i].mitigated;
-               }
+               //if (tfData.zLows[i].mitigated != zGTradeZoneInternalBullishHTF[j].mitigated) {
+               //   // Cập nhật trạng thái mitigated mới
+               //   zGTradeZoneInternalBullishHTF[j].mitigated = tfData.zLows[i].mitigated;
+               //}
                isFound = true;
                // Đã tồn tại zone
                break;
@@ -1393,10 +1393,10 @@ void scanInternalTradeZoneHighTF(TimeFrameData& tfData, MqlRates& bar1) {
             if (tfData.zHighs[i].time == zGTradeZoneInternalBearishHTF[j].time 
                && MathAbs(tfData.zHighs[i].high - zGTradeZoneInternalBearishHTF[j].high) < 0.00001 
                && MathAbs(tfData.zHighs[i].low - zGTradeZoneInternalBearishHTF[j].low) < 0.00001) {
-               if( tfData.zHighs[i].mitigated != zGTradeZoneInternalBearishHTF[j].mitigated) {
-                  // Cập nhật trạng thái mitigated mới
-                  zGTradeZoneInternalBearishHTF[j].mitigated = tfData.zHighs[i].mitigated;
-               }
+               //if( tfData.zHighs[i].mitigated != zGTradeZoneInternalBearishHTF[j].mitigated) {
+               //   // Cập nhật trạng thái mitigated mới
+               //   zGTradeZoneInternalBearishHTF[j].mitigated = tfData.zHighs[i].mitigated;
+               //}
                // Đã tồn tại zone
                isFound = true;
                break;
@@ -1576,9 +1576,9 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
 				gl_findL = -1;
 				gl_H_AF_LTFRealTime = -1;
 				gl_L_AF_LTFRealTime = -1;
-				// xoa du lieu de tranh vao lenh lien tuc sau khi dat target            
-				tfData.ClearPoiZoneArray(zArrPoiZoneLTFBullishBelongHighTF);
-				tfData.ClearPoiZoneArray(zArrPoiZoneLTFBearishBelongHighTF);
+				// xoa du lieu de tranh vao lenh lien tuc sau khi dat target  
+				resetTradeZoneHTF(tfData, zArrPoiZoneLTFBearishBelongHighTF);
+				resetTradeZoneHTF(tfData, zArrPoiZoneLTFBullishBelongHighTF);
 				
 				DeleteAllPendingOrders(_Symbol, InpMagic);
 			} else {
@@ -2633,11 +2633,11 @@ struct marketStructs{
       
       // Hàm check mitigate của Internal global zone LowTF dành cho Trade Multi TF. Có vẽ
       if( ArraySize(zArrPoiZoneLTFBullishBelongHighTF) > 0) {
-         getIsMitigatedZone(tfData, bar1, zArrPoiZoneLTFBullishBelongHighTF, 1, "zArrPoiZoneLTFBullishBelongHighTF", true);
+         getIsMitigatedZone(tfData, bar1, zArrPoiZoneLTFBullishBelongHighTF, 1, "zArrPoiZoneLTFBullishBelongHighTF");
       }
       
       if (ArraySize(zArrPoiZoneLTFBearishBelongHighTF) > 0) {
-         getIsMitigatedZone(tfData, bar1, zArrPoiZoneLTFBearishBelongHighTF, -1, "zArrPoiZoneLTFBearishBelongHighTF", true);
+         getIsMitigatedZone(tfData, bar1, zArrPoiZoneLTFBearishBelongHighTF, -1, "zArrPoiZoneLTFBearishBelongHighTF");
       }
             
       // ----------------------------------------------------------- //
@@ -2804,7 +2804,7 @@ struct marketStructs{
          
          // --- XỬ LÝ VẼ VÀ KÉO DÀI BOX ---
          // Vẽ khi: Mới chạm (isMitigated), đã chạm từ trước (mitigated==1), hoặc bị quét râu (isSwept)
-         if (isMitigated) 
+         if ((isMitigated || zone[i].mitigated == 1 || isSwept) && isReDraw) 
          {
             color zoneColor = zone[i].zoneColor;
             
