@@ -169,31 +169,31 @@ struct SignalInternal{
 
 // Khai báo biến trạng thái HTF to LTF. Khi breakout từ Internal HTF sang LTF
 struct StatusInternalHighToLow{
-   bool ss_IntScanActive;
-   int ss_ITrend;
-   int ss_vITrend;
-   int ss_mitigate_iOrderFlow; // Mặc định = -1 kể cả khi breakout, Khi ss_iTarget được xác định = 0, khi mitigate = 1.
-   double ss_iStoploss; //
-   double ss_iOrderBlock;
-   int ss_mitigate_iOrderBlock; // Mặc định = -1, Khi breakout =0, Khi mitigate thì biến này chuyển thành 1. 
-   double ss_iTarget;
-   double ss_iSnR;
-   datetime ss_iStoplossTime;
-   datetime ss_iTargetTime;
+   bool sHL_IntScanActive;
+   int sHL_ITrend;
+   int sHL_vITrend;
+   int sHL_mitigate_iOrderFlow; // Mặc định = -1 kể cả khi breakout, Khi sHL_iTarget được xác định = 0, khi mitigate = 1.
+   double sHL_iStoploss; //
+   double sHL_iOrderBlock;
+   int sHL_mitigate_iOrderBlock; // Mặc định = -1, Khi breakout =0, Khi mitigate thì biến này chuyển thành 1. 
+   double sHL_iTarget;
+   double sHL_iSnR;
+   datetime sHL_iStoplossTime;
+   datetime sHL_iTargetTime;
 };
 
-// Settings structure default High Timeframe to LowTimeframe
-bool ss_IntScanActive = false;
-int ss_ITrend;
-int ss_vITrend;
-int ss_mitigate_iOrderFlow; // Mặc định = -1 kể cả khi breakout, Khi ss_iTarget được xác định = 0, khi mitigate = 1.
-double ss_iStoploss; //
-double ss_iOrderBlock;
-int ss_mitigate_iOrderBlock; // Mặc định = -1, Khi breakout =0, Khi mitigate thì biến này chuyển thành 1. 
-double ss_iTarget;
-double ss_iSnR;
-datetime ss_iStoplossTime;
-datetime ss_iTargetTime;
+// // Settings structure default High Timeframe to LowTimeframe
+// bool ss_IntScanActive = false;
+// int ss_ITrend;
+// int ss_vITrend;
+// int ss_mitigate_iOrderFlow; // Mặc định = -1 kể cả khi breakout, Khi ss_iTarget được xác định = 0, khi mitigate = 1.
+// double ss_iStoploss; //
+// double ss_iOrderBlock;
+// int ss_mitigate_iOrderBlock; // Mặc định = -1, Khi breakout =0, Khi mitigate thì biến này chuyển thành 1. 
+// double ss_iTarget;
+// double ss_iSnR;
+// datetime ss_iStoplossTime;
+// datetime ss_iTargetTime;
 
 // Settings status default for Trade Basic
 struct infoMarketStructStatus{
@@ -1247,18 +1247,18 @@ PoiZone CreatePoiZone(TimeFrameData& tfData, double high, double low, double ope
 void setGlobalValueLowToHighTF(TimeFrameData& tfData) {
    // Thêm thông số ban đầu Data Default Internal High TF sau khi break
    if (tfData.isHighTF) {
-      ss_ITrend = tfData.iTrend;
-      ss_vITrend = tfData.vItrend;
-      ss_iStoploss = tfData.iStoploss;
-      ss_iStoplossTime = tfData.iStoplossTime;
-      ss_iOrderBlock = tfData.iOrderBlock;
-      ss_iSnR = tfData.iSnR;
-      ss_iTarget = tfData.iTarget;
-      ss_iTargetTime = tfData.iTargetTime;
-      ss_mitigate_iOrderBlock = 0;
-      if (ss_iTarget != 0) {
-         ss_mitigate_iOrderFlow = 0;
-         ss_mitigate_iOrderBlock = 0;
+      myEAs.statusInternalHTL.sHL_ITrend = tfData.iTrend;
+      myEAs.statusInternalHTL.sHL_vITrend = tfData.vItrend;
+      myEAs.statusInternalHTL.sHL_iStoploss = tfData.iStoploss;
+      myEAs.statusInternalHTL.sHL_iStoplossTime = tfData.iStoplossTime;
+      myEAs.statusInternalHTL.sHL_iOrderBlock = tfData.iOrderBlock;
+      myEAs.statusInternalHTL.sHL_iSnR = tfData.iSnR;
+      myEAs.statusInternalHTL.sHL_iTarget = tfData.iTarget;
+      myEAs.statusInternalHTL.sHL_iTargetTime = tfData.iTargetTime;
+      myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock = 0;
+      if (myEAs.statusInternalHTL.sHL_iTarget != 0) {
+         myEAs.statusInternalHTL.sHL_mitigate_iOrderFlow = 0;
+         myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock = 0;
       }
    }
 }
@@ -1477,7 +1477,7 @@ void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& zGlobal
    string name_poi = "";
    int isTypezone = 0;
    PoiZone tmp_zone;
-   datetime target_time = (ss_iTarget != 0) ? ss_iTargetTime : bar1.time;
+   datetime target_time = (myEAs.statusInternalHTL.sHL_iTarget != 0) ? myEAs.statusInternalHTL.sHL_iTargetTime : bar1.time;
    color gl_color;
    PoiZone zFilterdZone[];
     //Print("zGlobalInternalZone size: "+ (string) ArraySize(zGlobalInternalZone)); ArrayPrint(zGlobalInternalZone);
@@ -1506,7 +1506,7 @@ void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& zGlobal
       name_poi = "";
       str_info_row = " ( Time: "+ (string)zFilterdZone[i].time + " - High: "+ DoubleToString(zFilterdZone[i].high, _Digits) + " - Low: "+ DoubleToString(zFilterdZone[i].low, _Digits)+")";
       // Kiem tra neu zone khong thuoc thoi gian chi dinh thi bo qua
-      if (zFilterdZone[i].time < ss_iStoplossTime || zFilterdZone[i].time > target_time) {
+      if (zFilterdZone[i].time < myEAs.statusInternalHTL.sHL_iStoplossTime || zFilterdZone[i].time > target_time) {
          text += "\n1. Zone "+ (string) i + " không thuộc thời gian chỉ định. Bỏ qua."+str_info_row;
          continue; 
       }
@@ -1533,7 +1533,7 @@ void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& zGlobal
       }
       
       // Neu La Extreme zone
-      if ((type == 1 && zFilterdZone[i].low == ss_iStoploss) || (type == -1 && zFilterdZone[i].high == ss_iStoploss)) {
+      if ((type == 1 && zFilterdZone[i].low == myEAs.statusInternalHTL.sHL_iStoploss) || (type == -1 && zFilterdZone[i].high == myEAs.statusInternalHTL.sHL_iStoploss)) {
          // Them zone zIntSlow vao PoiZoneBullish voi isTypeZone = 1
          isTypezone = 1;
          if(tfData.isHighTF) {
@@ -1578,20 +1578,20 @@ void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& zGlobal
 void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
    string text = "";
 	if (tfData.isHighTF != true) { // Neu tiep theo cu break out cua Internal High TF la scan thong tin tu Low TF
-		if (ss_IntScanActive) {
-			if (ss_ITrend != 0) {
+		if (myEAs.statusInternalHTL.sHL_IntScanActive) {
+			if (myEAs.statusInternalHTL.sHL_ITrend != 0) {
 				// Scan bullish
-				if (ss_ITrend == 1) {
+				if (myEAs.statusInternalHTL.sHL_ITrend == 1) {
 				   if ( ArraySize(tfData.zArrIntBullish) > 0) {
 				      beginScanGlobalZoneInternalSelected(tfData, zGTradeZoneInternalBullishHTF,tfData.zArrIntBullish, zArrPoiZoneLTFBullishBelongHighTF, 1, bar1);
-				      ss_IntScanActive = false;
+				      myEAs.statusInternalHTL.sHL_IntScanActive = false;
 				   } else {
 				      // Quét toàn bộ các vùng POI Internal low timeframe để Trade theo Order Block, Order Flow mới
 				   }
-				} else if (ss_ITrend == -1 ) {
+				} else if (myEAs.statusInternalHTL.sHL_ITrend == -1 ) {
 				   if ( ArraySize(tfData.zArrIntBearish) > 0) { // Scan Bearish
 				      beginScanGlobalZoneInternalSelected(tfData, zGTradeZoneInternalBearishHTF,tfData.zArrIntBearish, zArrPoiZoneLTFBearishBelongHighTF, -1, bar1);
-				      ss_IntScanActive = false;
+				      myEAs.statusInternalHTL.sHL_IntScanActive = false;
 				   } else {
 				      // Quét toàn bộ các vùng POI Internal low timeframe để Trade theo Order Block, Order Flow mới
 				   }
@@ -1600,20 +1600,20 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
 			
 		} 	else { 
 			// Reset thông số ban đầu nếu Stoploss hoặc Take Profit
-			if ( (ss_ITrend == 1 && ((bar1.high > ss_iTarget && ss_iTarget != 0) || (bar1.low < ss_iStoploss && ss_iStoploss != 0))) 
-			   || (ss_ITrend == -1 && ((bar1.low < ss_iTarget && ss_iTarget != 0 ) || (bar1.high > ss_iStoploss && ss_iStoploss != 0)))
+			if ( (myEAs.statusInternalHTL.sHL_ITrend == 1 && ((bar1.high > myEAs.statusInternalHTL.sHL_iTarget && myEAs.statusInternalHTL.sHL_iTarget != 0) || (bar1.low < myEAs.statusInternalHTL.sHL_iStoploss && myEAs.statusInternalHTL.sHL_iStoploss != 0))) 
+			   || (myEAs.statusInternalHTL.sHL_ITrend == -1 && ((bar1.low < myEAs.statusInternalHTL.sHL_iTarget && myEAs.statusInternalHTL.sHL_iTarget != 0 ) || (bar1.high > myEAs.statusInternalHTL.sHL_iStoploss && myEAs.statusInternalHTL.sHL_iStoploss != 0)))
 			   ) {
 				text += "\n================> Clean Data vi đã take profit hoặc quét stoploss";
-				ss_ITrend = 0;
-				ss_vITrend = 0;
-				ss_iStoploss = 0;
-				ss_iStoplossTime = 0;
-				ss_iOrderBlock = 0;
-				ss_iSnR = 0;
-				ss_iTarget = 0;
-				ss_iTargetTime = 0;
-				ss_mitigate_iOrderFlow = -1;
-				ss_mitigate_iOrderBlock = -1;
+				myEAs.statusInternalHTL.sHL_ITrend = 0;
+				myEAs.statusInternalHTL.sHL_vITrend = 0;
+				myEAs.statusInternalHTL.sHL_iStoploss = 0;
+				myEAs.statusInternalHTL.sHL_iStoplossTime = 0;
+				myEAs.statusInternalHTL.sHL_iOrderBlock = 0;
+				myEAs.statusInternalHTL.sHL_iSnR = 0;
+				myEAs.statusInternalHTL.sHL_iTarget = 0;
+				myEAs.statusInternalHTL.sHL_iTargetTime = 0;
+				myEAs.statusInternalHTL.sHL_mitigate_iOrderFlow = -1;
+				myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock = -1;
 				
 				// Reset gl_find H or L
 				gl_H_pattern_signal = -1;
@@ -1628,23 +1628,23 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
 				
 				DeleteAllPendingOrders(_Symbol, InpMagic);
 			} else {
-				if (ss_ITrend == 1) {
-				   if ((ss_iTarget != 0 && bar1.high < ss_iTarget) || ( ss_iStoploss != 0 && bar1.low > ss_iStoploss) ) {
+				if (myEAs.statusInternalHTL.sHL_ITrend == 1) {
+				   if ((myEAs.statusInternalHTL.sHL_iTarget != 0 && bar1.high < myEAs.statusInternalHTL.sHL_iTarget) || ( myEAs.statusInternalHTL.sHL_iStoploss != 0 && bar1.low > myEAs.statusInternalHTL.sHL_iStoploss) ) {
 				      if (ArraySize(zArrPoiZoneLTFBullishBelongHighTF) == 0 ) {
 				         text += "\n================> LTF: Thiếu thông số Bullish. Scan lại Global zone ở bước sau";
-				         ss_IntScanActive = true;
+				         myEAs.statusInternalHTL.sHL_IntScanActive = true;
 				      }
 				   }
-				} else if (ss_ITrend == -1) {
-				   if ((bar1.low > ss_iTarget && ss_iTarget != 0 ) || (bar1.high < ss_iStoploss && ss_iStoploss != 0)) {
+				} else if (myEAs.statusInternalHTL.sHL_ITrend == -1) {
+				   if ((bar1.low > myEAs.statusInternalHTL.sHL_iTarget && myEAs.statusInternalHTL.sHL_iTarget != 0 ) || (bar1.high < myEAs.statusInternalHTL.sHL_iStoploss && myEAs.statusInternalHTL.sHL_iStoploss != 0)) {
 				      if (ArraySize(zArrPoiZoneLTFBearishBelongHighTF) == 0) {
 				         text += "\n================> LTF: Thiếu thông số Bearish. Scan lại Global zone ở bước sau";
-				         ss_IntScanActive = true;
+				         myEAs.statusInternalHTL.sHL_IntScanActive = true;
 				      }
 				   }
 				}
 			}     
-		} // End ss_IntScanActive == false
+		} // End myEAs.statusInternalHTL.sHL_IntScanActive == false
 	} // End tfData.isHighTF != true
 	else { // Setup cac thong so khi dang o HTF
 	   if (gl_findH == 1 && gl_intSHighHTFRealTime != tfData.intSHighs[0]) {
@@ -2019,7 +2019,7 @@ struct marketStructs{
            return; 
        }
       // 2. Kiểm tra tồn tại OB hoặc OF hay không
-      if (ss_iStoploss == 0 || ss_iTarget == 0) return;
+      if (myEAs.statusInternalHTL.sHL_iStoploss == 0 || myEAs.statusInternalHTL.sHL_iTarget == 0) return;
       if (ArraySize(zArrPoiZoneLTFBearishBelongHighTF) == 0 && ArraySize(zArrPoiZoneLTFBullishBelongHighTF)== 0) return;
       // 3. Bắt đầu kiểm tra điều kiện vào lệnh      
       if (tfData.iTrend == tfData.wvItrend) {
@@ -2174,7 +2174,7 @@ struct marketStructs{
            return; 
        }
       // 2. Kiểm tra tồn tại OB hoặc OF hay không
-      if (ss_iStoploss == 0 || ss_iTarget == 0) return;
+      if (myEAs.statusInternalHTL.sHL_iStoploss == 0 || myEAs.statusInternalHTL.sHL_iTarget == 0) return;
       if (ArraySize(zArrPoiZoneLTFBearishBelongHighTF) == 0 && ArraySize(zArrPoiZoneLTFBullishBelongHighTF)== 0) return;
       // 3. Bắt đầu kiểm tra điều kiện vào lệnh      
       if (myEAs.signalInternal.sg_iTrend == tfData.iTrend && tfData.iTrend == tfData.vItrend) {
@@ -2531,7 +2531,7 @@ struct marketStructs{
       // tfData.copyZoneToZone(zGTradeZoneInternalBearishHTF, zArrSell);
       
       if (type == 1) { // Chỉ vào lệnh ở OB HTF
-         if (ss_mitigate_iOrderBlock == 1) {
+         if (myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock == 1) {
             // Gọi hàm với điều kiện khắt khe hơn vì chưa vào order block. Cần double breakout để khẳng định
             if (myEAs.signalInternal.sg_iTrend == 1) {
                checkAccessZoneForTrade(tfData, zArrBuy, 1, "OB1 "+ text);
@@ -2540,13 +2540,13 @@ struct marketStructs{
             }
          }
       } else if (type == 2) { // Chỉ vào lệnh ở OB + OF HTF
-         if (ss_mitigate_iOrderBlock == 1) { 
+         if (myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock == 1) { 
             if (myEAs.signalInternal.sg_iTrend == 1) {
                checkAccessZoneForTrade(tfData, zArrBuy, 1, "OB 2 "+ text);
             } else if (myEAs.signalInternal.sg_iTrend == -1){
                checkAccessZoneForTrade(tfData, zArrSell, -1, "OB 2 "+ text);
             }
-         } else if (ss_mitigate_iOrderFlow == 1) {
+         } else if (myEAs.statusInternalHTL.sHL_mitigate_iOrderFlow == 1) {
             if (myEAs.signalInternal.sg_iTrend == 1) {
                checkAccessZoneForTrade(tfData, zArrBuy, 1, "OF 2 "+ text);
             } else if (myEAs.signalInternal.sg_iTrend == -1){
@@ -2554,19 +2554,19 @@ struct marketStructs{
             }
          }
       } else if (type == 3) { // Vào lệnh cả OB + OF và Non OF sau Break HTF
-         if (ss_mitigate_iOrderBlock == 1) { 
+         if (myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock == 1) { 
             if (myEAs.signalInternal.sg_iTrend == 1) {
                checkAccessZoneForTrade(tfData, zArrBuy, 1, "OB 3 "+ text);
             } else if (myEAs.signalInternal.sg_iTrend == -1){
                checkAccessZoneForTrade(tfData, zArrSell, -1, "OB 3 "+ text);
             }
-         } else if (ss_mitigate_iOrderFlow == 1) {
+         } else if (myEAs.statusInternalHTL.sHL_mitigate_iOrderFlow == 1) {
             if (myEAs.signalInternal.sg_iTrend == 1) {
                checkAccessZoneForTrade(tfData, zArrBuy, 1, "OF 3 "+ text);
             } else if (myEAs.signalInternal.sg_iTrend == -1){
                checkAccessZoneForTrade(tfData, zArrSell, -1, "OF 3 "+ text);
             }
-         } else if (ss_mitigate_iOrderBlock != 1 && ss_mitigate_iOrderFlow != 1) {
+         } else if (myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock != 1 && myEAs.statusInternalHTL.sHL_mitigate_iOrderFlow != 1) {
             if (myEAs.signalInternal.sg_iTrend == 1) {
                checkAccessZoneForTrade(tfData, zArrBuy, 1, "NON OB OF 3 "+ text);
             } else if (myEAs.signalInternal.sg_iTrend == -1){
@@ -2600,7 +2600,7 @@ struct marketStructs{
             if (key >=0) {
                g_stoploss = (type == 1)? zone[key].low : zone[key].high;
             } else {
-               g_stoploss = ss_iStoploss;
+               g_stoploss = myEAs.statusInternalHTL.sHL_iStoploss;
             }
             
             if (type == 1) {
@@ -2609,16 +2609,16 @@ struct marketStructs{
                   //if (myEAs.signalInternal.sg_getIdmBuy) result_str += "; Dừng Buy vì đã get Global IDM Buy";
                   //entryPrice = lastHigh;
                   entryPrice = tfData.intSHighs[1];
-                  g_stoploss = (ss_mitigate_iOrderBlock == 1 || 1)? gl_intSLowHTFRealTime : ss_iStoploss;
-                  result_str = "BUY: với SL = "+ DoubleToString(g_stoploss, _Digits) + "; TP = " + DoubleToString(ss_iTarget, _Digits);
+                  g_stoploss = (myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock == 1 || 1)? gl_intSLowHTFRealTime : myEAs.statusInternalHTL.sHL_iStoploss;
+                  result_str = "BUY: với SL = "+ DoubleToString(g_stoploss, _Digits) + "; TP = " + DoubleToString(myEAs.statusInternalHTL.sHL_iTarget, _Digits);
                   
                    if(entryPrice < Ask) 
                    {
                      // Gọi lệnh Buy Limit
-                     ExecutePendingOrder(ORDER_TYPE_BUY_LIMIT, entryPrice, g_stoploss, ss_iTarget, risk, InpMagic, str_options, InpRR);
+                     ExecutePendingOrder(ORDER_TYPE_BUY_LIMIT, entryPrice, g_stoploss, myEAs.statusInternalHTL.sHL_iTarget, risk, InpMagic, str_options, InpRR);
                    } else {
                      // Gọi lệnh Buy Stop
-                     ExecutePendingOrder(ORDER_TYPE_BUY_STOP, entryPrice, g_stoploss, ss_iTarget, risk, InpMagic, str_options, InpRR);
+                     ExecutePendingOrder(ORDER_TYPE_BUY_STOP, entryPrice, g_stoploss, myEAs.statusInternalHTL.sHL_iTarget, risk, InpMagic, str_options, InpRR);
                    }
                }
                
@@ -2627,16 +2627,16 @@ struct marketStructs{
                   
                   //if (myEAs.signalInternal.sg_getIdmSell) result_str += "; Dừng Sell vì đã get Global IDM Sell";
                   //entryPrice = lastLow;
-                  g_stoploss = (ss_mitigate_iOrderBlock == 1 || 1) ? gl_intSHighHTFRealTime : ss_iStoploss;
-                  result_str = "SELL: với SL = "+ DoubleToString(g_stoploss, _Digits)+"; TP = " + DoubleToString(ss_iTarget, _Digits);
+                  g_stoploss = (myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock == 1 || 1) ? gl_intSHighHTFRealTime : myEAs.statusInternalHTL.sHL_iStoploss;
+                  result_str = "SELL: với SL = "+ DoubleToString(g_stoploss, _Digits)+"; TP = " + DoubleToString(myEAs.statusInternalHTL.sHL_iTarget, _Digits);
                   
                   
                   entryPrice = tfData.intSLows[1];
                   if(entryPrice > Bid) {
                      // Gọi lệnh Buy Limit
-                     ExecutePendingOrder(ORDER_TYPE_SELL_LIMIT, entryPrice, g_stoploss, ss_iTarget, risk, InpMagic, str_options, InpRR);
+                     ExecutePendingOrder(ORDER_TYPE_SELL_LIMIT, entryPrice, g_stoploss, myEAs.statusInternalHTL.sHL_iTarget, risk, InpMagic, str_options, InpRR);
                   } else {
-                     ExecutePendingOrder(ORDER_TYPE_SELL_STOP, entryPrice, g_stoploss, ss_iTarget, risk, InpMagic, str_options, InpRR);
+                     ExecutePendingOrder(ORDER_TYPE_SELL_STOP, entryPrice, g_stoploss, myEAs.statusInternalHTL.sHL_iTarget, risk, InpMagic, str_options, InpRR);
                   }
                   
                }
@@ -2673,7 +2673,7 @@ struct marketStructs{
       }
       
       // Hàm check mitigate của Global Target
-      if (ss_ITrend != 0) {
+      if (myEAs.statusInternalHTL.sHL_ITrend != 0) {
          getIsMitigateGlobal(bar1);
       }
       
@@ -2711,38 +2711,38 @@ struct marketStructs{
    
    // Hàm chỉ kiểm tra ss Global đã mitigate order flow hoặc order block hay chưa
    void getIsMitigateGlobal(MqlRates& bar1) {
-      if (ss_iTarget == 0) return;
-      if (ss_ITrend == 1) {
+      if (myEAs.statusInternalHTL.sHL_iTarget == 0) return;
+      if (myEAs.statusInternalHTL.sHL_ITrend == 1) {
          // Kiểm tra order flow
-         if (ss_mitigate_iOrderFlow == 0 && bar1.low < ss_iSnR && bar1.low > ss_iStoploss) {
-            ss_mitigate_iOrderFlow = 1;
+         if (myEAs.statusInternalHTL.sHL_mitigate_iOrderFlow == 0 && bar1.low < myEAs.statusInternalHTL.sHL_iSnR && bar1.low > myEAs.statusInternalHTL.sHL_iStoploss) {
+            myEAs.statusInternalHTL.sHL_mitigate_iOrderFlow = 1;
          } 
          
          // Kiểm tra order block
-         if (ss_mitigate_iOrderBlock == 0 && bar1.low < ss_iOrderBlock && bar1.low > ss_iStoploss) {
-            ss_mitigate_iOrderBlock = 1;
+         if (myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock == 0 && bar1.low < myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock && bar1.low > myEAs.statusInternalHTL.sHL_iStoploss) {
+            myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock = 1;
          }
          
          // Nếu giá hit stoploss
-         if (bar1.close < ss_iStoploss) {
-            ss_mitigate_iOrderFlow = -1;
-            ss_mitigate_iOrderBlock = -1;
+         if (bar1.close < myEAs.statusInternalHTL.sHL_iStoploss) {
+            myEAs.statusInternalHTL.sHL_mitigate_iOrderFlow = -1;
+            myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock = -1;
          }
-      } else if (ss_ITrend == -1) {
+      } else if (myEAs.statusInternalHTL.sHL_ITrend == -1) {
          // Kiểm tra order flow
-         if (ss_mitigate_iOrderFlow == 0 && bar1.high > ss_iSnR && bar1.high < ss_iStoploss) {
-            ss_mitigate_iOrderFlow = 1;
+         if (myEAs.statusInternalHTL.sHL_mitigate_iOrderFlow == 0 && bar1.high > myEAs.statusInternalHTL.sHL_iSnR && bar1.high < myEAs.statusInternalHTL.sHL_iStoploss) {
+            myEAs.statusInternalHTL.sHL_mitigate_iOrderFlow = 1;
          } 
          
          // Kiểm tra order block
-         if (ss_mitigate_iOrderBlock == 0 && bar1.high > ss_iOrderBlock && bar1.high < ss_iStoploss) {
-            ss_mitigate_iOrderBlock = 1;
+         if (myEAs.statusInternalHTL.sHL_iOrderBlock == 0 && bar1.high > myEAs.statusInternalHTL.sHL_iOrderBlock && bar1.high < myEAs.statusInternalHTL.sHL_iStoploss) {
+            myEAs.statusInternalHTL.sHL_iOrderBlock = 1;
          }
          
          // Nếu giá hit stoploss
-         if (bar1.close > ss_iStoploss) {
-            ss_mitigate_iOrderFlow = -1;
-            ss_mitigate_iOrderBlock = -1;
+         if (bar1.close > myEAs.statusInternalHTL.sHL_iStoploss) {
+            myEAs.statusInternalHTL.sHL_mitigate_iOrderFlow = -1;
+            myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock = -1;
          }
       }
    }
@@ -3199,7 +3199,7 @@ struct marketStructs{
             tfData.UpdatePoiZoneArray(tfData.zArrIntBullish,0,tfData.zIntSLows[0], internal_name);
             // Scan poizone low timeframe thuộc Internal Break high timeframe Bullish
             if(tfData.isHighTF) {
-               ss_IntScanActive = true;
+               myEAs.statusInternalHTL.sHL_IntScanActive = true;
                // Scan lại các zone Internal Trade Zone HighTF
                scanInternalTradeZoneHighTF(tfData, bar1);
             } 
@@ -3269,7 +3269,7 @@ struct marketStructs{
             setGlobalValueLowToHighTF(tfData);
             // Scan poizone low timeframe thuộc Internal Break high timeframe bullish
             if(tfData.isHighTF) {
-               ss_IntScanActive = true;
+               myEAs.statusInternalHTL.sHL_IntScanActive = true;
                // Scan lại các zone Internal Trade Zone HighTF
                scanInternalTradeZoneHighTF(tfData, bar1);
             }
@@ -3369,7 +3369,7 @@ struct marketStructs{
             tfData.UpdatePoiZoneArray(tfData.zArrIntBullish,0,tfData.zIntSLows[0], internal_name);
             // Scan poizone low timeframe thuộc Internal Break high timeframe bullish
             if(tfData.isHighTF) {
-               ss_IntScanActive = true;
+               myEAs.statusInternalHTL.sHL_IntScanActive = true;
                // Scan lại các zone Internal Trade Zone HighTF
                scanInternalTradeZoneHighTF(tfData, bar1);
             }
@@ -3503,7 +3503,7 @@ struct marketStructs{
             tfData.UpdatePoiZoneArray(tfData.zArrIntBearish,0,tfData.zIntSHighs[0], internal_name);
             // Scan poizone low timeframe thuộc Internal Break high timeframe Bearish
             if(tfData.isHighTF) {
-               ss_IntScanActive = true;
+               myEAs.statusInternalHTL.sHL_IntScanActive = true;
                // Scan lại các zone Internal Trade Zone HighTF
                scanInternalTradeZoneHighTF(tfData, bar1);
             }
@@ -3574,7 +3574,7 @@ struct marketStructs{
             setGlobalValueLowToHighTF(tfData);
             // Scan poizone low timeframe thuộc Internal Break high timeframe Bearish
             if(tfData.isHighTF) {
-               ss_IntScanActive = true;
+               myEAs.statusInternalHTL.sHL_IntScanActive = true;
                // Scan lại các zone Internal Trade Zone HighTF
                scanInternalTradeZoneHighTF(tfData, bar1);
             }
@@ -3674,7 +3674,7 @@ struct marketStructs{
             tfData.UpdatePoiZoneArray(tfData.zArrIntBearish,0,tfData.zIntSHighs[0], internal_name);
             // Scan poizone low timeframe thuộc Internal Break high timeframe Bearish
             if(tfData.isHighTF) {
-               ss_IntScanActive = true;
+               myEAs.statusInternalHTL.sHL_IntScanActive = true;
                // Scan lại các zone Internal Trade Zone HighTF
                scanInternalTradeZoneHighTF(tfData, bar1);
             }
@@ -3789,7 +3789,7 @@ struct marketStructs{
             } 
             // Kích hoạt scan Global Poi zone
             if(tfData.isHighTF) {
-               ss_IntScanActive = true;
+               myEAs.statusInternalHTL.sHL_IntScanActive = true;
                
                // Reset PoiZone Trade Zone belong to Internal structure
                resetTradeZoneHTF(tfData, zGTradeZoneInternalBearishHTF);
@@ -3854,7 +3854,7 @@ struct marketStructs{
             } 
             // Kích hoạt scan Global Poi zone
             if(tfData.isHighTF) {
-               ss_IntScanActive = true;
+               myEAs.statusInternalHTL.sHL_IntScanActive = true;
                
                // Reset PoiZone Trade Zone belong to Internal structure
                resetTradeZoneHTF(tfData, zGTradeZoneInternalBearishHTF);
@@ -3942,7 +3942,7 @@ struct marketStructs{
             } 
             // Kích hoạt scan Global Poi zone
             if(tfData.isHighTF) {
-               ss_IntScanActive = true;
+               myEAs.statusInternalHTL.sHL_IntScanActive = true;
                // Reset PoiZone Trade Zone belong to Internal structure
                resetTradeZoneHTF(tfData, zGTradeZoneInternalBearishHTF);
                resetTradeZoneHTF(tfData, zGTradeZoneInternalBullishHTF);
@@ -4022,7 +4022,7 @@ struct marketStructs{
             }
             // Kích hoạt scan Global Poi zone
             if(tfData.isHighTF) {
-               ss_IntScanActive = true;
+               myEAs.statusInternalHTL.sHL_IntScanActive = true;
                // Reset PoiZone Trade Zone belong to Internal structure
                resetTradeZoneHTF(tfData, zGTradeZoneInternalBearishHTF);
                resetTradeZoneHTF(tfData, zGTradeZoneInternalBullishHTF);
@@ -4086,7 +4086,7 @@ struct marketStructs{
             }
             // Kích hoạt scan Global Poi zone
             if(tfData.isHighTF) {
-               ss_IntScanActive = true;
+               myEAs.statusInternalHTL.sHL_IntScanActive = true;
                
                // Reset PoiZone Trade Zone belong to Internal structure
                resetTradeZoneHTF(tfData, zGTradeZoneInternalBearishHTF);
@@ -4177,7 +4177,7 @@ struct marketStructs{
             }
             // Kích hoạt scan Global Poi zone
             if(tfData.isHighTF) {
-               ss_IntScanActive = true;
+               myEAs.statusInternalHTL.sHL_IntScanActive = true;
                // Reset PoiZone Trade Zone belong to Internal structure
                resetTradeZoneHTF(tfData, zGTradeZoneInternalBearishHTF);
                resetTradeZoneHTF(tfData, zGTradeZoneInternalBullishHTF);
@@ -6286,9 +6286,9 @@ string getValueTrend(TimeFrameData& tfData) {
                "\n($) Internal Trend: iTrend: "+(string) tfData.iTrend+ " vItrend: "+(string) tfData.vItrend + " wvItrend: "+(string) tfData.wvItrend + " waitingItrend: IntSHighs "+(string) tfData.waitingIntSHighs + " IntSLows " + (string) tfData.waitingIntSLows +" - LastSwingInternal: "+(string) tfData.LastSwingInternal+
                " _ iFindtarget: "+(string) tfData.iFindTarget + " iStoploss: " + DoubleToString(tfData.iStoploss,_Digits) + " iOrderBlock: " + DoubleToString(tfData.iOrderBlock,_Digits) + " iSnR: " + DoubleToString(tfData.iSnR,_Digits) + " iTarget: "+ DoubleToString(tfData.iTarget,_Digits) + " iFullTarget: "+ DoubleToString(tfData.iFullTarget,_Digits) +
                "\n($) Gann Trend: gTrend: "+(string) tfData.gTrend+ " vGTrend: "+(string) tfData.vGTrend+ " - LastSwingMeter: "+(string) tfData.LastSwingMeter+ " | | H: "+ DoubleToString( tfData.H, _Digits) +" - L: "+DoubleToString( tfData.L, _Digits);  
-   text += "\n($) Global Trend: ss_ITrend: " + (string) ss_ITrend +"; ss_vITrend: "+ (string) ss_vITrend + "; ss_iStoploss: " +DoubleToString(ss_iStoploss,_Digits) + 
-            "; ss_iOrderBlock: "+ DoubleToString(ss_iOrderBlock, _Digits) +"; ss_iSnR: "+ DoubleToString (ss_iSnR, _Digits) + "; ss_iTarget: "+ DoubleToString( ss_iTarget, _Digits)
-            + "; ss_mitigate_iOrderFlow: "+ (string) ss_mitigate_iOrderFlow + "; ss_mitigate_iOrderBlock: "+ (string) ss_mitigate_iOrderBlock;
+   text += "\n($) Global Trend: sHL_ITrend: " + (string) myEAs.statusInternalHTL.sHL_ITrend +"; sHL_vITrend: "+ (string) myEAs.statusInternalHTL.sHL_vITrend + "; sHL_iStoploss: " +DoubleToString(myEAs.statusInternalHTL.sHL_iStoploss,_Digits) + 
+            "; sHL_iOrderBlock: "+ (string) myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock +"; sHL_iSnR: "+ DoubleToString (myEAs.statusInternalHTL.sHL_iSnR, _Digits) + "; sHL_iTarget: "+ DoubleToString( myEAs.statusInternalHTL.sHL_iTarget, _Digits)
+            + "; sHL_mitigate_iOrderFlow: "+ (string) myEAs.statusInternalHTL.sHL_mitigate_iOrderFlow + "; sHL_mitigate_iOrderBlock: "+ (string) myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock;
    text += "\n($) HTF: sTrend: "+(string) myEAs.signalInternal.sg_sTrend+"("+(string) myEAs.signalInternal.sg_vSTrend+") ; mTrend: "+(string) myEAs.signalInternal.sg_mTrend+"("+(string) myEAs.signalInternal.sg_vMTrend+" . "+(string) myEAs.signalInternal.sg_wvMTrend+") ; iTrend: "+(string) myEAs.signalInternal.sg_iTrend+"("+(string) myEAs.signalInternal.sg_vITrend+" . "+(string) myEAs.signalInternal.sg_wvITrend+")"+") ; getIdmBuy: "+(string) myEAs.signalInternal.sg_getIdmBuy+"- getIdmSell: "+(string) myEAs.signalInternal.sg_getIdmSell;
    text += "\n($) HTF: Internal High = "+ DoubleToString(gl_intSHighHTFRealTime, _Digits) + " && LTF: gl_H = "+DoubleToString(gl_H_AF_LTFRealTime, _Digits) + " marjor H = "+DoubleToString(gl_H_arrPBHigh_LTF, _Digits)+" gl_findH = "+(string) gl_findL+ " - Signal Sell: " + (string) gl_H_pattern_signal+
                " || Internal Low = "+ DoubleToString(gl_intSLowHTFRealTime, _Digits) + " && LTF: gl_L = "+ DoubleToString(gl_L_AF_LTFRealTime, _Digits) + " marjor L = "+DoubleToString(gl_L_arrPBLow_LTF, _Digits)+" gl_findL = "+ (string) gl_findH + " - Signal Buy: " + (string) gl_L_pattern_signal;
