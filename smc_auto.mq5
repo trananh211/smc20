@@ -156,12 +156,19 @@ struct SignalInternal{
    // Value HighTimeFrame to Global setup
    int sg_sTrend;
    int sg_vSTrend;
+   
    int sg_mTrend;
    int sg_vMTrend;
    int sg_wvMTrend;
+   bool sg_wvIsBuyMarjor;
+   bool sg_wvIsSellMarjor;
+   
    int sg_iTrend;
    int sg_vITrend;
    int sg_wvITrend;
+   
+   bool sg_wvIsBuyInternal;
+   bool sg_wvIsSellInternal;
 
    bool sg_getIdmBuy;
    bool sg_getIdmSell;
@@ -295,6 +302,8 @@ public:
    int iTrend;
    int vItrend;
    int wvItrend;
+   bool wvIsBuyInternal; // Trả về trạng thái logic phù hợp Buy. true => Buy, false = Không làm gì
+   bool wvIsSellInternal; // Trả về trạng thái logic phù hợp Sell. true => Sell, false = Không làm gì
    int waitingIntSHighs; // Chờ nến phá vỡ đỉnh internal swing highs. default = 0
    int waitingIntSLows;  // Chờ nến phá vỡ đỉnh internal swing lows.  default = 0
 
@@ -313,6 +322,8 @@ public:
    int vMTrend; // marjor Trend with volume
    int vSTrend; // struct Trend with volume
    int wvMtrend;
+   bool wvIsBuyMarjor; // Trả về trạng thái logic phù hợp Buy. true => Buy, false = Không làm gì
+   bool wvIsSellMarjor; // Trả về trạng thái logic phù hợp Sell. true => Sell, false = Không làm gì
    datetime arrPbHTime[];
    double arrPbHigh[];
    datetime arrPbLTime[];
@@ -409,8 +420,8 @@ public:
       LastSwingMeter = 0;
       gTrend = 0; vGTrend = 0; 
       LastSwingInternal = 0;
-      iTrend = 0; vItrend = 0; wvItrend = 0;
-      mTrend = 0; vMTrend = 0; wvMtrend = 0;
+      iTrend = 0; vItrend = 0; wvItrend = 0; wvIsBuyInternal = false; wvIsSellInternal = false;
+      mTrend = 0; vMTrend = 0; wvMtrend = 0; wvIsBuyMarjor = false; wvIsSellMarjor = false;
       sTrend = 0; vSTrend = 0;
       waitingHighs = 0;
       waitingLows = 0;
@@ -896,6 +907,48 @@ public:
       return true;
    }
    
+   // Hàm trả về true hoặc false trạng thái check logic volume wave Buy or Sell của 1 con sóng
+   bool getStatusLegalByVolumeOfBreakStruct(TimeFrameData& tfData, string typeStruct = "", int typeDirection = 0) {
+      bool result = false;
+      long waveBreak_new1 = 0;
+      long wavePullBack_prev2 = 0;
+      long waveBreak_prev3 = 0;
+      
+      if (typeStruct == "Internal") {
+         // Check logic Buy by wave volume kieu Internal
+         if (typeDirection == 1) {
+            waveBreak_new1 = tfData.wvolIntSHighs[0];
+            wavePullBack_prev2 = tfData.wvolIntSLows[0];
+            waveBreak_prev3 = tfData.wvolIntSHighs[0];
+            
+         // Check logic Sell by wave volume kieu Internal
+         } else if (typeDirection == -1) {
+            waveBreak_new1 = tfData.wvolIntSLows[0];
+            wavePullBack_prev2 = tfData.wvolIntSHighs[0];
+            waveBreak_prev3 = tfData.wvolIntSLows[1];
+         }
+      } else if (typeStruct == "Marjor") {
+         // Check logic Buy by wave volume kieu Marjor
+         if (typeDirection == 1) {
+            waveBreak_new1 = tfData.wvolArrPbHigh[0];
+            wavePullBack_prev2 = tfData.wvolArrPbLow[0];
+            waveBreak_prev3 = tfData.wvolArrPbHigh[0];
+            
+         // Check logic Sell by wave volume kieu Marjor
+         } else if (typeDirection == -1) {
+            waveBreak_new1 = tfData.wvolArrPbLow[0];
+            wavePullBack_prev2 = tfData.wvolArrPbHigh[0];
+            waveBreak_prev3 = tfData.wvolArrPbLow[1];
+         }
+      }
+      
+      // Check logic
+      if (waveBreak_new1 > wavePullBack_prev2 && waveBreak_new1 > waveBreak_prev3) {
+         result = true;
+      }
+      return result;
+   }
+   
    // Hàm để nhận và lưu trữ dữ liệu - Đã sửa lỗi "structures containing objects"
    void copyZoneToZone(const PoiZone &sourceArray[], PoiZone &targetArray[]) {
       int size = ArraySize(sourceArray);
@@ -915,6 +968,7 @@ public:
       
       // Print("Đã copy thành công ", size, " vùng POI.");
    }
+   
 };
 
 //+------------------------------------------------------------------+
@@ -2007,22 +2061,22 @@ struct marketStructs{
                if (myEAs.signalInternal.sg_wvITrend == tfData.iTrend) { 
                   // Tầng 3: I.1 - I.4 và XVI.64 - XVI.61
                   if (tfData.mTrend == tfData.vMTrend) {
-                     // I.1 - XVI.64 : myEAs.signalInternal.sg_mTrend; = gl_iTrend; = gl_wvItrend; = iTrend; = mTrend; = wvMTrend;
+                     // I.1 - XVI.64 : sg_mTrend; = sg_iTrend; = sg_wvItrend; = iTrend; = mTrend; = wvMTrend;
                      if (tfData.iTrend == tfData.mTrend) {
                         callFunctionTrade = true;
                         option_trade = (tfData.iTrend == 1)? 1 : 64;
-                     // I.4 - XVI.61 : myEAs.signalInternal.sg_mTrend; = gl_iTrend; = gl_wvItrend; != iTrend; != mTrend; != wvMTrend;
+                     // I.4 - XVI.61 : myEAs.signalInternal.sg_mTrend; = sg_iTrend; = sg_wvItrend; != iTrend; != mTrend; != wvMTrend;
                      } else {
                         callFunctionTrade = true;
                         option_trade = (tfData.iTrend == 1)? 4 : 61;
                      }
                   // Tầng 3: I.2 - I.3 và XVI.62 - XVI.63
                   } else {
-                     // I.2 - XVI.63 : myEAs.signalInternal.sg_mTrend; = gl_iTrend; = gl_wvItrend; = iTrend; = mTrend; != wvMTrend;
+                     // I.2 - XVI.63 : sg_mTrend; = sg_iTrend; = sg_wvItrend; = iTrend; = mTrend; != wvMTrend;
                      if (tfData.iTrend == tfData.mTrend) {
                         callFunctionTrade = true;
                         option_trade = (tfData.iTrend == 1)? 2 : 63;
-                     // I.3 - XVI.62: myEAs.signalInternal.sg_mTrend; = gl_iTrend; = gl_wvItrend; = iTrend; != mTrend; = wvMTrend;
+                     // I.3 - XVI.62: sg_mTrend; = sg_iTrend; = sg_wvItrend; = iTrend; != mTrend; = wvMTrend;
                      } else {
                         callFunctionTrade = true;
                         option_trade = (tfData.iTrend == 1)? 3 : 62;
@@ -2039,21 +2093,21 @@ struct marketStructs{
                if (myEAs.signalInternal.sg_wvITrend == tfData.iTrend) { 
                   // Tầng 3: IV.13 - IV.16 và XIII.49 - XIII.52
                   if (tfData.mTrend == tfData.vMTrend) {
-                     // IV.16 - XIII.49 : myEAs.signalInternal.sg_mTrend; = gl_iTrend; != gl_wvItrend; != iTrend; != mTrend; != wvMTrend;
+                     // IV.16 - XIII.49 : sg_mTrend; = sg_iTrend; != sg_wvItrend; != iTrend; != mTrend; != wvMTrend;
                      if (tfData.iTrend == tfData.mTrend) {
                         callFunctionTrade = true;
                         option_trade = (tfData.iTrend == -1)? 16 : 49;
-                     // IV.13 - XIII.52: myEAs.signalInternal.sg_mTrend; = gl_iTrend; != gl_wvItrend; != iTrend; = mTrend; != wvMTrend;
+                     // IV.13 - XIII.52: sg_mTrend; = sg_iTrend; != sg_wvItrend; != iTrend; = mTrend; != wvMTrend;
                      } else {
                         // Không làm gì
                      }
                   // Tầng 3: IV.14 - IV.15 và XIII.50 - XIII.51
                   } else {
-                     // IV.15 - XIII.50: myEAs.signalInternal.sg_mTrend; = gl_iTrend; != gl_wvItrend; != iTrend; != mTrend; = wvMTrend;
+                     // IV.15 - XIII.50: sg_mTrend; = sg_iTrend; != sg_wvItrend; != iTrend; != mTrend; = wvMTrend;
                      if (tfData.iTrend == tfData.mTrend) {
                         callFunctionTrade = true;
                         option_trade = (tfData.iTrend == -1)? 15 : 50;
-                     // IV.14 - XIII.51: myEAs.signalInternal.sg_mTrend; = gl_iTrend; != gl_wvItrend; != iTrend; = mTrend; != wvMTrend;
+                     // IV.14 - XIII.51: sg_mTrend; = sg_iTrend; != sg_wvItrend; != iTrend; = mTrend; != wvMTrend;
                      } else {
                         callFunctionTrade = true;
                         option_trade = (tfData.iTrend == -1)? 14 : 51;
@@ -2072,21 +2126,21 @@ struct marketStructs{
                if (myEAs.signalInternal.sg_wvITrend == tfData.iTrend) {
                   // Tầng 3: V.17 - V.20 và XII.45 - XII.48
                   if (tfData.mTrend == tfData.vMTrend) {
-                     // V.17 - XII.48: myEAs.signalInternal.sg_mTrend; != gl_iTrend; = gl_wvItrend; = iTrend; = mTrend; = wvMTrend;
+                     // V.17 - XII.48: sg_mTrend; != sg_iTrend; = sg_wvItrend; = iTrend; = mTrend; = wvMTrend;
                      if (tfData.iTrend == tfData.mTrend) {
                         callFunctionTrade = true;
                         option_trade = (tfData.iTrend == 1)? 17 : 48;
-                     // V.20 - XII.45: myEAs.signalInternal.sg_mTrend; != gl_iTrend; = gl_wvItrend; = iTrend; = mTrend; != wvMTrend;
+                     // V.20 - XII.45: sg_mTrend; != sg_iTrend; = sg_wvItrend; = iTrend; = mTrend; != wvMTrend;
                      } else {
                         // Không làm gì
                      }
                   // Tầng 3: V.18 - V.19 và XII.46 - XII.47
                   } else {
-                     // V.18 - XII.47: myEAs.signalInternal.sg_mTrend; != gl_iTrend; = gl_wvItrend; = iTrend; = mTrend; != wvMTrend;
+                     // V.18 - XII.47: sg_mTrend; != sg_iTrend; = sg_wvItrend; = iTrend; = mTrend; != wvMTrend;
                      if (tfData.iTrend == tfData.mTrend) {
                         callFunctionTrade = true;
                         option_trade = (tfData.iTrend == 1)? 18 : 47;
-                     // V.19 - XII.46: myEAs.signalInternal.sg_mTrend; != gl_iTrend; = gl_wvItrend; = iTrend; != mTrend; = wvMTrend;
+                     // V.19 - XII.46: sg_mTrend; != sg_iTrend; = sg_wvItrend; = iTrend; != mTrend; = wvMTrend;
                      } else {
                         callFunctionTrade = true;
                         option_trade = (tfData.iTrend == 1)? 19 : 46;
@@ -2105,22 +2159,22 @@ struct marketStructs{
                } else { 
                   // Tầng 3: VIII.30 + VIII.31 - IX.34 + IX.35
                   if (tfData.mTrend != tfData.vMTrend) {
-                     // VIII.31 - IX.34: myEAs.signalInternal.sg_mTrend; != gl_iTrend; != gl_wvItrend; != iTrend; != mTrend; = wvMTrend;
+                     // VIII.31 - IX.34: sg_mTrend; != sg_iTrend; != sg_wvItrend; != iTrend; != mTrend; = wvMTrend;
                      if (tfData.iTrend == tfData.mTrend) {
                         callFunctionTrade = true;
                         option_trade = (tfData.iTrend == -1)? 31 : 34;
-                     // VIII.30 - IX.35: myEAs.signalInternal.sg_mTrend; != gl_iTrend; != gl_wvItrend; != iTrend; = mTrend; != wvMTrend;
+                     // VIII.30 - IX.35: sg_mTrend; != sg_iTrend; != sg_wvItrend; != iTrend; = mTrend; != wvMTrend;
                      } else {
                         callFunctionTrade = true;
                         option_trade = (tfData.iTrend == -1)? 30 : 35;
                      }
                   // Tầng 3: VIII.29 + VIII.32 - IX.33 + IX.36
                   } else {
-                     // VIII.32 - IX.33: myEAs.signalInternal.sg_mTrend; != gl_iTrend; != gl_wvItrend; != iTrend; != mTrend; != wvMTrend;
+                     // VIII.32 - IX.33: sg_mTrend; != sg_iTrend; != sg_wvItrend; != iTrend; != mTrend; != wvMTrend;
                      if (tfData.iTrend == tfData.mTrend) {
                         callFunctionTrade = true;
                         option_trade = (tfData.iTrend == -1)? 32 : 33;
-                     // VIII.29 - IX.36: myEAs.signalInternal.sg_mTrend; != gl_iTrend; != gl_wvItrend; != iTrend; = mTrend; = wvMTrend;
+                     // VIII.29 - IX.36: sg_mTrend; != sg_iTrend; != sg_wvItrend; != iTrend; = mTrend; = wvMTrend;
                      } else {
                         callFunctionTrade = true;
                         option_trade = (tfData.iTrend == -1)? 29 : 36;
@@ -3129,6 +3183,9 @@ struct marketStructs{
             // Setup wave volume
             if (tfData.wvItrend == 0 && tfData.wvolIntSHighTime[0] > tfData.wvolIntSLowTime[0]) {
                tfData.wvItrend = (tfData.wvolIntSHighs[0] > tfData.wvolIntSLows[0]) ? 1 : -1;
+               // Trả về trạng thái chấp nhận Buy or Sell của Internal sau cú Break khi xác nhận được swing đầu tiên
+               tfData.wvIsBuyInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", 1);
+               tfData.wvIsSellInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", -1);
             }
             
             drawPointStructure(tfData, 1, bar2.high, bar2.time, INTERNAL_STRUCTURE, false, enabledDraw);
@@ -3196,6 +3253,9 @@ struct marketStructs{
             // Setup wave volume
             if (tfData.wvItrend != 0 && tfData.wvolIntSHighTime[0] > tfData.wvolIntSLowTime[0]) {
                tfData.wvItrend = (tfData.wvolIntSHighs[0] > tfData.wvolIntSLows[0]) ? 1 : -1;
+               // Trả về trạng thái chấp nhận Buy or Sell của Internal sau cú Break khi xác nhận được swing đầu tiên
+               tfData.wvIsBuyInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", 1);
+               tfData.wvIsSellInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", -1);
             }
             
             drawPointStructure(tfData, 1, bar2.high, bar2.time, INTERNAL_STRUCTURE, true, enabledDraw);
@@ -3433,6 +3493,9 @@ struct marketStructs{
             // Setup wave volume
             if (tfData.wvItrend == 0 && tfData.wvolIntSLowTime[0] > tfData.wvolIntSHighTime[0]) {
                tfData.wvItrend = (tfData.wvolIntSLows[0] > tfData.wvolIntSHighs[0]) ? -1 : 1;
+               // Trả về trạng thái chấp nhận Buy or Sell của Internal sau cú Break khi xác nhận được swing đầu tiên
+               tfData.wvIsBuyInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", 1);
+               tfData.wvIsSellInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", -1);
             }
             
             drawPointStructure(tfData, -1, bar2.low, bar2.time, INTERNAL_STRUCTURE, false, enabledDraw);
@@ -3501,6 +3564,9 @@ struct marketStructs{
             // Setup wave volume
             if (tfData.wvItrend != 0 && tfData.wvolIntSLowTime[0] > tfData.wvolIntSHighTime[0]) {
                tfData.wvItrend = (tfData.wvolIntSLows[0] > tfData.wvolIntSHighs[0]) ? -1 : 1;
+               // Trả về trạng thái chấp nhận Buy or Sell của Internal sau cú Break khi xác nhận được swing đầu tiên
+               tfData.wvIsBuyInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", 1);
+               tfData.wvIsSellInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", -1);
             }
             
             drawPointStructure(tfData, -1, bar2.low, bar2.time, INTERNAL_STRUCTURE, true, enabledDraw);
@@ -3713,6 +3779,8 @@ struct marketStructs{
             tfData.iTrend = 1;
             tfData.vItrend = tfData.iTrend;
             tfData.wvItrend = 0;
+            tfData.wvIsBuyInternal = false;
+            tfData.wvIsSellInternal = false;
             tfData.LastSwingInternal = 1;
             tfData.waitingIntSHighs = 1;
                         
@@ -3778,6 +3846,8 @@ struct marketStructs{
             tfData.iTrend = 1;
             tfData.vItrend = tfData.iTrend;
             tfData.wvItrend = 0;
+            tfData.wvIsBuyInternal = false;
+            tfData.wvIsSellInternal = false;
             tfData.LastSwingInternal = 1;
             tfData.waitingIntSHighs = 1;
                         
@@ -3843,6 +3913,8 @@ struct marketStructs{
             tfData.iTrend = 1;
             tfData.vItrend = tfData.iTrend;
             tfData.wvItrend = 0;
+            tfData.wvIsBuyInternal = false;
+            tfData.wvIsSellInternal = false;
             tfData.LastSwingInternal = 1;
             tfData.waitingIntSHighs = 1;
                         
@@ -3945,6 +4017,8 @@ struct marketStructs{
             tfData.iTrend = -1;
             tfData.vItrend = tfData.iTrend;
             tfData.wvItrend = 0;
+            tfData.wvIsBuyInternal = false;
+            tfData.wvIsSellInternal = false;
             tfData.LastSwingInternal = -1;
             tfData.waitingIntSLows = 1;
             
@@ -4010,6 +4084,8 @@ struct marketStructs{
             tfData.iTrend = -1;
             tfData.vItrend = tfData.iTrend;
             tfData.wvItrend = 0;
+            tfData.wvIsBuyInternal = false;
+            tfData.wvIsSellInternal = false;
             tfData.LastSwingInternal = -1;
             tfData.waitingIntSLows = 1;
                         
@@ -4076,6 +4152,8 @@ struct marketStructs{
             tfData.iTrend = -1;
             tfData.vItrend = tfData.iTrend;
             tfData.wvItrend = 0;
+            tfData.wvIsBuyInternal = false;
+            tfData.wvIsSellInternal = false;
             tfData.LastSwingInternal = -1;
             tfData.waitingIntSLows = 1;
                         
@@ -4177,6 +4255,8 @@ struct marketStructs{
          myEAs.signalInternal.sg_iTrend = tfData.iTrend;
          myEAs.signalInternal.sg_vITrend = tfData.vItrend;
          myEAs.signalInternal.sg_wvITrend = tfData.wvItrend;
+         myEAs.signalInternal.sg_wvIsBuyInternal = tfData.wvIsBuyInternal;
+         myEAs.signalInternal.sg_wvIsSellInternal = tfData.wvIsSellInternal;
       } else { // Set thong so co ban cho Low Timeframe
          if (myEAs.marketStructStatus.iMSS_findH == 1) {
             if (myEAs.marketStructStatus.iMSS_H_AF_LTFRealTime <= 0 || (myEAs.marketStructStatus.iMSS_H_AF_LTFRealTime > 0 && myEAs.marketStructStatus.iMSS_H_AF_LTFRealTime < tfData.intSHighs[0])) {
@@ -4416,6 +4496,9 @@ struct marketStructs{
                // Setup wave volume
                if (tfData.wvMtrend == 0 && tfData.wvolArrPbHighTime[0] > tfData.wvolArrPbLowTime[0]) {
                   tfData.wvMtrend = (tfData.wvolArrPbHigh[0] > tfData.wvolArrPbLow[0]) ? 1 : -1;
+                  // Trả về trạng thái chấp nhận Buy or Sell của Marjor sau cú Break khi xác nhận được swing đầu tiên bởi cú quét IDM 
+                  tfData.wvIsBuyMarjor = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Marjor", 1);
+                  tfData.wvIsSellMarjor = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Marjor", -1);
                }
             
                // add new zone
@@ -4557,6 +4640,8 @@ struct marketStructs{
                // Setup wave volume
                if (tfData.wvMtrend != 0 && tfData.wvolArrPbHighTime[0] < tfData.wvolArrPbLowTime[0]) {
                   tfData.wvMtrend = 0;
+                  tfData.wvIsBuyMarjor = false;
+                  tfData.wvIsSellMarjor = false;
                }
 
                // Add New Zone Bullish
@@ -4664,6 +4749,8 @@ struct marketStructs{
                // Setup wave volume
                if (tfData.wvMtrend != 0 && tfData.wvolArrPbHighTime[0] < tfData.wvolArrPbLowTime[0]) {
                   tfData.wvMtrend = 0;
+                  tfData.wvIsBuyMarjor = false;
+                  tfData.wvIsSellMarjor = false;
                }
 
                // Add New Zone Bullish
@@ -4896,6 +4983,9 @@ struct marketStructs{
                // Setup wave volume
                if (tfData.wvMtrend == 0 && tfData.wvolArrPbLowTime[0] > tfData.wvolArrPbHighTime[0]) {
                   tfData.wvMtrend = (tfData.wvolArrPbLow[0] > tfData.wvolArrPbHigh[0]) ? -1 : 1;
+                  // Trả về trạng thái chấp nhận Buy or Sell của Marjor sau cú Break khi xác nhận được swing đầu tiên bởi cú quét IDM 
+                  tfData.wvIsBuyMarjor = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Marjor", 1);
+                  tfData.wvIsSellMarjor = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Marjor", -1);
                }
                
                // Add new zone
@@ -5034,6 +5124,8 @@ struct marketStructs{
                // Setup wave volume
                if (tfData.wvMtrend != 0 && tfData.wvolArrPbLowTime[0] < tfData.wvolArrPbHighTime[0]) {
                   tfData.wvMtrend = 0;
+                  tfData.wvIsBuyMarjor = false;
+                  tfData.wvIsSellMarjor = false;
                }
                // Add New Zone Bearish
                // 2. Tìm "điểm neo" (index) dựa trên thời gian của nến đó
@@ -5140,6 +5232,8 @@ struct marketStructs{
                // Setup wave volume
                if (tfData.wvMtrend != 0 && tfData.wvolArrPbLowTime[0] < tfData.wvolArrPbHighTime[0]) {
                   tfData.wvMtrend = 0;
+                  tfData.wvIsBuyMarjor = false;
+                  tfData.wvIsSellMarjor = false;
                }
 
                // Add New Zone Bearish
@@ -5278,12 +5372,9 @@ struct marketStructs{
          myEAs.signalInternal.sg_vMTrend = tfData.vMTrend;
          myEAs.signalInternal.sg_wvMTrend = tfData.wvMtrend;
          
-//         myEAs.signalInternal.sg_sTrend = tfData.sTrend;
-//         myEAs.signalInternal.sg_vSTrend = tfData.vSTrend;
-//         
-//         gl_mTrend = tfData.mTrend;
-//         gl_vMTrend = tfData.vMTrend;
-//         gl_wvMTrend = tfData.wvMtrend;
+         myEAs.signalInternal.sg_wvIsBuyMarjor = tfData.wvIsBuyMarjor;
+         myEAs.signalInternal.sg_wvIsSellMarjor = tfData.wvIsSellMarjor;
+         
       } else { // set thong so co ban LTF
          myEAs.marketStructStatus.iMSS_H_arrPBHigh_LTF = tfData.arrPbHigh[0];
          myEAs.marketStructStatus.iMSS_L_arrPBLow_LTF = tfData.arrPbLow[0];
@@ -6175,7 +6266,7 @@ void showPoiComment(TimeFrameData& tfData) {
 
 void showComment(TimeFrameData& tfData) {
    //Print("Timeframe: "+ (string) tfData.isTimeframe);
-   
+   Print("myEAs.signalInternal"); ArrayPrint(myEAs);
       //Print("Highs: "); ArrayPrint(tfData.Highs);
       //Print("HighsTime: "); ArrayPrint(tfData.HighsTime);
       //Print("Vol Highs: "); ArrayPrint(tfData.volHighs);
