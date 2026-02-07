@@ -110,7 +110,7 @@ input group "=== Draw target ==="
 input bool showTargetHighTF = true; // Hien thi target line o High Timeframe
 input bool showTargetLowTF = true; // Hien thi target line o Low Timeframe
 input bool isDrawMarjor = true; // Draw target with Marjor Swing
-input bool isDrawInteral = true; // Draw target with Internal Swing
+input bool isDrawInternal = true; // Draw target with Internal Swing
 
 input group "=== PoiZone Marjor color High + Low TF ==="
 input color color_HTF_Extreme_Bullish_Zone = clrGreen; // High TimeFrame Extreme Bullish color
@@ -290,6 +290,14 @@ public:
    datetime wvolIntSHighTime[];
    long wvolIntSLows[];
    datetime wvolIntSLowTime[];
+   
+   // Internal. Lưu thông số bar break, nơi đặt line, chiều dài line
+   int isDrawTarget_internal; // Hướng check volume. 1 Hướng buy ; -1 Hướng sell
+   MqlRates barBreak_internal;
+   int line_direction_internal;
+   double line_high_internal;
+   double line_low_internal;
+   double place_start_line_draw_internal;
    
    int iFindTarget;
    double iStoploss; datetime iStoplossTime;
@@ -525,10 +533,29 @@ public:
       
       ZeroMemory(L_bar);
       ZeroMemory(H_bar);
+      
+      // reset line draw
+      isDrawTarget_internal = 0;
+      ZeroMemory(barBreak_internal);
+      line_direction_internal = 0;
+      line_high_internal = 0;
+      line_low_internal = 0;
    }
    
    // Helper Methods for Array Management
-
+   
+   void resetDrawBarSettings(TimeFrameData& tfData, int typeDraw = 0) {
+      if (typeDraw == INTERNAL_STRUCTURE) {
+         isDrawTarget_internal = 0;
+         ZeroMemory(barBreak_internal);
+         line_direction_internal = 0;
+         line_high_internal = 0;
+         line_low_internal = 0;
+      } else if (typeDraw == MAJOR_STRUCTURE) {
+      
+      }
+   }
+   
    // Phương thức thêm phần tử vào mảng long
    int AddToLongArray(long &array[], long value, int ilimit = 10)
    {
@@ -3188,6 +3215,8 @@ struct marketStructs{
                // Trả về trạng thái chấp nhận Buy or Sell của Internal sau cú Break khi xác nhận được swing đầu tiên
                tfData.wvIsBuyInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", 1);
                tfData.wvIsSellInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", -1);
+               // Set thông số hướng để vẽ line break
+               tfData.line_direction_internal = (tfData.isDrawTarget_internal == tfData.iTrend)? tfData.wvItrend : 0;
             }
             
             drawPointStructure(tfData, 1, bar2.high, bar2.time, INTERNAL_STRUCTURE, false, enabledDraw);
@@ -3258,6 +3287,8 @@ struct marketStructs{
                // Trả về trạng thái chấp nhận Buy or Sell của Internal sau cú Break khi xác nhận được swing đầu tiên
                tfData.wvIsBuyInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", 1);
                tfData.wvIsSellInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", -1);
+               // Set thông số hướng để vẽ line break
+               tfData.line_direction_internal = (tfData.isDrawTarget_internal == tfData.iTrend)? tfData.wvItrend : 0;
             }
             
             drawPointStructure(tfData, 1, bar2.high, bar2.time, INTERNAL_STRUCTURE, true, enabledDraw);
@@ -3498,6 +3529,8 @@ struct marketStructs{
                // Trả về trạng thái chấp nhận Buy or Sell của Internal sau cú Break khi xác nhận được swing đầu tiên
                tfData.wvIsBuyInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", 1);
                tfData.wvIsSellInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", -1);
+               // Set thông số hướng để vẽ line break
+               tfData.line_direction_internal = (tfData.isDrawTarget_internal == tfData.iTrend)? tfData.wvItrend : 0;
             }
             
             drawPointStructure(tfData, -1, bar2.low, bar2.time, INTERNAL_STRUCTURE, false, enabledDraw);
@@ -3569,6 +3602,8 @@ struct marketStructs{
                // Trả về trạng thái chấp nhận Buy or Sell của Internal sau cú Break khi xác nhận được swing đầu tiên
                tfData.wvIsBuyInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", 1);
                tfData.wvIsSellInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", -1);
+               // Set thông số hướng để vẽ line break
+               tfData.line_direction_internal = (tfData.isDrawTarget_internal == tfData.iTrend)? tfData.wvItrend : 0;
             }
             
             drawPointStructure(tfData, -1, bar2.low, bar2.time, INTERNAL_STRUCTURE, true, enabledDraw);
@@ -3819,6 +3854,10 @@ struct marketStructs{
                line_target = tfData.vItrend;
             }
             isDrawTarget = true;
+            tfData.isDrawTarget_internal = tfData.iTrend;
+            tfData.line_high_internal = tfData.intSHighs[0];
+            tfData.line_low_internal = tfData.intSLows[0];
+            tfData.barBreak_internal = bar1;
             // Set news value target zone
             //beginSetValueToPoiZone(tfData, tfData.zIntSLows[0], "InternalZone");
             // Thêm mới thông số Global Target 
@@ -3886,6 +3925,10 @@ struct marketStructs{
                line_target = tfData.vItrend;
             }
             isDrawTarget = true;
+            tfData.isDrawTarget_internal = tfData.iTrend;
+            tfData.line_high_internal = tfData.intSHighs[0];
+            tfData.line_low_internal = tfData.intSLows[0];
+            tfData.barBreak_internal = bar1;
             // Set news value target zone
             //beginSetValueToPoiZone(tfData, tfData.zIntSLows[0], "InternalZone");
             // Thêm mới thông số Global Target 
@@ -3976,6 +4019,10 @@ struct marketStructs{
                line_target = tfData.vItrend;
             }
             isDrawTarget = true;
+            tfData.isDrawTarget_internal = tfData.iTrend;
+            tfData.line_high_internal = tfData.intSHighs[0];
+            tfData.line_low_internal = tfData.intSLows[0];
+            tfData.barBreak_internal = bar1;
             // Set news value target zone
             //beginSetValueToPoiZone(tfData, tfData.zIntSLows[0], "InternalZone");
             // Thêm mới thông số Global Target 
@@ -4000,10 +4047,10 @@ struct marketStructs{
          }
          // show draw target line
          if ((showTargetHighTF == true && tfData.isTimeframe == highPairTF) || (showTargetLowTF == true && tfData.isTimeframe == lowPairTF)) {
-            if (isDrawInteral == true && isDrawTarget == true) {
+            if (isDrawInternal == true && isDrawTarget == true) {
                isDrawTarget = false;
-               // ve line
-               DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 4);
+               //// ve line
+               //DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 4);
             }
          }
          
@@ -4057,7 +4104,10 @@ struct marketStructs{
                line_target = tfData.vItrend;
             }
             isDrawTarget = true;
-            
+            tfData.isDrawTarget_internal = tfData.iTrend;
+            tfData.line_high_internal = tfData.intSHighs[0];
+            tfData.line_low_internal = tfData.intSLows[0];
+            tfData.barBreak_internal = bar1;
             // Set news value target zone
             //beginSetValueToPoiZone(tfData, tfData.zIntSHighs[0], "InternalZone");
             // Thêm mới thông số Global Target 
@@ -4124,6 +4174,10 @@ struct marketStructs{
                line_target = tfData.vItrend;
             }
             isDrawTarget = true;
+            tfData.isDrawTarget_internal = tfData.iTrend;
+            tfData.line_high_internal = tfData.intSHighs[0];
+            tfData.line_low_internal = tfData.intSLows[0];
+            tfData.barBreak_internal = bar1;
             // Set news value target zone
             //beginSetValueToPoiZone(tfData, tfData.zIntSHighs[0], "InternalZone");
             // Thêm mới thông số Global Target 
@@ -4217,6 +4271,10 @@ struct marketStructs{
                line_target = tfData.vItrend;
             }
             isDrawTarget = true;
+            tfData.isDrawTarget_internal = tfData.iTrend;
+            tfData.line_high_internal = tfData.intSHighs[0];
+            tfData.line_low_internal = tfData.intSLows[0];
+            tfData.barBreak_internal = bar1;
             // Set news value target zone
             //beginSetValueToPoiZone(tfData, tfData.zIntSHighs[0], "InternalZone");
             // Thêm mới thông số Global Target 
@@ -4241,10 +4299,10 @@ struct marketStructs{
          }
          // Show draw target line
          if ((showTargetHighTF == true && tfData.isTimeframe == highPairTF) || (showTargetLowTF == true && tfData.isTimeframe == lowPairTF)) {
-            if (isDrawInteral == true && isDrawTarget == true) {
+            if (isDrawInternal == true && isDrawTarget == true) {
                isDrawTarget = false;
-               // ve line
-               DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 4);
+               //// ve line
+               //DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 4);
             }
          }
          
@@ -4252,6 +4310,47 @@ struct marketStructs{
             text_all += str_internal+" (Break) "+textInternalLow;
          }
       }
+      
+      // Show draw target line by wave volume
+      if ((showTargetHighTF == true && tfData.isTimeframe == highPairTF) || (showTargetLowTF == true && tfData.isTimeframe == lowPairTF)) {
+         if (isDrawInternal == true && tfData.line_direction_internal != 0) {
+            double line_start = 0;
+            double line_end = 0;
+            // ve line
+            if (tfData.iTrend == 1) {
+               // breakout success
+               if (tfData.line_direction_internal == tfData.iTrend) {
+                  tfData.place_start_line_draw_internal = tfData.barBreak_internal.high;
+                  line_start = tfData.line_low_internal;
+                  line_end = tfData.line_high_internal;
+               // false breakout
+               } else {
+                  tfData.place_start_line_draw_internal = tfData.line_low_internal;
+                  line_start = tfData.line_high_internal;
+                  line_end = tfData.line_low_internal;
+               }
+               
+            } else {
+               // breakout success
+               if (tfData.line_direction_internal == tfData.iTrend) {
+                  tfData.place_start_line_draw_internal = tfData.barBreak_internal.low;
+                  line_start = tfData.line_high_internal;
+                  line_end = tfData.line_low_internal;
+                  
+               // false breakout
+               } else {
+                  tfData.place_start_line_draw_internal = tfData.line_high_internal;
+                  line_start = tfData.line_low_internal;
+                  line_end = tfData.line_high_internal;
+                  
+               }
+            }
+            // ve line
+            DrawDirectionalSegment(tfData.line_direction_internal, tfData.place_start_line_draw_internal, tfData.barBreak_internal.time, line_start, line_end, tfData.tfColor, 1, 4);
+            tfData.resetDrawBarSettings(tfData, INTERNAL_STRUCTURE);
+         }
+      }
+      
       // Set Global Value of High Timeframe
       if (tfData.isHighTF) {
          myEAs.signalInternal.sg_iTrend = tfData.iTrend;
@@ -5360,8 +5459,8 @@ struct marketStructs{
          // Ve Target Marjog
          if (isDrawMarjor == true && isDrawTarget == true) {
             isDrawTarget = false;
-            // ve line
-            DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 3);
+            //// ve line
+            //DrawDirectionalSegment(line_target, place_start_line_draw, bar1.time, line_dinh, line_day, tfData.tfColor, 1, 3);
          }
       }
             
