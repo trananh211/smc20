@@ -182,49 +182,22 @@ struct StatusInternalHighToLow{
    datetime sHL_iTargetTime;
 };
 
-// // Settings structure default High Timeframe to LowTimeframe
-// bool ss_IntScanActive = false;
-// int ss_ITrend;
-// int ss_vITrend;
-// int ss_mitigate_iOrderFlow; // Mặc định = -1 kể cả khi breakout, Khi ss_iTarget được xác định = 0, khi mitigate = 1.
-// double ss_iStoploss; //
-// double ss_iOrderBlock;
-// int ss_mitigate_iOrderBlock; // Mặc định = -1, Khi breakout =0, Khi mitigate thì biến này chuyển thành 1. 
-// double ss_iTarget;
-// double ss_iSnR;
-// datetime ss_iStoplossTime;
-// datetime ss_iTargetTime;
-
 // Settings status default for Trade Basic
 struct infoMarketStructStatus{
-   // Swing Internal HTF tạm thời
-   double gl_intSHighHTFRealTime;
-   double gl_intSLowHTFRealTime;
+   // Swing Internal HTF tạm thời. (RealTime)
+   double iMSS_intSHighHTFRealTime;
+   double iMSS_intSLowHTFRealTime;
 
    // Swing Internal LTF tạm thời sau khi break Internal ở HTF. AF After Break
-   double gl_H_AF_LTFRealTime;
-   int gl_H_pattern_signal;
-   double gl_L_AF_LTFRealTime;
-   int gl_L_pattern_signal;
-   int gl_findH;
-   int gl_findL;
-   double gl_H_arrPBHigh_LTF;
-   double gl_L_arrPBLow_LTF;
+   double iMSS_H_AF_LTFRealTime;
+   int iMSS_H_pattern_signal;
+   double iMSS_L_AF_LTFRealTime;
+   int iMSS_L_pattern_signal;
+   int iMSS_findH;
+   int iMSS_findL;
+   double iMSS_H_arrPBHigh_LTF;
+   double iMSS_L_arrPBLow_LTF;
 };
-
-// Swing Internal HTF tạm thời
-double gl_intSHighHTFRealTime;
-double gl_intSLowHTFRealTime;
-
-// Swing Internal LTF tạm thời sau khi break Internal ở HTF. AF After Break
-double gl_H_AF_LTFRealTime;
-int gl_H_pattern_signal;
-double gl_L_AF_LTFRealTime;
-int gl_L_pattern_signal;
-int gl_findH;
-int gl_findL;
-double gl_H_arrPBHigh_LTF;
-double gl_L_arrPBLow_LTF;
 
 // Khai báo struct toàn cục cho toàn bộ thông tin trade
 struct TradeBasicStatus{
@@ -1616,12 +1589,12 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
 				myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock = -1;
 				
 				// Reset gl_find H or L
-				gl_H_pattern_signal = -1;
-				gl_L_pattern_signal = -1;
-				gl_findH = -1;
-				gl_findL = -1;
-				gl_H_AF_LTFRealTime = -1;
-				gl_L_AF_LTFRealTime = -1;
+				myEAs.marketStructStatus.iMSS_H_pattern_signal = -1;
+				myEAs.marketStructStatus.iMSS_L_pattern_signal = -1;
+				myEAs.marketStructStatus.iMSS_findH = -1;
+				myEAs.marketStructStatus.iMSS_findL = -1;
+				myEAs.marketStructStatus.iMSS_H_AF_LTFRealTime = -1;
+				myEAs.marketStructStatus.iMSS_L_AF_LTFRealTime = -1;
 				// xoa du lieu de tranh vao lenh lien tuc sau khi dat target  
 				resetTradeZoneHTF(tfData, zArrPoiZoneLTFBearishBelongHighTF);
 				resetTradeZoneHTF(tfData, zArrPoiZoneLTFBullishBelongHighTF);
@@ -1647,16 +1620,16 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
 		} // End myEAs.statusInternalHTL.sHL_IntScanActive == false
 	} // End tfData.isHighTF != true
 	else { // Setup cac thong so khi dang o HTF
-	   if (gl_findH == 1 && gl_intSHighHTFRealTime != tfData.intSHighs[0]) {
-	      gl_H_pattern_signal = CheckCandleByTime(tfData.intSHighTime[0], tfData.timeFrame, -1);
-	      gl_intSHighHTFRealTime = tfData.intSHighs[0];
-	      if (gl_H_pattern_signal == 1) Print("waiting");
+	   if (myEAs.marketStructStatus.iMSS_findH == 1 && myEAs.marketStructStatus.iMSS_intSHighHTFRealTime != tfData.intSHighs[0]) {
+	      myEAs.marketStructStatus.iMSS_H_pattern_signal = CheckCandleByTime(tfData.intSHighTime[0], tfData.timeFrame, -1);
+	      myEAs.marketStructStatus.iMSS_intSHighHTFRealTime = tfData.intSHighs[0];
+	      if (myEAs.marketStructStatus.iMSS_H_pattern_signal == 1) Print("waiting");
 	   }
 	   
-	   if (gl_findL == 1 && gl_intSLowHTFRealTime != tfData.intSLows[0]) {
-	      gl_L_pattern_signal = CheckCandleByTime(tfData.intSLowTime[0], tfData.timeFrame, 1);
-	      gl_intSLowHTFRealTime = tfData.intSLows[0];
-	      if (gl_L_pattern_signal == 1) Print("waiting");
+	   if (myEAs.marketStructStatus.iMSS_findL == 1 && myEAs.marketStructStatus.iMSS_intSLowHTFRealTime != tfData.intSLows[0]) {
+	      myEAs.marketStructStatus.iMSS_L_pattern_signal = CheckCandleByTime(tfData.intSLowTime[0], tfData.timeFrame, 1);
+	      myEAs.marketStructStatus.iMSS_intSLowHTFRealTime = tfData.intSLows[0];
+	      if (myEAs.marketStructStatus.iMSS_L_pattern_signal == 1) Print("waiting");
 	   }
    }   
 } // End scanGlobalInternalPoiZone
@@ -2604,12 +2577,12 @@ struct marketStructs{
             }
             
             if (type == 1) {
-               if (gl_intSLowHTFRealTime == gl_L_AF_LTFRealTime && gl_L_pattern_signal == 1) {
+               if (myEAs.marketStructStatus.iMSS_intSLowHTFRealTime == myEAs.marketStructStatus.iMSS_L_AF_LTFRealTime && myEAs.marketStructStatus.iMSS_L_pattern_signal == 1) {
                
                   //if (myEAs.signalInternal.sg_getIdmBuy) result_str += "; Dừng Buy vì đã get Global IDM Buy";
                   //entryPrice = lastHigh;
                   entryPrice = tfData.intSHighs[1];
-                  g_stoploss = (myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock == 1 || 1)? gl_intSLowHTFRealTime : myEAs.statusInternalHTL.sHL_iStoploss;
+                  g_stoploss = (myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock == 1 || 1)? myEAs.marketStructStatus.iMSS_intSLowHTFRealTime : myEAs.statusInternalHTL.sHL_iStoploss;
                   result_str = "BUY: với SL = "+ DoubleToString(g_stoploss, _Digits) + "; TP = " + DoubleToString(myEAs.statusInternalHTL.sHL_iTarget, _Digits);
                   
                    if(entryPrice < Ask) 
@@ -2623,11 +2596,11 @@ struct marketStructs{
                }
                
             } else if (type == -1) {
-               if (gl_intSHighHTFRealTime == gl_H_AF_LTFRealTime && gl_H_pattern_signal == 1) {
+               if (myEAs.marketStructStatus.iMSS_intSHighHTFRealTime == myEAs.marketStructStatus.iMSS_H_AF_LTFRealTime && myEAs.marketStructStatus.iMSS_H_pattern_signal == 1) {
                   
                   //if (myEAs.signalInternal.sg_getIdmSell) result_str += "; Dừng Sell vì đã get Global IDM Sell";
                   //entryPrice = lastLow;
-                  g_stoploss = (myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock == 1 || 1) ? gl_intSHighHTFRealTime : myEAs.statusInternalHTL.sHL_iStoploss;
+                  g_stoploss = (myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock == 1 || 1) ? myEAs.marketStructStatus.iMSS_intSHighHTFRealTime : myEAs.statusInternalHTL.sHL_iStoploss;
                   result_str = "SELL: với SL = "+ DoubleToString(g_stoploss, _Digits)+"; TP = " + DoubleToString(myEAs.statusInternalHTL.sHL_iTarget, _Digits);
                   
                   
@@ -3171,8 +3144,8 @@ struct marketStructs{
                textInternalHigh += " | Update High 1,2";
                // Phan cap nhat find L cua LTF thi xac dinh duoc HighTF iTarget
                if(tfData.isHighTF) {
-                  gl_findL = 1;
-                  gl_findH = 0;
+                  myEAs.marketStructStatus.iMSS_findL = 1;
+                  myEAs.marketStructStatus.iMSS_findH = 0;
                } 
             }
             
@@ -3183,8 +3156,8 @@ struct marketStructs{
                textInternalHigh += " | New High 1,1";
                // Phan cap nhat find L cua LTF thi xac dinh duoc HighTF iTarget
                if(tfData.isHighTF) {
-                  gl_findL = 1;
-                  gl_findH = 0;
+                  myEAs.marketStructStatus.iMSS_findL = 1;
+                  myEAs.marketStructStatus.iMSS_findH = 0;
                } 
             }
             
@@ -3238,8 +3211,8 @@ struct marketStructs{
                textInternalHigh += " | Update High 2,2";
                // Phan cap nhat find L cua LTF thi xac dinh duoc HighTF iTarget
                if(tfData.isHighTF) {
-                  gl_findL = 1;
-                  gl_findH = 0;
+                  myEAs.marketStructStatus.iMSS_findL = 1;
+                  myEAs.marketStructStatus.iMSS_findH = 0;
                } 
             }
             
@@ -3250,8 +3223,8 @@ struct marketStructs{
                textInternalHigh += " | New High 2,1";
                // Phan cap nhat find L cua LTF thi xac dinh duoc HighTF iTarget
                if(tfData.isHighTF) {
-                  gl_findL = 1;
-                  gl_findH = 0;
+                  myEAs.marketStructStatus.iMSS_findL = 1;
+                  myEAs.marketStructStatus.iMSS_findH = 0;
                } 
             }
                         
@@ -3353,8 +3326,8 @@ struct marketStructs{
                textInternalHigh += " | New High 6";
                // Phan cap nhat find L cua LTF thi xac dinh duoc HighTF iTarget
                if(tfData.isHighTF) {
-                  gl_findL = 1;
-                  gl_findH = 0;
+                  myEAs.marketStructStatus.iMSS_findL = 1;
+                  myEAs.marketStructStatus.iMSS_findH = 0;
                } 
             }
                                     
@@ -3475,8 +3448,8 @@ struct marketStructs{
                textInternalLow += " | Update Low -1,2";
                // Phan cap nhat find H cua LTF thi xac dinh duoc HighTF iTarget
                if(tfData.isHighTF) {
-                  gl_findL = 0;
-                  gl_findH = 1;
+                  myEAs.marketStructStatus.iMSS_findL = 0;
+                  myEAs.marketStructStatus.iMSS_findH = 1;
                } 
             }
             
@@ -3487,8 +3460,8 @@ struct marketStructs{
                textInternalLow += " | New Low -1,1";
                // Phan cap nhat find H cua LTF thi xac dinh duoc HighTF iTarget
                if(tfData.isHighTF) {
-                  gl_findL = 0;
-                  gl_findH = 1;
+                  myEAs.marketStructStatus.iMSS_findL = 0;
+                  myEAs.marketStructStatus.iMSS_findH = 1;
                } 
             }
             
@@ -3543,8 +3516,8 @@ struct marketStructs{
                textInternalLow += " | Update Low -2,2";
                // Phan cap nhat find H cua LTF thi xac dinh duoc HighTF iTarget
                if(tfData.isHighTF) {
-                  gl_findL = 0;
-                  gl_findH = 1;
+                  myEAs.marketStructStatus.iMSS_findL = 0;
+                  myEAs.marketStructStatus.iMSS_findH = 1;
                } 
             }
             
@@ -3555,8 +3528,8 @@ struct marketStructs{
                textInternalLow += " | New Low -2,1";
                // Phan cap nhat find H cua LTF thi xac dinh duoc HighTF iTarget
                if(tfData.isHighTF) {
-                  gl_findL = 0;
-                  gl_findH = 1;
+                  myEAs.marketStructStatus.iMSS_findL = 0;
+                  myEAs.marketStructStatus.iMSS_findH = 1;
                } 
             }
             
@@ -3658,8 +3631,8 @@ struct marketStructs{
                textInternalLow += " | New Low 6";
                // Phan cap nhat find H cua LTF thi xac dinh duoc HighTF iTarget
                if(tfData.isHighTF) {
-                  gl_findL = 0;
-                  gl_findH = 1;
+                  myEAs.marketStructStatus.iMSS_findL = 0;
+                  myEAs.marketStructStatus.iMSS_findH = 1;
                } 
             }
             
@@ -4205,13 +4178,13 @@ struct marketStructs{
          myEAs.signalInternal.sg_vITrend = tfData.vItrend;
          myEAs.signalInternal.sg_wvITrend = tfData.wvItrend;
       } else { // Set thong so co ban cho Low Timeframe
-         if (gl_findH == 1) {
-            if (gl_H_AF_LTFRealTime <= 0 || (gl_H_AF_LTFRealTime > 0 && gl_H_AF_LTFRealTime < tfData.intSHighs[0])) {
-               gl_H_AF_LTFRealTime = tfData.intSHighs[0];
+         if (myEAs.marketStructStatus.iMSS_findH == 1) {
+            if (myEAs.marketStructStatus.iMSS_H_AF_LTFRealTime <= 0 || (myEAs.marketStructStatus.iMSS_H_AF_LTFRealTime > 0 && myEAs.marketStructStatus.iMSS_H_AF_LTFRealTime < tfData.intSHighs[0])) {
+               myEAs.marketStructStatus.iMSS_H_AF_LTFRealTime = tfData.intSHighs[0];
             }
-         } else if (gl_findL == 1) {
-            if (gl_L_AF_LTFRealTime <= 0 || (gl_L_AF_LTFRealTime > 0 && gl_L_AF_LTFRealTime > tfData.intSLows[0])) {
-               gl_L_AF_LTFRealTime = tfData.intSLows[0];
+         } else if (myEAs.marketStructStatus.iMSS_findL == 1) {
+            if (myEAs.marketStructStatus.iMSS_L_AF_LTFRealTime <= 0 || (myEAs.marketStructStatus.iMSS_L_AF_LTFRealTime > 0 && myEAs.marketStructStatus.iMSS_L_AF_LTFRealTime > tfData.intSLows[0])) {
+               myEAs.marketStructStatus.iMSS_L_AF_LTFRealTime = tfData.intSLows[0];
             }
          }
       }
@@ -5312,8 +5285,8 @@ struct marketStructs{
 //         gl_vMTrend = tfData.vMTrend;
 //         gl_wvMTrend = tfData.wvMtrend;
       } else { // set thong so co ban LTF
-         gl_H_arrPBHigh_LTF = tfData.arrPbHigh[0];
-         gl_L_arrPBLow_LTF = tfData.arrPbLow[0];
+         myEAs.marketStructStatus.iMSS_H_arrPBHigh_LTF = tfData.arrPbHigh[0];
+         myEAs.marketStructStatus.iMSS_L_arrPBLow_LTF = tfData.arrPbLow[0];
       }
       
       if(StringLen(text) > 0) {
@@ -6290,7 +6263,7 @@ string getValueTrend(TimeFrameData& tfData) {
             "; sHL_iOrderBlock: "+ (string) myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock +"; sHL_iSnR: "+ DoubleToString (myEAs.statusInternalHTL.sHL_iSnR, _Digits) + "; sHL_iTarget: "+ DoubleToString( myEAs.statusInternalHTL.sHL_iTarget, _Digits)
             + "; sHL_mitigate_iOrderFlow: "+ (string) myEAs.statusInternalHTL.sHL_mitigate_iOrderFlow + "; sHL_mitigate_iOrderBlock: "+ (string) myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock;
    text += "\n($) HTF: sTrend: "+(string) myEAs.signalInternal.sg_sTrend+"("+(string) myEAs.signalInternal.sg_vSTrend+") ; mTrend: "+(string) myEAs.signalInternal.sg_mTrend+"("+(string) myEAs.signalInternal.sg_vMTrend+" . "+(string) myEAs.signalInternal.sg_wvMTrend+") ; iTrend: "+(string) myEAs.signalInternal.sg_iTrend+"("+(string) myEAs.signalInternal.sg_vITrend+" . "+(string) myEAs.signalInternal.sg_wvITrend+")"+") ; getIdmBuy: "+(string) myEAs.signalInternal.sg_getIdmBuy+"- getIdmSell: "+(string) myEAs.signalInternal.sg_getIdmSell;
-   text += "\n($) HTF: Internal High = "+ DoubleToString(gl_intSHighHTFRealTime, _Digits) + " && LTF: gl_H = "+DoubleToString(gl_H_AF_LTFRealTime, _Digits) + " marjor H = "+DoubleToString(gl_H_arrPBHigh_LTF, _Digits)+" gl_findH = "+(string) gl_findL+ " - Signal Sell: " + (string) gl_H_pattern_signal+
-               " || Internal Low = "+ DoubleToString(gl_intSLowHTFRealTime, _Digits) + " && LTF: gl_L = "+ DoubleToString(gl_L_AF_LTFRealTime, _Digits) + " marjor L = "+DoubleToString(gl_L_arrPBLow_LTF, _Digits)+" gl_findL = "+ (string) gl_findH + " - Signal Buy: " + (string) gl_L_pattern_signal;
+   text += "\n($) HTF: Internal High = "+ DoubleToString(myEAs.marketStructStatus.iMSS_intSHighHTFRealTime, _Digits) + " && LTF: gl_H = "+DoubleToString(myEAs.marketStructStatus.iMSS_H_AF_LTFRealTime, _Digits) + " marjor H = "+DoubleToString(myEAs.marketStructStatus.iMSS_H_arrPBHigh_LTF, _Digits)+" iMSS_findH = "+(string) myEAs.marketStructStatus.iMSS_findL+ " - Signal Sell: " + (string) myEAs.marketStructStatus.iMSS_H_pattern_signal+
+               " || Internal Low = "+ DoubleToString(myEAs.marketStructStatus.iMSS_intSLowHTFRealTime, _Digits) + " && LTF: gl_L = "+ DoubleToString(myEAs.marketStructStatus.iMSS_L_AF_LTFRealTime, _Digits) + " marjor L = "+DoubleToString(myEAs.marketStructStatus.iMSS_L_arrPBLow_LTF, _Digits)+" iMSS_findL = "+ (string) myEAs.marketStructStatus.iMSS_findH + " - Signal Buy: " + (string) myEAs.marketStructStatus.iMSS_L_pattern_signal;
    return text;
 }
