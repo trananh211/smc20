@@ -913,34 +913,36 @@ public:
       long waveBreak_new1 = 0;
       long wavePullBack_prev2 = 0;
       long waveBreak_prev3 = 0;
-      
-      if (typeStruct == "Internal") {
-         // Check logic Buy by wave volume kieu Internal
-         if (typeDirection == 1) {
-            waveBreak_new1 = tfData.wvolIntSHighs[0];
-            wavePullBack_prev2 = tfData.wvolIntSLows[0];
-            waveBreak_prev3 = tfData.wvolIntSHighs[0];
-            
-         // Check logic Sell by wave volume kieu Internal
-         } else if (typeDirection == -1) {
-            waveBreak_new1 = tfData.wvolIntSLows[0];
-            wavePullBack_prev2 = tfData.wvolIntSHighs[0];
-            waveBreak_prev3 = tfData.wvolIntSLows[1];
-         }
-      } else if (typeStruct == "Marjor") {
-         // Check logic Buy by wave volume kieu Marjor
-         if (typeDirection == 1) {
-            waveBreak_new1 = tfData.wvolArrPbHigh[0];
-            wavePullBack_prev2 = tfData.wvolArrPbLow[0];
-            waveBreak_prev3 = tfData.wvolArrPbHigh[0];
-            
-         // Check logic Sell by wave volume kieu Marjor
-         } else if (typeDirection == -1) {
-            waveBreak_new1 = tfData.wvolArrPbLow[0];
-            wavePullBack_prev2 = tfData.wvolArrPbHigh[0];
-            waveBreak_prev3 = tfData.wvolArrPbLow[1];
+      if(ArraySize(tfData.wvolArrPbHigh) > 2 || ArraySize(tfData.wvolArrPbLow) > 2) {
+         if (typeStruct == "Internal") {
+            // Check logic Buy by wave volume kieu Internal
+            if (typeDirection == 1) {
+               waveBreak_new1 = tfData.wvolIntSHighs[0];
+               wavePullBack_prev2 = tfData.wvolIntSLows[0];
+               waveBreak_prev3 = tfData.wvolIntSHighs[0];
+               
+            // Check logic Sell by wave volume kieu Internal
+            } else if (typeDirection == -1) {
+               waveBreak_new1 = tfData.wvolIntSLows[0];
+               wavePullBack_prev2 = tfData.wvolIntSHighs[0];
+               waveBreak_prev3 = tfData.wvolIntSLows[1];
+            }
+         } else if (typeStruct == "Marjor") {
+            // Check logic Buy by wave volume kieu Marjor
+            if (typeDirection == 1) {
+               waveBreak_new1 = tfData.wvolArrPbHigh[0];
+               wavePullBack_prev2 = tfData.wvolArrPbLow[0];
+               waveBreak_prev3 = tfData.wvolArrPbHigh[0];
+               
+            // Check logic Sell by wave volume kieu Marjor
+            } else if (typeDirection == -1) {
+               waveBreak_new1 = tfData.wvolArrPbLow[0];
+               wavePullBack_prev2 = tfData.wvolArrPbHigh[0];
+               waveBreak_prev3 = tfData.wvolArrPbLow[1];
+            }
          }
       }
+      
       
       // Check logic
       if (waveBreak_new1 > wavePullBack_prev2 && waveBreak_new1 > waveBreak_prev3) {
@@ -6266,7 +6268,7 @@ void showPoiComment(TimeFrameData& tfData) {
 
 void showComment(TimeFrameData& tfData) {
    //Print("Timeframe: "+ (string) tfData.isTimeframe);
-   Print("myEAs.signalInternal"); ArrayPrint(myEAs);
+   
       //Print("Highs: "); ArrayPrint(tfData.Highs);
       //Print("HighsTime: "); ArrayPrint(tfData.HighsTime);
       //Print("Vol Highs: "); ArrayPrint(tfData.volHighs);
