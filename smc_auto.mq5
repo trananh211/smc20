@@ -1337,15 +1337,15 @@ void setValueToInternalSwingHTF(TimeFrameData& tfData, MqlRates& barBreak, MqlRa
             myEAs.valueInternal.vi_isSwept = (barSwing.high > tfData.intSHighs[1] && barSwing.close < tfData.intSHighs[1]) ? true : false;
          } else {
             // gia close cua break va swing deu thap hon swing high[1]
-            myEAs.valueInternal.vi_isSwept = (barBreak.close < tfData.intSHighs[1] || barSwing.close < tfData.intSHighs[1]) ? true : false;
+            myEAs.valueInternal.vi_isSwept = ((barBreak.close < tfData.intSHighs[1] && barSwing.close < tfData.intSHighs[1]) || barSwing.close < tfData.intSHighs[1]) ? true : false;
          }
       } else if (tfData.iTrend == -1) {
-         if (barBreak.low < tfData.intSLows[1]) {
+         if (barBreak.low > tfData.intSLows[1]) {
             // phai sweept intsHigh[1] bang swing high [0]
             myEAs.valueInternal.vi_isSwept = (barSwing.low < tfData.intSLows[1] && barSwing.close > tfData.intSLows[1]) ? true : false;
          } else {
             // gia close cua break va swing deu thap hon swing high[1]
-            myEAs.valueInternal.vi_isSwept = (barBreak.close > tfData.intSLows[1] || barSwing.close > tfData.intSLows[1]) ? true : false;
+            myEAs.valueInternal.vi_isSwept = ((barBreak.close > tfData.intSLows[1] && barSwing.close > tfData.intSLows[1] )|| barSwing.close > tfData.intSLows[1]) ? true : false;
          }
       }
    } else {
