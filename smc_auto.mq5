@@ -1321,11 +1321,8 @@ void resetTradeZoneHTF(TimeFrameData& tfData, PoiZone& zone[]) {
       for(int i=0;i<ArraySize(zone);i++) {
          objName = zone[i].name;
          if (ObjectFind(0, objName) >= 0) {
-               ObjectDelete(0, objName);
-               Print("---------> Delete box: "+objName+" = [Thành công]");
-            } else {
-               Print("---------> Delete box: "+objName+" = [Không tồn tại]");
-            }
+            ObjectDelete(0, objName);
+         }
       }
    }
    tfData.ClearPoiZoneArray(zone);
@@ -2790,9 +2787,6 @@ struct marketStructs{
             
             if (ObjectFind(0, objName) >= 0) {
                ObjectDelete(0, objName);
-               Print("---------> Delete box: "+zoneString+" && "+objName+" = [Thành công]");
-            } else {
-               Print("---------> Delete box: "+zoneString+" && "+objName+" = [Không tồn tại]");
             }
             
             //// Xóa nhãn cũ (nếu có từ phiên bản trước)
@@ -2914,9 +2908,6 @@ struct marketStructs{
             
             if (ObjectFind(0, objName) >= 0) {
                ObjectDelete(0, objName);
-               Print("--------->HTF Delete box: "+zoneString+": "+objName+" = [Thành công]");
-            } else {
-               Print("--------->HTF Delete box: "+zoneString+": "+objName+" = [Không tồn tại]");
             }
             
             //// Xóa nhãn cũ (nếu có từ phiên bản trước)
@@ -2942,8 +2933,6 @@ struct marketStructs{
             {
                DrawBox(0, objName, 0, zone[i].time, zone[i].high, bar1.time, zone[i].low, zone[i].zoneColor, STYLE_SOLID, 1, true, false, false, true, 0);
             }
-            Print("--------->HTF Mitigated box: "+zoneString+": "+objName);
-            Print("----");
          }
          
          
