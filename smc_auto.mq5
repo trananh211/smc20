@@ -177,17 +177,19 @@ struct SignalInternal{
 
 // Khai báo thông số dành cho HTF hình thành swing
 struct valueInternalNewSwing{
-   // Thông số dành cho trade
-   double vi_SwingNew;
-   datetime vi_SwingTimeNew;
-   bool isSignalConfirm_Patten;
-   
    bool isActive;
+   // Thông số dành cho trade
+   double vins_SwingNew;
+   datetime vins_SwingTimeNew;
+   bool vins_isSignalConfirm_Patten;
+   
+   // Thông số HTF break: thuộc dạng swept hay không, mitigate POI hay không 
+   bool vins_isOrderFlowMitigated;
+   bool vins_isPoiZoneMitigated;
+   bool vins_isPoiZoneSwept;
    
    // LTF sau khi xác nhận được swing ở HTF
-   int isSignalConfirm_LTF;
-   double vi_LTF_SwingNew;
-   datetime vi_LTF_SwingTimeNew;
+   int vins_isSignalConfirm_LTF;
 
    };
 
@@ -204,6 +206,9 @@ struct ValueInternal{
    double vi_intSLow;
    datetime vi_intSLowTime;
    double vi_intSnR;
+   
+   double vi_isMitigatedPoiZone;
+   double vi_isSweptPoiZone;
    
    // Thông số dành cho trade
    valueInternalNewSwing vi_TempSwing_High;
@@ -1375,6 +1380,42 @@ void setValueToInternalSwingHTF(TimeFrameData& tfData, MqlRates& barBreak, MqlRa
       myEAs.valueInternal.vi_intSnR = (tfData.iTrend == 1)? tfData.intSHighs[0] : tfData.intSLows[0];
       myEAs.valueInternal.vi_isSwept = false;
    }
+   // Kiểm tra Swing có mitigated POI hay không.
+   
+   if(myEAs.valueInternal.vi_isMitigatedPoiZone == false || myEAs.valueInternal.vi_isSweptPoiZone == false) {
+      // Nếu Trend là trend tăng
+      if(tfData.mTrend == 1 && tfData.iTrend == -1 && ArraySize(zGTradeZoneBullishHTF) > 0) {
+         // kiểm tra toàn bộ các PoiZone bullish
+         for(int i=0;i<ArraySize(zGTradeZoneBullishHTF);i++) {
+            if(zGTradeZoneBullishHTF[i].mitigated == -1) continue; // Poizone da bi pha qua truoc do. bo qua
+            if(barSwing.low > zGTradeZoneBullishHTF[i].high) continue; // Gia chua cham vao poizone. bo qua
+            
+            if(barSwing.low < zGTradeZoneBullishHTF[i].low && barSwing.close > zGTradeZoneBullishHTF[i].low) {
+               myEAs.valueInternal.vi_isSweptPoiZone = true;
+            }
+            if(barSwing.low <= zGTradeZoneBullishHTF[i].high && barSwing.low >= zGTradeZoneBullishHTF[i].low) {
+               myEAs.valueInternal.vi_isMitigatedPoiZone = true;
+               break;
+            }
+         }
+      } else if(tfData.mTrend == -1 && tfData.iTrend == 1 && ArraySize(zGTradeZoneBearishHTF) > 0){
+         // kiểm tra toàn bộ các PoiZone bearish
+         for(int i=0;i<ArraySize(zGTradeZoneBearishHTF);i++) {
+            if(zGTradeZoneBearishHTF[i].mitigated == -1) continue; // Poizone da bi pha qua truoc do. bo qua
+            if(barSwing.high < zGTradeZoneBearishHTF[i].low) continue; // Gia chua cham vao poizone. bo qua
+            
+            if(barSwing.high > zGTradeZoneBearishHTF[i].high && barSwing.close < zGTradeZoneBearishHTF[i].high) {
+               myEAs.valueInternal.vi_isSweptPoiZone = true;
+            }
+            if(barSwing.high >= zGTradeZoneBearishHTF[i].low && barSwing.high <= zGTradeZoneBearishHTF[i].high) {
+               myEAs.valueInternal.vi_isMitigatedPoiZone = true;
+               break;
+            }
+         }
+      }
+       
+   } // End Kiem tra
+   
    Print("============= SET THONG SO THANH CONG==============");
    PrintValueInternal(myEAs.valueInternal);
    Print("============= SET THONG SO THANH CONG==============");
@@ -1387,55 +1428,56 @@ void setValueToInternalSwingHTF(TimeFrameData& tfData, MqlRates& barBreak, MqlRa
 //+----------------------------------------------------------------------------+
 void PrintValueInternal(ValueInternal &data) {
    Print("=== CHI TIẾT VALUE INTERNAL ===");
-   PrintFormat("Trend: %d | Wave Trend: %d | IsSwept: %s", 
-               data.vi_ITrend, data.vi_wvITrend, (data.vi_isSwept ? "Yes" : "No"));
+   PrintFormat("Trend: %d | Wave Trend: %d | IsSwept: %s | IsMitigatedPoizone: %s | IsSweptPoizone: %s", 
+               data.vi_ITrend, data.vi_wvITrend, (data.vi_isSwept ? "Yes" : "No"), (data.vi_isMitigatedPoiZone ? "Yes" : "No"), (data.vi_isSweptPoiZone ? "Yes" : "No"));
    PrintFormat("Internal High: %.5f (%s)", data.vi_intSHigh, TimeToString(data.vi_intSHighTime));
    PrintFormat("Internal Low: %.5f (%s)", data.vi_intSLow, TimeToString(data.vi_intSLowTime));
    
    Print("--- Temp Swing High (Trade Info) ---");
-   string confirmt_high_LTF = (data.vi_TempSwing_High.isSignalConfirm_LTF == 0) ? "0 Not scan" : ((data.vi_TempSwing_High.isSignalConfirm_LTF == 1)? "1 Yes" : "-1 No");
-   PrintFormat("Price: %.5f | Time: %s | Active: %s | isSignalConfirm_Patten: %s | isSignalConfirm_LTF: %s", 
-               data.vi_TempSwing_High.vi_SwingNew, 
-               TimeToString(data.vi_TempSwing_High.vi_SwingTimeNew),
-               (data.vi_TempSwing_High.isActive ? "Yes" : "No"), ((data.vi_TempSwing_High.isSignalConfirm_Patten) ? "Yes" : "No"), confirmt_high_LTF);
+   string confirmt_high_LTF = (data.vi_TempSwing_High.vins_isSignalConfirm_LTF == 0) ? "0 Not scan" : ((data.vi_TempSwing_High.vins_isSignalConfirm_LTF == 1)? "1 Yes" : "-1 No");
+   PrintFormat("Price: %.5f | Time: %s | Active: %s | vins_isSignalConfirm_Patten: %s | vins_isSignalConfirm_LTF: %s", 
+               data.vi_TempSwing_High.vins_SwingNew, 
+               TimeToString(data.vi_TempSwing_High.vins_SwingTimeNew),
+               (data.vi_TempSwing_High.isActive ? "Yes" : "No"), ((data.vi_TempSwing_High.vins_isSignalConfirm_Patten) ? "Yes" : "No"), confirmt_high_LTF);
 
    Print("--- Temp Swing Low (Trade Info) ---");
-   string confirmt_low_LTF = (data.vi_TempSwing_Low.isSignalConfirm_LTF == 0) ? "0 Not scan" : ((data.vi_TempSwing_Low.isSignalConfirm_LTF == 1)? "1 Yes" : "-1 No");
-   PrintFormat("Price: %.5f | Time: %s | Active: %s | isSignalConfirm_Patten: %s | isSignalConfirm_LTF: %s", 
-               data.vi_TempSwing_Low.vi_SwingNew, 
-               TimeToString(data.vi_TempSwing_Low.vi_SwingTimeNew),
-               (data.vi_TempSwing_Low.isActive ? "Yes" : "No"), ((data.vi_TempSwing_Low.isSignalConfirm_Patten) ? "Yes" : "No"), confirmt_low_LTF);
+   string confirmt_low_LTF = (data.vi_TempSwing_Low.vins_isSignalConfirm_LTF == 0) ? "0 Not scan" : ((data.vi_TempSwing_Low.vins_isSignalConfirm_LTF == 1)? "1 Yes" : "-1 No");
+   PrintFormat("Price: %.5f | Time: %s | Active: %s | vins_isSignalConfirm_Patten: %s | vins_isSignalConfirm_LTF: %s", 
+               data.vi_TempSwing_Low.vins_SwingNew, 
+               TimeToString(data.vi_TempSwing_Low.vins_SwingTimeNew),
+               (data.vi_TempSwing_Low.isActive ? "Yes" : "No"), ((data.vi_TempSwing_Low.vins_isSignalConfirm_Patten) ? "Yes" : "No"), confirmt_low_LTF);
    Print("================================");
 }
 
 void checkValueWithInternalSwingHTF(TimeFrameData& tfData, MqlRates& barPrev, MqlRates& barSwing, MqlRates& barNext, int type = 0) {
+   if(myEAs.valueInternal.vi_ITrend == 0) return;
    int direction_nghich = (type == 1) ? -1 : 1;
    // Nếu xu hướng đang tăng. Kiểm tra swing Low PullBack
    if (type == 1) {
       // Check Swing Bull ( đúng xu hướng)
       ZeroMemory(myEAs.valueInternal.vi_TempSwing_Low);
-      myEAs.valueInternal.vi_TempSwing_Low.vi_SwingNew = barSwing.low;
-      myEAs.valueInternal.vi_TempSwing_Low.vi_SwingTimeNew = barSwing.time;
-      myEAs.valueInternal.vi_TempSwing_Low.isSignalConfirm_Patten = CheckTheCandleCluster(barPrev, barSwing, barNext, type);
-      if (myEAs.valueInternal.vi_TempSwing_Low.isSignalConfirm_Patten) myEAs.valueInternal.vi_TempSwing_Low.isSignalConfirm_LTF = 0;
+      myEAs.valueInternal.vi_TempSwing_Low.vins_SwingNew = barSwing.low;
+      myEAs.valueInternal.vi_TempSwing_Low.vins_SwingTimeNew = barSwing.time;
+      myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten = CheckTheCandleCluster(barPrev, barSwing, barNext, type);
+      if (myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten) myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF = 0;
       //// Check Swing Bear ( nghịch xu hướng)
       //ZeroMemory(myEAs.valueInternal.vi_TempSwing_High);
-      //myEAs.valueInternal.vi_TempSwing_High.vi_SwingNew = barSwing.high;
-      //myEAs.valueInternal.vi_TempSwing_High.vi_SwingTimeNew = barSwing.time;
-      //myEAs.valueInternal.vi_TempSwing_High.isSignalConfirm_Patten = CheckTheCandleCluster(barPrev, barSwing, barNext, direction_nghich);
+      //myEAs.valueInternal.vi_TempSwing_High.vins_SwingNew = barSwing.high;
+      //myEAs.valueInternal.vi_TempSwing_High.vins_SwingTimeNew = barSwing.time;
+      //myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten = CheckTheCandleCluster(barPrev, barSwing, barNext, direction_nghich);
    // Nếu xu hướng đang giảm. Kiểm tra swing High PullBack
    } else if (type == -1) {
       // Check Swing Bear ( đúng xu hướng)
       ZeroMemory(myEAs.valueInternal.vi_TempSwing_High);
-      myEAs.valueInternal.vi_TempSwing_High.vi_SwingNew = barSwing.high;
-      myEAs.valueInternal.vi_TempSwing_High.vi_SwingTimeNew = barSwing.time;
-      myEAs.valueInternal.vi_TempSwing_High.isSignalConfirm_Patten = CheckTheCandleCluster(barPrev, barSwing, barNext, type);
-      if (myEAs.valueInternal.vi_TempSwing_High.isSignalConfirm_Patten) myEAs.valueInternal.vi_TempSwing_High.isSignalConfirm_LTF = 0;
+      myEAs.valueInternal.vi_TempSwing_High.vins_SwingNew = barSwing.high;
+      myEAs.valueInternal.vi_TempSwing_High.vins_SwingTimeNew = barSwing.time;
+      myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten = CheckTheCandleCluster(barPrev, barSwing, barNext, type);
+      if (myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten) myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_LTF = 0;
       //// Check Swing Bull (nghịch xu hướng)
       //ZeroMemory(myEAs.valueInternal.vi_TempSwing_Low);
-      //myEAs.valueInternal.vi_TempSwing_Low.vi_SwingNew = barSwing.low;
-      //myEAs.valueInternal.vi_TempSwing_Low.vi_SwingTimeNew = barSwing.time;
-      //myEAs.valueInternal.vi_TempSwing_Low.isSignalConfirm_Patten = CheckTheCandleCluster(barPrev, barSwing, barNext, direction_nghich);
+      //myEAs.valueInternal.vi_TempSwing_Low.vins_SwingNew = barSwing.low;
+      //myEAs.valueInternal.vi_TempSwing_Low.vins_SwingTimeNew = barSwing.time;
+      //myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten = CheckTheCandleCluster(barPrev, barSwing, barNext, direction_nghich);
    }
    
    PrintValueInternal(myEAs.valueInternal);
@@ -1455,6 +1497,10 @@ void resetValueInternalHTF() {
    myEAs.valueInternal.vi_intSLow = 0;
    myEAs.valueInternal.vi_intSLowTime = 0;
    myEAs.valueInternal.vi_intSnR = 0;
+   
+   myEAs.valueInternal.vi_isMitigatedPoiZone = false;
+   myEAs.valueInternal.vi_isSweptPoiZone = false;
+   
    ZeroMemory(myEAs.valueInternal.vi_TempSwing_High);
    ZeroMemory(myEAs.valueInternal.vi_TempSwing_Low);
    Print("============= RESET THONG SO THANH CONG==============");
@@ -2003,9 +2049,9 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
 		//---
 		// Kiểm tra các vùng Trade Poi Internal Lowtimeframe sau khi đã hình thành signal từ HTF( Phần xác nhận ở Low Time Frame))
       // Check Signal Buy
-      if (myEAs.valueInternal.vi_TempSwing_Low.isSignalConfirm_Patten == true && myEAs.valueInternal.vi_TempSwing_Low.isSignalConfirm_LTF == 0) {
+      if (myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten == true && myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF == 0) {
             Print("bawt dau kiem tra lowtf loww");
-            Print("New Swing: "+ DoubleToString(myEAs.valueInternal.vi_TempSwing_Low.vi_SwingNew, _Digits) + " tại thời gian: "+ (string) myEAs.valueInternal.vi_TempSwing_Low.vi_SwingTimeNew);
+            Print("New Swing: "+ DoubleToString(myEAs.valueInternal.vi_TempSwing_Low.vins_SwingNew, _Digits) + " tại thời gian: "+ (string) myEAs.valueInternal.vi_TempSwing_Low.vins_SwingTimeNew);
             Print("intSLows"); ArrayPrint(tfData.intSLows);
             Print("intSHighs"); ArrayPrint(tfData.intSHighs);
             
@@ -2017,13 +2063,13 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
             
           if (tfData.iTrend == 1 && tfData.wvItrend == tfData.iTrend) {
                string text = "";
-              // myEAs.valueInternal.vi_TempSwing_Low.isSignalConfirm_LTF = false;
+              // myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF = false;
               if (ArraySize(tfData.intSLows) > 0) {
                   int key = -1;
-                  myEAs.valueInternal.vi_TempSwing_Low.isSignalConfirm_LTF = -1;
+                  myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF = -1;
                   for(int i=0;i<ArraySize(tfData.intSLows) - 1;i++) {
-                      if (tfData.intSLowTime[i] < myEAs.valueInternal.vi_TempSwing_Low.vi_SwingTimeNew) continue;
-                      if (tfData.intSLows[i] == myEAs.valueInternal.vi_TempSwing_Low.vi_SwingNew) {
+                      if (tfData.intSLowTime[i] < myEAs.valueInternal.vi_TempSwing_Low.vins_SwingTimeNew) continue;
+                      if (tfData.intSLows[i] == myEAs.valueInternal.vi_TempSwing_Low.vins_SwingNew) {
                           key = i;
                           Print("Tìm được key swing là : "+ (string) key);
                           break;
@@ -2056,7 +2102,7 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
                            text += " | Swing High Next: "+ DoubleToString(tfData.intSHighs[key - 1], _Digits)+" vol : "+ (string) volSwingNext;
                         }
                      }
-                     myEAs.valueInternal.vi_TempSwing_Low.isSignalConfirm_LTF = (volSwing < volSwingPre && volSwingPre < volSwingNext) ? 1: -1;
+                     myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF = (volSwing < volSwingPre && volSwingPre < volSwingNext) ? 1: -1;
                      
                      PrintValueInternal(myEAs.valueInternal);
                      Print("----------  "+text);
@@ -2068,9 +2114,9 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
           }
       }  
       // Check Signal Sell
-      else if (myEAs.valueInternal.vi_TempSwing_High.isSignalConfirm_Patten == true && myEAs.valueInternal.vi_TempSwing_High.isSignalConfirm_LTF == 0) {
+      else if (myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten == true && myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_LTF == 0) {
          Print("bawt dau kiem tra lowtf high");
-         Print("New Swing: "+ DoubleToString(myEAs.valueInternal.vi_TempSwing_High.vi_SwingNew, _Digits) + " tại thời gian: "+ (string) myEAs.valueInternal.vi_TempSwing_High.vi_SwingTimeNew);
+         Print("New Swing: "+ DoubleToString(myEAs.valueInternal.vi_TempSwing_High.vins_SwingNew, _Digits) + " tại thời gian: "+ (string) myEAs.valueInternal.vi_TempSwing_High.vins_SwingTimeNew);
          Print("intSHighs"); ArrayPrint(tfData.intSHighs);
          Print("intSLows"); ArrayPrint(tfData.intSLows);
          
@@ -2078,13 +2124,13 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
          Print("intSHighTime"); ArrayPrint(tfData.intSHighTime);
          if (tfData.iTrend == -1 && tfData.wvItrend == tfData.iTrend) {
             string text = "";
-            //myEAs.valueInternal.vi_TempSwing_High.isSignalConfirm_LTF = false;
+            //myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_LTF = false;
             if (ArraySize(tfData.intSHighs) > 0) {
                   int key = -1;
-                  myEAs.valueInternal.vi_TempSwing_High.isSignalConfirm_LTF = -1;
+                  myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_LTF = -1;
                   for(int i=0;i<ArraySize(tfData.intSHighs) - 1;i++) {
-                      if (tfData.intSHighTime[i] < myEAs.valueInternal.vi_TempSwing_High.vi_SwingTimeNew) continue;
-                      if (tfData.intSHighs[i] == myEAs.valueInternal.vi_TempSwing_High.vi_SwingNew) {
+                      if (tfData.intSHighTime[i] < myEAs.valueInternal.vi_TempSwing_High.vins_SwingTimeNew) continue;
+                      if (tfData.intSHighs[i] == myEAs.valueInternal.vi_TempSwing_High.vins_SwingNew) {
                           key = i;
                           Print("Tìm được key swing là : "+ (string) key);
                           break;
@@ -2118,7 +2164,7 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
                         }
                      }
                      
-                     myEAs.valueInternal.vi_TempSwing_High.isSignalConfirm_LTF = (volSwing < volSwingPre && volSwingPre < volSwingNext) ? 1: -1;
+                     myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_LTF = (volSwing < volSwingPre && volSwingPre < volSwingNext) ? 1: -1;
                      
                      PrintValueInternal(myEAs.valueInternal);
                      Print("----------  "+text);
@@ -2786,16 +2832,27 @@ struct marketStructs{
    
    // Hàm lọc dữ liệu đầu vào để quyết định vào lệnh theo kiểu nào được định sẵn
    void CheckMarketForTradeByPredefinedOptions(TimeFrameData& tfData, int direction_trade, int option_trade, bool getIDM = false){
+       string text = "";
        if (direction_trade == 1) {
          if (option_trade == 1 || option_trade == 2 || option_trade ==3 || option_trade ==4) {
             if (getIDM) {
-               // -HTF:
-               //    - Internal High:
-               //       ○ Không được sweep Internal High[1] 
-               //    - Internal Low:
-               //    - Wave volume:
-               //       ○ wvIntHIgh[0] > wvIntHigh[1]
-               //       ○ wvIntHigh[0] > wvIntLow[1]
+               // -HTF: 
+               // Phai trung xu huong trade
+               if(myEAs.valueInternal.vi_ITrend == 1) {
+                  Print("[Bo qua] Khac xu hướng: "+(string) myEAs.valueInternal.vi_ITrend +"!="+(string) direction_trade);
+                  return;
+               }  
+               // - Internal High: ○ Không được sweep Internal High[1] 
+               if(myEAs.valueInternal.vi_isSwept) {
+                  Print("[Bo qua] Internal High[0] đã swept Internal High[1]"+(string) myEAs.valueInternal.vi_isSwept);
+                  return; 
+               }
+               // - Internal Low: - Wave volume:  ○ wvIntHIgh[0] > wvIntHigh[1] && ○ wvIntHigh[0] > wvIntLow[1]
+               if(myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF != 1) {
+                  Print("[Bo qua] // - Internal Low: - Wave volume: wvIntHIgh[0] > wvIntHigh[1] && wvIntHigh[0] > wvIntLow[1]");
+                  return; 
+               }
+               text += "Buy 1 2 3 4 - GetIDM roi";
                //    - SL & TP:
                //       ○ SL: Internal Low[0]
                //       ○ TP: Internal High[0]
@@ -2803,6 +2860,22 @@ struct marketStructs{
                //       ○ -SL: có thể đặt tại arrPBLow[0] LTF
                //          TP: Internal High[0] và arrPBHigh[0] HTF
             } else {
+               // Phai trung xu huong trade
+               if(myEAs.valueInternal.vi_ITrend == 1) {
+                  Print("[Bo qua] Khac xu hướng: "+(string) myEAs.valueInternal.vi_ITrend +"!="+(string) direction_trade);
+                  return;
+               }  
+               // - Internal High: ○ Không được sweep Internal High[1] 
+               if(myEAs.valueInternal.vi_isSwept) {
+                  Print("[Bo qua] Internal High[0] đã swept Internal High[1]"+(string) myEAs.valueInternal.vi_isSwept);
+                  return; 
+               }
+               // - Internal Low: - Wave volume:  ○ wvIntHIgh[0] > wvIntHigh[1] && ○ wvIntHigh[0] > wvIntLow[1]
+               if(myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF != 1) {
+                  Print("[Bo qua] // - Internal Low: - Wave volume: wvIntHIgh[0] > wvIntHigh[1] && wvIntHigh[0] > wvIntLow[1]");
+                  return; 
+               }
+               text += "Buy 1 2 3 4 - Chua GetIDM";
                // -HTF:
                //    - Internal High[0]:
                //       ○ Không được sweep Internal High[1] 
@@ -3013,6 +3086,9 @@ struct marketStructs{
             }
             
          } 
+      }
+      if(StringLen(text) > 0) {
+         Print(text);
       }
    }
 
@@ -4452,7 +4528,7 @@ struct marketStructs{
             if (tfData.intSHighs[0] < tfData.intSHighs[1]) {
                // Clear Draw intSHigh[0]
                deleteObj(tfData.intSHighTime[0], tfData.intSHighs[0], iWingding_internal_high, "");
-               // Sort intSHighs. todo tuananh
+               // Sort intSHighs. 
                tfData.SortDoubleArrayAfterDelete(tfData.intSHighs);
                tfData.SortDateTimeArrayAfterDelete(tfData.intSHighTime);
                tfData.SortLongArrayAfterDelete(tfData.volIntSHighs);
@@ -6721,7 +6797,6 @@ string getInfoStruct(ENUM_TIMEFRAMES timeframe) {
 
 // Todo: 
 void showPoiComment(TimeFrameData& tfData) {
-   return;
    bool show = false;
    string text = "Timeframe: "+ (string) tfData.isTimeframe;
     if (myEAs.signalInternal.sg_iTrend == 1) {
@@ -6767,6 +6842,7 @@ void showPoiComment(TimeFrameData& tfData) {
 }
 
 void showComment(TimeFrameData& tfData) {
+   return;
    //Print("Timeframe: "+ (string) tfData.isTimeframe);
    
       //Print("Highs: "); ArrayPrint(tfData.Highs);
