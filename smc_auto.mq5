@@ -1435,17 +1435,21 @@ void PrintValueInternal(ValueInternal &data) {
    
    Print("--- Temp Swing High (Trade Info) ---");
    string confirmt_high_LTF = (data.vi_TempSwing_High.vins_isSignalConfirm_LTF == 0) ? "0 Not scan" : ((data.vi_TempSwing_High.vins_isSignalConfirm_LTF == 1)? "1 Yes" : "-1 No");
-   PrintFormat("Price: %.5f | Time: %s | Active: %s | vins_isSignalConfirm_Patten: %s | vins_isSignalConfirm_LTF: %s", 
+   PrintFormat("Price: %.5f | Time: %s | Active: %s | isSignalConfirm_Patten: %s | isSignalConfirm_LTF: %s | isOrderFlowMitigated: %s  | isPoiZoneMitigated: %s | isPoiZoneSwept: %s", 
                data.vi_TempSwing_High.vins_SwingNew, 
                TimeToString(data.vi_TempSwing_High.vins_SwingTimeNew),
-               (data.vi_TempSwing_High.isActive ? "Yes" : "No"), ((data.vi_TempSwing_High.vins_isSignalConfirm_Patten) ? "Yes" : "No"), confirmt_high_LTF);
+               (data.vi_TempSwing_High.isActive ? "Yes" : "No"), ((data.vi_TempSwing_High.vins_isSignalConfirm_Patten) ? "Yes" : "No"), confirmt_high_LTF, 
+               ((data.vi_TempSwing_High.vins_isOrderFlowMitigated) ? "Yes" : "No"), ((data.vi_TempSwing_High.vins_isPoiZoneMitigated) ? "Yes" : "No"), ((data.vi_TempSwing_High.vins_isPoiZoneSwept) ? "Yes" : "No")
+               );
 
    Print("--- Temp Swing Low (Trade Info) ---");
    string confirmt_low_LTF = (data.vi_TempSwing_Low.vins_isSignalConfirm_LTF == 0) ? "0 Not scan" : ((data.vi_TempSwing_Low.vins_isSignalConfirm_LTF == 1)? "1 Yes" : "-1 No");
-   PrintFormat("Price: %.5f | Time: %s | Active: %s | vins_isSignalConfirm_Patten: %s | vins_isSignalConfirm_LTF: %s", 
+   PrintFormat("Price: %.5f | Time: %s | Active: %s | isSignalConfirm_Patten: %s | isSignalConfirm_LTF: %s | isOrderFlowMitigated: %s  | isPoiZoneMitigated: %s | isPoiZoneSwept: %s",
                data.vi_TempSwing_Low.vins_SwingNew, 
                TimeToString(data.vi_TempSwing_Low.vins_SwingTimeNew),
-               (data.vi_TempSwing_Low.isActive ? "Yes" : "No"), ((data.vi_TempSwing_Low.vins_isSignalConfirm_Patten) ? "Yes" : "No"), confirmt_low_LTF);
+               (data.vi_TempSwing_Low.isActive ? "Yes" : "No"), ((data.vi_TempSwing_Low.vins_isSignalConfirm_Patten) ? "Yes" : "No"), confirmt_low_LTF,
+               ((data.vi_TempSwing_Low.vins_isOrderFlowMitigated) ? "Yes" : "No"), ((data.vi_TempSwing_Low.vins_isPoiZoneMitigated) ? "Yes" : "No"), ((data.vi_TempSwing_Low.vins_isPoiZoneSwept) ? "Yes" : "No")
+               );
    Print("================================");
 }
 
@@ -1459,7 +1463,26 @@ void checkValueWithInternalSwingHTF(TimeFrameData& tfData, MqlRates& barPrev, Mq
       myEAs.valueInternal.vi_TempSwing_Low.vins_SwingNew = barSwing.low;
       myEAs.valueInternal.vi_TempSwing_Low.vins_SwingTimeNew = barSwing.time;
       myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten = CheckTheCandleCluster(barPrev, barSwing, barNext, type);
-      if (myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten) myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF = 0;
+      if(myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten) myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF = 0;
+      // Kiem tra mitigated 
+      // order flow
+      if(myEAs.valueInternal.vi_TempSwing_Low.vins_isOrderFlowMitigated == false && 
+         barSwing.low <= tfData.intSHighs[1] && barSwing.low >= tfData.intSLows[1]) myEAs.valueInternal.vi_TempSwing_Low.vins_isOrderFlowMitigated = true;
+      // Poizone
+      if((myEAs.valueInternal.vi_TempSwing_Low.vins_isPoiZoneMitigated == false || myEAs.valueInternal.vi_TempSwing_Low.vins_isPoiZoneSwept == false) && 
+         ArraySize(zGTradeZoneInternalBullishHTF) > 0) {
+         for(int i=0;i<ArraySize(zGTradeZoneInternalBullishHTF);i++){
+            if(zGTradeZoneInternalBullishHTF[i].mitigated == -1) continue; // poizone da bi vuot qua truoc do. bo qua
+            if(barSwing.low > zGTradeZoneInternalBullishHTF[i].high) continue; // gia chua cham toi poizone. bo qua
+            // kiem tra poizone co bi swept hay khong
+            if(barSwing.low < zGTradeZoneInternalBullishHTF[i].low && barSwing.close > zGTradeZoneInternalBullishHTF[i].low) myEAs.valueInternal.vi_TempSwing_Low.vins_isPoiZoneSwept = true;
+            // kiem tra mitigated poizone
+            if(barSwing.low <= zGTradeZoneInternalBullishHTF[i].high && barSwing.low >= zGTradeZoneInternalBullishHTF[i].low) {
+               myEAs.valueInternal.vi_TempSwing_Low.vins_isPoiZoneMitigated = true;
+               break;
+            } 
+         }
+      }
       //// Check Swing Bear ( nghịch xu hướng)
       //ZeroMemory(myEAs.valueInternal.vi_TempSwing_High);
       //myEAs.valueInternal.vi_TempSwing_High.vins_SwingNew = barSwing.high;
@@ -1473,11 +1496,30 @@ void checkValueWithInternalSwingHTF(TimeFrameData& tfData, MqlRates& barPrev, Mq
       myEAs.valueInternal.vi_TempSwing_High.vins_SwingTimeNew = barSwing.time;
       myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten = CheckTheCandleCluster(barPrev, barSwing, barNext, type);
       if (myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten) myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_LTF = 0;
+      // Kiem tra mitigated 
+      // order flow
+      if(myEAs.valueInternal.vi_TempSwing_High.vins_isOrderFlowMitigated == false && 
+         barSwing.high >= tfData.intSLows[1] && barSwing.high <= tfData.intSHighs[1]) myEAs.valueInternal.vi_TempSwing_High.vins_isOrderFlowMitigated = true;
+      // Poizone
+      if((myEAs.valueInternal.vi_TempSwing_High.vins_isPoiZoneMitigated == false || myEAs.valueInternal.vi_TempSwing_High.vins_isPoiZoneSwept == false) && 
+         ArraySize(zGTradeZoneInternalBearishHTF) > 0) {
+         for(int i=0;i<ArraySize(zGTradeZoneInternalBearishHTF);i++){
+            if(zGTradeZoneInternalBearishHTF[i].mitigated == -1) continue; // poizone da bi vuot qua truoc do. bo qua
+            if(barSwing.high < zGTradeZoneInternalBearishHTF[i].low) continue; // gia chua cham toi poizone. bo qua
+            // kiem tra poizone co bi swept hay khong
+            if(barSwing.high > zGTradeZoneInternalBearishHTF[i].high && barSwing.close < zGTradeZoneInternalBearishHTF[i].high) myEAs.valueInternal.vi_TempSwing_High.vins_isPoiZoneSwept = true;
+            // kiem tra mitigated poizone
+            if(barSwing.high >= zGTradeZoneInternalBearishHTF[i].low && barSwing.high <= zGTradeZoneInternalBearishHTF[i].high) {
+               myEAs.valueInternal.vi_TempSwing_High.vins_isPoiZoneMitigated = true;
+               break;
+            } 
+         }
+      }
       //// Check Swing Bull (nghịch xu hướng)
-      //ZeroMemory(myEAs.valueInternal.vi_TempSwing_Low);
-      //myEAs.valueInternal.vi_TempSwing_Low.vins_SwingNew = barSwing.low;
-      //myEAs.valueInternal.vi_TempSwing_Low.vins_SwingTimeNew = barSwing.time;
-      //myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten = CheckTheCandleCluster(barPrev, barSwing, barNext, direction_nghich);
+      //ZeroMemory(myEAs.valueInternal.vi_TempSwing_High);
+      //myEAs.valueInternal.vi_TempSwing_High.vins_SwingNew = barSwing.low;
+      //myEAs.valueInternal.vi_TempSwing_High.vins_SwingTimeNew = barSwing.time;
+      //myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten = CheckTheCandleCluster(barPrev, barSwing, barNext, direction_nghich);
    }
    
    PrintValueInternal(myEAs.valueInternal);
