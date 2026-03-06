@@ -1665,8 +1665,8 @@ void checkValueWithInternalSwingHTF(TimeFrameData& tfData, MqlRates& barPrev, Mq
    PrintValueInternal(myEAs.valueInternal);
    // Goi ham trade
    
-   Print("========GET Swing HTF thành công==========");
-   Print("========GET Swing HTF thành công==========");
+   Print("========GET Swing HTF (Pullback Or Swept Swing) thành công==========");
+   Print("========GET Swing HTF (Pullback Or Swept Swing) thành công==========");
 }
 
 // Reset Internal HTF (valueInternal)
@@ -2270,15 +2270,15 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
             if (key == 0) {
                text += "\nKiem tra song Gann \n";
                
-               Print("Highs"); ArrayPrint(tfData.Highs);
-               Print("HighsTime"); ArrayPrint(tfData.HighsTime);
-               Print("wvolHighs"); ArrayPrint(tfData.wvolHighs);
-               Print("wvolHighTime"); ArrayPrint(tfData.wvolHighTime);
-               
-               Print("Lows"); ArrayPrint(tfData.Lows);
-               Print("LowsTime"); ArrayPrint(tfData.LowsTime);
-               Print("wvolLows"); ArrayPrint(tfData.wvolLows);
-               Print("wvolLowTime"); ArrayPrint(tfData.wvolLowTime);
+//               Print("Highs"); ArrayPrint(tfData.Highs);
+//               Print("HighsTime"); ArrayPrint(tfData.HighsTime);
+//               Print("wvolHighs"); ArrayPrint(tfData.wvolHighs);
+//               Print("wvolHighTime"); ArrayPrint(tfData.wvolHighTime);
+//               
+//               Print("Lows"); ArrayPrint(tfData.Lows);
+//               Print("LowsTime"); ArrayPrint(tfData.LowsTime);
+//               Print("wvolLows"); ArrayPrint(tfData.wvolLows);
+//               Print("wvolLowTime"); ArrayPrint(tfData.wvolLowTime);
                
                //myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF = -1;
                int keyGann = -1;
@@ -2357,11 +2357,7 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
                text += "\nGann: Swing High Pre: "+ DoubleToString(i_swingGann_Pre, _Digits)+" vol : "+ (string) volSwingPre + " tại "+(string) i_swingGann_Pre_Time;
                text += " | Swing Low: "+ DoubleToString(i_swingGann, _Digits)+" vol : "+ (string) volSwing + " tại "+(string) i_swingGannTime;
                text += " | Swing High Next: "+ DoubleToString(i_swingGann_Next, _Digits)+" vol : "+ (string) volSwingNext+ " tại "+(string) i_swingGann_Next_Time;
-               //Hop luu voi dieu kien iTrend.
-               //if ((tfData.iTrend == 1 && tfData.wvItrend == tfData.iTrend) || (tfData.iTrend == -1 && tfData.wvItrend != tfData.iTrend)) {
-               //   // Ket luan LTF.
-               //   myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF = (volSwingNext > volSwing && volSwingNext > volSwingPre)? 1 : -1; 
-               //}
+               
                if (volSwingNext != 0) {
                   myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF = (volSwingNext > volSwing && volSwingNext > volSwingPre)? 1 : -1; 
                   text += (myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF == 1)? " => Chap nhan Signal LowTF = 1" : "=> Tu chối Signal LowTF = -1";
@@ -2425,10 +2421,7 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
       }  
       // Check Signal Sell
       else if ((myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten == 1 && myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_LTF == 0) || 
-         (myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten_Again == 2 && myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_LTF == 2) 
-         //|| 
-            //(myEAs.valueInternal.vi_TempSwing_High.vins_SwingNew == 0 && myEAs.valueInternal.vi_ITrend == 1 && myEAs.valueInternal.vi_wvITrend != 1 && (myEAs.valueInternal.vi_isSwept || myEAs.valueInternal.vi_isMitigatedPoiZone || myEAs.valueInternal.vi_isSweptPoiZone))
-         ) {
+         (myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten_Again == 2 && myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_LTF == 2) ) {
          Print("Bat dau kiem tra lowtf high");
          Print("New Swing: "+ DoubleToString(myEAs.valueInternal.vi_TempSwing_High.vins_SwingNew, _Digits) + " tại thời gian: "+ (string) myEAs.valueInternal.vi_TempSwing_High.vins_SwingTimeNew);
 
@@ -3316,6 +3309,7 @@ struct marketStructs{
    // Hàm lọc dữ liệu đầu vào để quyết định vào lệnh theo kiểu nào được định sẵn
    void CheckMarketForTradeByPredefinedOptions(TimeFrameData& tfData, int direction_trade, int option_trade, bool getIDM = false){
        string text = "";
+       Print("Timeframe: "+EnumToString(tfData.timeFrame)+"- Kiem tra dieu kien vao lenh theo huong : " + (string) direction_trade +" voi option: " + (string) option_trade + ((getIDM)? "Da ": "Chua") + " Get IDM");
        if (direction_trade == 1) {
          if (option_trade == 1 || option_trade == 2 || option_trade ==3 || option_trade ==4) {
             if (getIDM) {
