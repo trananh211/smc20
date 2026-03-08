@@ -1360,8 +1360,11 @@ PoiZone CreatePoiZone(TimeFrameData& tfData, double high, double low, double ope
       
    return zone;
 }
+
 // Set thông số để có hướng trade theo Internal HTF. (valueInternal). Hàm được đặt sau khi tìm thấy new swing HTF            
 void setValueToInternalSwingHTF(TimeFrameData& tfData, MqlRates& barBreak, MqlRates& barSwing){
+   myEAs.valueInternal.vi_mTrend = tfData.mTrend;
+   myEAs.valueInternal.vi_wvmTrend = tfData.wvMtrend;
    myEAs.valueInternal.vi_ITrend = tfData.iTrend;
    myEAs.valueInternal.vi_wvITrend = tfData.wvItrend;
    myEAs.valueInternal.vi_wvIsBuyInternal = tfData.wvIsBuyInternal;
@@ -1653,6 +1656,8 @@ void checkValueWithInternalSwingHTF(TimeFrameData& tfData, MqlRates& barPrev, Mq
 
 // Reset Internal HTF (valueInternal)
 void resetValueInternalHTF() {
+   myEAs.valueInternal.vi_mTrend = 0;
+   myEAs.valueInternal.vi_wvmTrend = 0;
    myEAs.valueInternal.vi_ITrend = 0;
    myEAs.valueInternal.vi_wvITrend = 0;
    myEAs.valueInternal.vi_wvIsBuyInternal = false;
@@ -2125,7 +2130,7 @@ void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& zGlobal
 }
 
 // Hàm đặt trong real wave
-void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
+void checkStatusSettingPoiZone(TimeFrameData& tfData, MqlRates& bar1){
    string text = "";
 	if (tfData.isHighTF != true) { // Neu tiep theo cu break out cua Internal High TF la scan thong tin tu Low TF
 		if (myEAs.statusInternalHTL.sHL_IntScanActive) {
@@ -2647,7 +2652,7 @@ void scanGlobalInternalPoiZone(TimeFrameData& tfData, MqlRates& bar1){
 	      //}
 	   }
    }   
-} // End scanGlobalInternalPoiZone
+} // End checkStatusSettingPoiZone
 
 //+------------------------------------------------------------------+
 //| Hàm tính tổng Tick Volume với Timeframe tùy chọn                 |
@@ -2958,7 +2963,7 @@ struct marketStructs{
          }
          drawMarketStruct(tfData, bar1);
          // POI
-         scanGlobalInternalPoiZone(tfData, bar1);
+         checkStatusSettingPoiZone(tfData, bar1);
          
          // Mitigation
          checkMitigateZone(tfData, bar1);         
@@ -2980,7 +2985,7 @@ struct marketStructs{
       string text  = "";
       string resultStructure = "";
       string resultMarjorStruct = "";
-      textall += "----------------------------------------------------------------------> New "+EnumToString(timeframe)+" bar formed: "+TimeToString(TimeCurrent())+" <-----------------------------------------------------------------------";
+      textall += "----------------------------------------------------------------------> START "+EnumToString(timeframe)+" bar formed: "+ TimeToString(TimeCurrent())+" <-----------------------------------------------------------------------";
       int copied = CopyRates(_Symbol, timeframe, 0, 4, rates);
       
       MqlRates bar1, bar2, bar3;
@@ -3004,7 +3009,7 @@ struct marketStructs{
       }
       drawMarketStruct(tfData, bar1);
       // POI
-      scanGlobalInternalPoiZone(tfData, bar1);
+      checkStatusSettingPoiZone(tfData, bar1);
       
       // Mitigation
       checkMitigateZone(tfData, bar1);
@@ -3012,8 +3017,9 @@ struct marketStructs{
       textall += "\n#Final: "+getValueTrend(tfData);
       //text += "\n------------ End Real Gann wave---------------";
       //Print(text); 
-      
       textall += "\n----------------------------------------------------------------------> END "+EnumToString(timeframe)+" bar formed: "+ TimeToString(TimeCurrent())+" <-----------------------------------------------------------------------";
+      
+      
       if (StringLen(text) > 0) {
          Print(textall);
       }
@@ -3027,6 +3033,7 @@ struct marketStructs{
       
       // For develop
       showPoiComment(tfData);
+      
    }
    
    // Hàm vào lệnh theo điều kiện của EA bởi volume Wave
