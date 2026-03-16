@@ -50,38 +50,91 @@ int iWingding_internal_low = 226;
 int iWingding_internal_key_high = 225;
 int iWingding_internal_key_low = 226;
 
-// Biến global
-   CTrade                  trade;
-   CPositionInfo           posinfo;
-   COrderInfo              ordinfo;
-   CHistoryOrderInfo       hisinfo;
-   CDealInfo               dealinfo;
-   
-   enum enumLotType{Fixed_lot=0, Pct_of_Balance=1, Pct_of_Equity=2, Pct_of_Free_Margin=3};
-
 input group "GENERAL SETTINGS";
    input    int            InpMagic = 12345; // Magic Number
    input    int            Slippage = 1;
    input    double         InpRR = 2.0; // Rewards/ Risk
    input    double         InpMinLot      = 0.03; // Khối lượng tối thiểu vào lệnh (0.03)
    input    double         InpBE = 2.0; // Break Event : Chốt lời trước 1/2
-   
-input group "TIME SETTINGS";
-   input    int            StartHour = 16; // START TRADING HOUR
-   input    int            EndHour = 22; // END TRADING HOUR
-   input    int            Secs = 60; // ORDER MOFIFICATIONS (Should be same as TF)
-   
-input group "MONEY MANAGEMENT"; // MONEY MANAGEMENT
-   input    enumLotType    LotType = 0; // Type of Lotsize calculation
-   input    double         FixedLot = 0.01;  // Fixed lots 0.0 = MM
-   input    double         RiskPercent = 0.5;   // Risk MM%
 
-input group "TRADE SETTINGS IN POINT"; // TRADE SETTINGS
-   input    double         Delta = 0.5; // ORDER DISTANCE
-   input    double         MaxDistance = 7; // THETA (Max order distance)
-   input    double         Stop = 10;  // Stop loss size
-   input    double         MaxTrailing = 4; // COS (Start or trailing stop)
-   input    int            MaxSpread = 5555; // Max spread limit
+
+CTrade                  trade;
+CPositionInfo           posinfo;
+COrderInfo              ordinfo;
+
+input group "=== Trading Profiles ==="
+enum SystemType {Forex=0, BitCoin=1, _Gold=2, US_Indices=3};
+input SystemType SType = 0; // Trading system applied (Forex, Crypto, Gold, Indices)
+int SysChoice;
+
+input group "=== Common Trading Inputs ==="   
+input double                  minVolume                        = 0.01; // Min volume to start
+input double                  RiskPercent                      = 2;    // Risk as % of Trading Capital
+input ENUM_TIMEFRAMES         Timeframe                        = PERIOD_CURRENT; // Time frame to run
+input string                  TradeComment                     = "Scalping Robot"; // Trade Comment
+
+string dotSpace = "----------------------------------------------------";
+
+enum StartHour {Inactive_SH=0, _1_SH=1, _2_SH=2, _3_SH=3, _4_SH=4, _5_SH=5, _6_SH=6, _7_SH=7, _8_SH=8, _9_SH=9, _10_SH=10, _11_SH=11, _12_SH=12, _13_SH=13, _14_SH=14, _15_SH=15, _16_SH=16, _17_SH=17, _18_SH=18, _19_SH=19, _20_SH=20, _21_SH=21, _22_SH=22, _23_SH=23, _24_SH=24 };
+input StartHour SHInput = _6_SH; // Start Hour
+
+enum EndHour {Inactive_EH=0, _1_EH=1, _2_EH=2, _3_EH=3, _4_EH=4, _5_EH=5, _6_EH=6, _7_EH=7, _8_EH=8, _9_EH=9, _10_EH=10, _11_EH=11, _12_EH=12, _13_EH=13, _14_EH=14, _15_EH=15, _16_EH=16, _17_EH=17, _18_EH=18, _19_EH=19, _20_EH=20, _21_EH=21, _22_EH=22, _23_EH=23, _24_EH=24 };
+input EndHour EHInput = _21_EH; // End Hour
+
+string                        PairCurency;
+int                           SHChoice;
+int                           EHChoice;
+int                           BarsN = 5;
+int                           ExpirationBars = 100;
+int                           OrderDistPoints= 100;
+double                        Tppoints, Slpoints, TslTriggerPoints, TslPoints;
+int                           handleRSI, handleMovAvg;
+
+input color                   ChartColorTradingOff             = clrPink;  // Chart color when EA is Inactive
+input color                   ChartColorTradingOn              = clrWhite; // Chart color when EA is Active      
+bool                          Tradingenabled                   = true;
+input bool                    HideIndicators                   = true;     // Hide indicator on Chart?
+string                        TradingEnabledComm               = "";
+
+input group "=== Forex Trading Inputs ==="   
+input int                     TppointsInput                    = 350; // Take Profit (10 Points = 1 pip)
+input int                     SlpointsInput                    = 250; // Stoploss Points (10 Points = 1 pip)
+input int                     TslTriggerPointsInput            = 20;  // Points in Profit before Trailing
+input int                     TslPointsInput                   = 10;  // Trailing Stoploss Points
+
+input group "=== Cryto Related Inputs ==="   
+input double                  TPasPct                          = 0.4; // TP as % of Price
+input double                  SLasPct                          = 0.4; // SL as % of Price
+input double                  TSLasPctofTP                     = 5;   // Trail SL as % of TP
+input double                  TSLTgrasPctofTP                  = 7;   // Trigger of Trail SL % of Tp
+
+input group "=== Gold Related Inputs ==="   
+input double                  TPasPctGold                      = 1; // TP as % of Price (Cent) 1 - (Standard) - 1
+input double                  SLasPctGold                      = 2.5; // SL as % of Price (Cent) 2.5 - (Standard) - 0.35
+input double                  TSLasPctofTPGold                 = 20; // Trail SL as % of TP (Cent) 20 - (Standard) - 10 
+input double                  TSLTgrasPctofTPGold              = 30; // Trigger of Trail SL % of Tp (Cent) 30 - (Standard) - 15
+
+input group "=== Indices Related Inputs ==="   
+input double                  TPasPctIndices                   = 0.2;
+input double                  SLasPctIndices                   = 0.2;
+input double                  TSLasPctofTPIndices              = 5;
+input double                  TSLTgrasPctofTPIndices           = 7;
+
+input group "=== News Filter ==="
+input bool                    NewFilterOn                      = true; // Filter for Level 3 News?
+enum                          sep_dropdown{ comma=0, semicolon=1};
+input sep_dropdown            separator                        = comma;
+input string                  KeyNews                          = "BCB,NFP,JOLTS,Nonfarm,PMI,GDP,Confidence,Interest Rate";
+input string                  NewsCurrencies                   = "USD,GBP,EUR,JPY,BRL";
+input int                     DaysNewsLookUp                   = 100;
+input int                     StopBeforeMin                    = 15;
+input int                     StartTradingMin                  = 15;
+bool                          TrDisabledNews                   = false;
+
+ushort                        sep_code;
+string                        Newstoavoid[];
+datetime                      LastNewsAvoided;
+
 
 input group "=== Market Struct Inputs ==="   
 input int _PointSpace = 1000; // Khoảng cách để vẽ swing, line so với high và low 
