@@ -57,7 +57,6 @@ input group "GENERAL SETTINGS";
    input    double         InpMinLot      = 0.03; // Khối lượng tối thiểu vào lệnh (0.03)
    input    double         InpBE = 2.0; // Break Event : Chốt lời trước 1/2
 
-
 CTrade                  trade;
 CPositionInfo           posinfo;
 COrderInfo              ordinfo;
@@ -69,7 +68,7 @@ int SysChoice;
 
 input group "=== Common Trading Inputs ==="   
 input double                  minVolume                        = 0.01; // Min volume to start
-input double                  RiskPercent                      = 2;    // Risk as % of Trading Capital
+input double                  RiskPercent                      = 20;    // Risk as % of Trading Capital
 input ENUM_TIMEFRAMES         Timeframe                        = PERIOD_CURRENT; // Time frame to run
 input string                  TradeComment                     = "Scalping Robot"; // Trade Comment
 
@@ -135,6 +134,18 @@ ushort                        sep_code;
 string                        Newstoavoid[];
 datetime                      LastNewsAvoided;
 
+input group "=== Only For Tester ==="
+input bool exTime = false;
+enum ExStartHour {ExInactive_SH=0, _1_ExSH=1, _2_ExSH=2, _3_ExSH=3, _4_ExSH=4, _5_ExSH=5, _6_ExSH=6, _7_ExSH=7, _8_ExSH=8, _9_ExSH=9, _10_ExSH=10, _11_ExSH=11, _12_ExSH=12, _13_ExSH=13, _14_ExSH=14, _15_ExSH=15, _16_ExSH=16, _17_ExSH=17, _18_ExSH=18, _19_ExSH=19, _20_ExSH=20, _21_ExSH=21, _22_ExSH=22, _23_ExSH=23, _24_ExSH=24 };
+input ExStartHour ExSHInput = _5_ExSH;
+enum ExEndHour {ExInactive_EH=0, _1_ExEH=1, _2_ExEH=2, _3_ExEH=3, _4_ExEH=4, _5_ExEH=5, _6_ExEH=6, _7_ExEH=7, _8_ExEH=8, _9_ExEH=9, _10_ExEH=10, _11_ExEH=11, _12_ExEH=12, _13_ExEH=13, _14_ExEH=14, _15_ExEH=15, _16_ExEH=16, _17_ExEH=17, _18_ExEH=18, _19_ExEH=19, _20_ExEH=20, _21_ExEH=21, _22_ExEH=22, _23_ExEH=23, _24_ExEH=24 };
+input ExEndHour ExEHInput = _12_ExEH; 
+
+int ExSHChoice, ExEHChoice;
+datetime time_Local, time_server, time_gmt;
+string today;
+int Hournow;
+string _news_text = "";
 
 input group "=== Market Struct Inputs ==="   
 input int _PointSpace = 1000; // Khoảng cách để vẽ swing, line so với high và low 
@@ -2311,7 +2322,7 @@ void checkStatusSettingPoiZone(TimeFrameData& tfData, MqlRates& bar1){
          
          // neu tim duoc key low time frame
          if(key >= 0 ){
-            
+            text += "\nKiem tra song internal Tang\n";
             // Kiem tra song Internal
             if (key > 0) {
                //Print("wvolIntSHighs"); ArrayPrint(tfData.wvolIntSHighs);
@@ -2349,13 +2360,14 @@ void checkStatusSettingPoiZone(TimeFrameData& tfData, MqlRates& bar1){
                   
                   if (volSwingNext != 0) {
                      myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF = (i_iTrend == 1 && volSwingNext > volSwing && volSwingNext > volSwingPre)? 1 : -1;
-                     text += (myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF == 1)? " => Chap nhan Signal LowTF = 1" : "=> Tu chối Signal LowTF = -1";
+                     text += (myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF == 1)? "\n => Chap nhan Signal LowTF = 1" : "=> Tu chối Signal LowTF = -1";
                      
                      myEAs.valueInternal.vi_TempSwing_Low.vins_LTF_iTrend = i_iTrend;
                      myEAs.valueInternal.vi_TempSwing_Low.vins_LTF_wviTrend = i_wvIrend;
                      myEAs.valueInternal.vi_TempSwing_Low.vins_LTF_mTrend = tfData.mTrend;
                      myEAs.valueInternal.vi_TempSwing_Low.vins_LTF_wvmTrend = tfData.wvMtrend;
                      myEAs.valueInternal.vi_TempSwing_Low.vins_Entry_Stop = price_Stop;
+                     text += "; Cap nhat entry_stop: "+ DoubleToString(price_Stop, _Digits);
                      
                   } else {
                      text += "\nChua tim thay Bullish Internal Break LTF => Bo qua luot nay. Tiep tuc tim kiem o luot sau";
@@ -2364,7 +2376,7 @@ void checkStatusSettingPoiZone(TimeFrameData& tfData, MqlRates& bar1){
                   text += "\nTim duoc swing Low volume, nhung khong du du lieu de kiem tra breakout lowtimeframe. bo qua cho luot tiep theo";
                }
             } else {
-               text += "\nKiem tra song Gann \n";
+               text += "\nKiem tra song Gann Tang\n";
                
 //               Print("Highs"); ArrayPrint(tfData.Highs);
 //               Print("HighsTime"); ArrayPrint(tfData.HighsTime);
@@ -2458,13 +2470,14 @@ void checkStatusSettingPoiZone(TimeFrameData& tfData, MqlRates& bar1){
                
                if (volSwingNext != 0) {
                   myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF = (volSwingNext > volSwing && volSwingNext > volSwingPre)? 1 : -1; 
-                  text += (myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF == 1)? " => Chap nhan Signal LowTF = 1" : "=> Tu chối Signal LowTF = -1";
+                  text += (myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF == 1)? "\n => Chap nhan Signal LowTF = 1" : "=> Tu chối Signal LowTF = -1";
                   
                   myEAs.valueInternal.vi_TempSwing_Low.vins_LTF_iTrend = tfData.iTrend;
                   myEAs.valueInternal.vi_TempSwing_Low.vins_LTF_wviTrend = tfData.wvItrend;
                   myEAs.valueInternal.vi_TempSwing_Low.vins_LTF_mTrend = tfData.mTrend;
                   myEAs.valueInternal.vi_TempSwing_Low.vins_LTF_wvmTrend = tfData.wvMtrend;
                   myEAs.valueInternal.vi_TempSwing_Low.vins_Entry_Stop = price_Stop;
+                  text += "; Cap nhat entry_stop: "+ DoubleToString(price_Stop, _Digits);
                } else {
                   text += "\nChua tim thay Bullish Gann Break LTF => Bo qua luot nay. Tiep tuc tim kiem o luot sau";
                }
@@ -2507,7 +2520,7 @@ void checkStatusSettingPoiZone(TimeFrameData& tfData, MqlRates& bar1){
          }
          // neu tim duoc key low time frame
          if(key >= 0){
-            
+            text += "\n Kiem tra song Internal giam\n";
             // Kiem tra song Internal
             if (key > 0) {
                //Print("wvolIntSHighs"); ArrayPrint(tfData.wvolIntSHighs);
@@ -2544,13 +2557,14 @@ void checkStatusSettingPoiZone(TimeFrameData& tfData, MqlRates& bar1){
                   }
                   if (volSwingNext != 0) {
                      myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_LTF = (i_iTrend == -1 && volSwingNext > volSwing && volSwingNext > volSwingPre)? 1 : -1;
-                     text += (myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_LTF == 1)? " => Chap nhan Signal LowTF = 1" : "=> Tu chối Signal LowTF = -1";
+                     text += (myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_LTF == 1)? "\n => Chap nhan Signal LowTF = 1" : "=> Tu chối Signal LowTF = -1";
                      
                      myEAs.valueInternal.vi_TempSwing_High.vins_LTF_iTrend = tfData.iTrend;
                      myEAs.valueInternal.vi_TempSwing_High.vins_LTF_wviTrend = tfData.wvItrend;
                      myEAs.valueInternal.vi_TempSwing_High.vins_LTF_mTrend = tfData.mTrend;
                      myEAs.valueInternal.vi_TempSwing_High.vins_LTF_wvmTrend = tfData.wvMtrend;
-                     myEAs.valueInternal.vi_TempSwing_Low.vins_Entry_Stop = price_Stop;
+                     myEAs.valueInternal.vi_TempSwing_High.vins_Entry_Stop = price_Stop;
+                     text += "; Cap nhat entry_stop: "+ DoubleToString(price_Stop, _Digits);
                   } else {
                      text += "\nChua tim thay Bearish Internal Break LTF => Bo qua luot nay. Tiep tuc tim kiem o luot sau";
                   }
@@ -2562,7 +2576,7 @@ void checkStatusSettingPoiZone(TimeFrameData& tfData, MqlRates& bar1){
             // Kiem tra song Gann
             else {
                             
-               text += "\nKiem tra song Gann \n";
+               text += "\nKiem tra song Gann Giam\n";
                
 //               Print("Highs"); ArrayPrint(tfData.Highs);
 //               Print("HighsTime"); ArrayPrint(tfData.HighsTime);
@@ -2654,14 +2668,14 @@ void checkStatusSettingPoiZone(TimeFrameData& tfData, MqlRates& bar1){
                // Ket luan LTF.
                if (volSwingNext != 0) {
                   myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_LTF = (volSwingNext > volSwing && volSwingNext > volSwingPre)? 1 : -1;
-                  text += (myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_LTF == 1)? " => Chap nhan Signal LowTF = 1" : "=> Tu chối Signal LowTF = -1";
+                  text += (myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_LTF == 1)? "\n => Chap nhan Signal LowTF = 1" : "=> Tu chối Signal LowTF = -1";
                   
                   myEAs.valueInternal.vi_TempSwing_High.vins_LTF_iTrend = tfData.iTrend;
                   myEAs.valueInternal.vi_TempSwing_High.vins_LTF_wviTrend = tfData.wvItrend;
                   myEAs.valueInternal.vi_TempSwing_High.vins_LTF_mTrend = tfData.mTrend;
                   myEAs.valueInternal.vi_TempSwing_High.vins_LTF_wvmTrend = tfData.wvMtrend;
-                  myEAs.valueInternal.vi_TempSwing_Low.vins_Entry_Stop = price_Stop;
-                  
+                  myEAs.valueInternal.vi_TempSwing_High.vins_Entry_Stop = price_Stop;
+                  text += "; Cap nhat entry_stop: "+ DoubleToString(price_Stop, _Digits);
                } else {
                   text += "\nChua tim thay Bearish Gann Break LTF => Bo qua luot nay. Tiep tuc tim kiem o luot sau";
                }
@@ -3108,7 +3122,7 @@ struct marketStructs{
       }
       
       // For develop
-      showPoiComment(tfData);
+      //showPoiComment(tfData);
       
    }
    
@@ -3116,12 +3130,7 @@ struct marketStructs{
    void CheckMarketForTradeByWaveVolume(TimeFrameData& tfData){
       string text = "";
       Print("$ Ham CheckMarketForTradeByWaveVolume is running.");
-      // Kiểm tra điều kiện vào lệnh theo volume wave
-      int result = 0;
-      int type_trade = 0; // 1: buy, -1: sell
-      int option_trade = 0;
-      bool conditions_typeA = false;
-      bool callFunctionTrade = false;
+      
       // 1. Kiểm tra xem đã có lệnh nào của cặp tiền này và Magic này chưa
        if(IsTradeExists(_Symbol, InpMagic))
        {
@@ -3165,8 +3174,65 @@ struct marketStructs{
          Print(text);
       }
       
-      text = TAB_STRING+ "5. Bắt đầu kiểm tra điều kiện vào lệnh\n";
       // 5. Bắt đầu kiểm tra điều kiện vào lệnh
+      //goTradeBySMC(tfData);
+      goTradeScalpingRobot(tfData);
+   }
+   
+   // Hàm vào lệnh theo scalping robot
+   void goTradeScalpingRobot(TimeFrameData& tfData) {
+      // kiểm tra tồn tại điều kiện đồng thuận low và high tf hay chưa
+      if (myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_LTF == 1) {
+         Print("Vao lenh Sell");
+         double entry = myEAs.valueInternal.vi_TempSwing_High.vins_Entry_Stop;
+         if(entry == 0) return;
+         double bid = SymbolInfoDouble(_Symbol,SYMBOL_BID);
+         double tp = (myEAs.valueInternal.vi_intSLow != 0)? myEAs.valueInternal.vi_intSLow : entry - Tppoints * _Point;
+         tp = entry - Tppoints * _Point;
+         double sl = myEAs.valueInternal.vi_TempSwing_High.vins_SwingNew;
+         double lots = (RiskPercent > 0) ? CalculateLotSize(RiskPercent, entry, sl, minVolume) : minVolume;
+         datetime expiration = iTime(_Symbol, Timeframe, 0) + ExpirationBars * PeriodSeconds(Timeframe);
+         if (bid < entry + OrderDistPoints * _Point) {
+            Print("Vao lenh limit");
+            trade.SellLimit(lots, entry, _Symbol, sl, tp,ORDER_TIME_SPECIFIED, expiration);
+         } else {
+            Print("Vao lenh stop");
+            trade.SellStop(lots, entry, _Symbol, sl, tp, ORDER_TIME_SPECIFIED, expiration);
+         }
+         
+      } else if (myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF == 1) {
+         Print("Vao lenh Buy");
+         double entry = myEAs.valueInternal.vi_TempSwing_Low.vins_Entry_Stop;
+         if(entry == 0) return;
+         double tp = (myEAs.valueInternal.vi_intSHigh != 0)? myEAs.valueInternal.vi_intSHigh : entry + Tppoints * _Point;
+         tp = entry + Tppoints * _Point;
+         double sl = myEAs.valueInternal.vi_TempSwing_Low.vins_SwingNew;
+         double lots = (RiskPercent > 0) ? CalculateLotSize(RiskPercent, entry, sl, minVolume) : minVolume;
+         datetime expiration = iTime(_Symbol, Timeframe, 0) + ExpirationBars * PeriodSeconds(Timeframe);
+         double ask = SymbolInfoDouble(_Symbol,SYMBOL_ASK);
+         if (ask > entry - OrderDistPoints * _Point) {
+            Print("Vao lenh limit");
+            trade.BuyLimit(lots, entry, _Symbol, sl, tp,ORDER_TIME_SPECIFIED, expiration);
+         } else {
+            Print("Vao lenh stop");
+            trade.BuyStop(lots, entry, _Symbol, sl, tp, ORDER_TIME_SPECIFIED, expiration);
+         }
+      } else {
+         Print("Khong co LTF xac nhan. Bo qua");
+      }
+   }
+   
+   // Hàm vào lệnh theo đièu kiện SMC
+   void goTradeBySMC(TimeFrameData& tfData) {
+      string text = "";
+      // Kiểm tra điều kiện vào lệnh theo volume wave
+      int result = 0;
+      int type_trade = 0; // 1: buy, -1: sell
+      int option_trade = 0;
+      bool conditions_typeA = false;
+      bool callFunctionTrade = false;
+      text = TAB_STRING+ "5. Bắt đầu kiểm tra điều kiện vào lệnh\n";
+      
       int f_iTrend = 0;
       int f_wvITrend = 0;
       int f_mTrend = 0;
@@ -3364,126 +3430,6 @@ struct marketStructs{
       Print(text);
       if(result == 1) {
          Print("=========");
-      }
-   }
-   
-   // Hàm vào lệnh theo điều kiện của EA bởi volume Bar breakout
-   void afterCheckMarketForTrade(TimeFrameData& tfData) {
-      int count = 0;
-      int key_actived = -1;
-      // 1. Kiểm tra xem đã có lệnh nào của cặp tiền này và Magic này chưa
-       if(IsTradeExists(_Symbol, InpMagic))
-       {
-           // Nếu đã có lệnh, chúng ta thoát hàm luôn, không chạy các logic phía dưới
-           return; 
-       }
-      // 2. Kiểm tra tồn tại OB hoặc OF hay không
-      if (myEAs.statusInternalHTL.sHL_iStoploss == 0 || myEAs.statusInternalHTL.sHL_iTarget == 0) return;
-      if (ArraySize(zArrPoiZoneLTFBearishBelongHighTF) == 0 && ArraySize(zArrPoiZoneLTFBullishBelongHighTF)== 0) return;
-      // 3. Bắt đầu kiểm tra điều kiện vào lệnh      
-      if (myEAs.signalInternal.sg_iTrend == tfData.iTrend && tfData.iTrend == tfData.vItrend) {
-         // 3.1 kiểm tra xem đã get IDM High TF hay chưa
-         // Neu chua get IDM HTF thi duoc phep mua ban theo Internal HTF
-         if (myEAs.signalInternal.sg_getIdmBuy == false && myEAs.signalInternal.sg_getIdmSell == false) {
-            if (myEAs.signalInternal.sg_mTrend == myEAs.signalInternal.sg_iTrend) { // I va III: thuan trend
-               if (myEAs.signalInternal.sg_iTrend == tfData.mTrend) { // Option 1: I. tuyệt đối
-                  if (tfData.mTrend == tfData.vMTrend) { // X1 + X3
-                     if (myEAs.signalInternal.sg_iTrend == myEAs.signalInternal.sg_vITrend) { // x1
-                        checkPositionAccessForTrade(tfData, 3, "xyz1 Not get IDM");
-                     } else { // x3
-                        checkPositionAccessForTrade(tfData, 2, "xy3 Not get IDM");
-                     }
-                  } else { // X2 + X4
-                     if (myEAs.signalInternal.sg_iTrend == myEAs.signalInternal.sg_vITrend) {
-                        checkPositionAccessForTrade(tfData, 1, "x2 Not get IDM");
-                     } else {
-                        checkPositionAccessForTrade(tfData, 1, "x4 Not get IDM");
-                     }
-                     
-                  }
-               } else if (myEAs.signalInternal.sg_iTrend != tfData.mTrend) { // option III: Không chắc 2
-                  if (tfData.mTrend != tfData.vMTrend) { // X6 + X8
-                     if (myEAs.signalInternal.sg_iTrend == myEAs.signalInternal.sg_vITrend) {
-                        checkPositionAccessForTrade(tfData, 1, "x6 Not get IDM");
-                     } else {
-                        checkPositionAccessForTrade(tfData, 1, "x8 Not get IDM");
-                     }
-                     
-                  } else { // X7 + X9
-                     if (myEAs.signalInternal.sg_iTrend == myEAs.signalInternal.sg_vITrend) { //x7
-                        //checkPositionAccessForTrade(tfData, 1, "x7 Not get IDM");
-                     } else { // x9
-                        //checkPositionAccessForTrade(tfData, 1, "x9 Not get IDM");
-                     }
-                  }
-               }
-            }
-         } else { // Nếu đã get IDM HTF rồi 
-            if (myEAs.signalInternal.sg_mTrend == myEAs.signalInternal.sg_iTrend) { // I va III: thuan trend
-               if (tfData.mTrend == myEAs.signalInternal.sg_iTrend) {
-                  if (tfData.mTrend == tfData.vMTrend) { // X1 + X3
-                     if (myEAs.signalInternal.sg_iTrend == myEAs.signalInternal.sg_vITrend) {
-                        checkPositionAccessForTrade(tfData, 3, "xyz1 Geted IDM");
-                     } else {
-                        checkPositionAccessForTrade(tfData, 2, "xy3 Geted IDM");
-                     }
-                     
-                  } else { // X2 + X4
-                     if (myEAs.signalInternal.sg_iTrend == myEAs.signalInternal.sg_vITrend) {
-                        checkPositionAccessForTrade(tfData, 1, "x2 Geted IDM");
-                     } else {
-                        checkPositionAccessForTrade(tfData, 1, "x4 Geted IDM");
-                     }
-                  }
-               } else {
-                  if (tfData.mTrend != tfData.vMTrend) { // X6 + X8
-                     if (myEAs.signalInternal.sg_iTrend == myEAs.signalInternal.sg_vITrend) { // x6
-                        checkPositionAccessForTrade(tfData, 1, "x6 Geted IDM");
-                     } else { // x8
-                        checkPositionAccessForTrade(tfData, 1, "x8 Geted IDM");
-                     }
-                  } else { // X7 + X9
-                     if (myEAs.signalInternal.sg_iTrend == myEAs.signalInternal.sg_vITrend) {
-                        //checkPositionAccessForTrade(tfData, 1, "x7 Geted IDM");
-                     } else {
-                        //checkPositionAccessForTrade(tfData, 1, "x9 Geted IDM");
-                     }
-                  }
-               }
-            } else { // VI va VIII: nguoc trend
-               if (tfData.mTrend != myEAs.signalInternal.sg_iTrend) { // VI: Khong chac 3
-                  if (tfData.mTrend != tfData.vMTrend) { // X13 + X15
-                     if (myEAs.signalInternal.sg_iTrend == myEAs.signalInternal.sg_vITrend) { // x15
-                        checkPositionAccessForTrade(tfData, 1, "x15 Geted IDM");
-                     } else { // x13
-                        checkPositionAccessForTrade(tfData, 1, "x13 Geted IDM");
-                     }
-                  } else { // X14 + X12
-                     if (myEAs.signalInternal.sg_iTrend == myEAs.signalInternal.sg_vITrend) { // x14
-                        //checkPositionAccessForTrade(tfData, 1, "x14 Geted IDM");
-                     } else { // x12
-                        //checkPositionAccessForTrade(tfData, 1, "x12 Geted IDM");
-                     }
-                  }
-               } else { // VIII: Tuong doi 4
-                  if (tfData.mTrend != tfData.vMTrend) { // X17 + X19
-                     if (myEAs.signalInternal.sg_iTrend != myEAs.signalInternal.sg_vITrend) { // x17
-                        checkPositionAccessForTrade(tfData, 1, "x17 Geted IDM");
-                     } else { // x19
-                        checkPositionAccessForTrade(tfData, 1, "x19 Geted IDM");
-                     }
-                  } else { // X18 + X20
-                     if (myEAs.signalInternal.sg_iTrend != myEAs.signalInternal.sg_vITrend) { // x18
-                        checkPositionAccessForTrade(tfData, 2, "x18 Geted IDM");
-                     } else { // x20
-                        checkPositionAccessForTrade(tfData, 2, "x20 Geted IDM");
-                     }
-                  }
-               }
-            }
-         }
-         
-         
       }
    }
    
@@ -3895,142 +3841,6 @@ struct marketStructs{
          Print(text);
          Print("Ham goi lenh trade");
          Print("===");
-      }
-   }
-
-   // Hàm kiểm tra vị trí của nến hiện tại có đủ điều kiện vào lệnh theo từng loại hay không
-   void checkPositionAccessForTrade(TimeFrameData& tfData, int type = 0, string text = "") {
-      string string_type = "";
-      int type_trend = 0;
-      PoiZone zArrBuy[];
-      PoiZone zArrSell[];
-      
-      // Set POI la zone Low TF
-      tfData.copyZoneToZone(zArrPoiZoneLTFBullishBelongHighTF, zArrBuy);
-      tfData.copyZoneToZone(zArrPoiZoneLTFBearishBelongHighTF, zArrSell);
-      
-      // // Set POI la zone High TF
-      // tfData.copyZoneToZone(zGTradeZoneInternalBullishHTF, zArrBuy);
-      // tfData.copyZoneToZone(zGTradeZoneInternalBearishHTF, zArrSell);
-      
-      if (type == 1) { // Chỉ vào lệnh ở OB HTF
-         if (myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock == 1) {
-            // Gọi hàm với điều kiện khắt khe hơn vì chưa vào order block. Cần double breakout để khẳng định
-            if (myEAs.signalInternal.sg_iTrend == 1) {
-               checkAccessZoneForTrade(tfData, zArrBuy, 1, "OB1 "+ text);
-            } else if (myEAs.signalInternal.sg_iTrend == -1){
-               checkAccessZoneForTrade(tfData, zArrSell, -1, "OB1 "+ text);
-            }
-         }
-      } else if (type == 2) { // Chỉ vào lệnh ở OB + OF HTF
-         if (myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock == 1) { 
-            if (myEAs.signalInternal.sg_iTrend == 1) {
-               checkAccessZoneForTrade(tfData, zArrBuy, 1, "OB 2 "+ text);
-            } else if (myEAs.signalInternal.sg_iTrend == -1){
-               checkAccessZoneForTrade(tfData, zArrSell, -1, "OB 2 "+ text);
-            }
-         } else if (myEAs.statusInternalHTL.sHL_mitigate_iOrderFlow == 1) {
-            if (myEAs.signalInternal.sg_iTrend == 1) {
-               checkAccessZoneForTrade(tfData, zArrBuy, 1, "OF 2 "+ text);
-            } else if (myEAs.signalInternal.sg_iTrend == -1){
-               checkAccessZoneForTrade(tfData, zArrSell, -1, "OF 2 "+ text);
-            }
-         }
-      } else if (type == 3) { // Vào lệnh cả OB + OF và Non OF sau Break HTF
-         if (myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock == 1) { 
-            if (myEAs.signalInternal.sg_iTrend == 1) {
-               checkAccessZoneForTrade(tfData, zArrBuy, 1, "OB 3 "+ text);
-            } else if (myEAs.signalInternal.sg_iTrend == -1){
-               checkAccessZoneForTrade(tfData, zArrSell, -1, "OB 3 "+ text);
-            }
-         } else if (myEAs.statusInternalHTL.sHL_mitigate_iOrderFlow == 1) {
-            if (myEAs.signalInternal.sg_iTrend == 1) {
-               checkAccessZoneForTrade(tfData, zArrBuy, 1, "OF 3 "+ text);
-            } else if (myEAs.signalInternal.sg_iTrend == -1){
-               checkAccessZoneForTrade(tfData, zArrSell, -1, "OF 3 "+ text);
-            }
-         } else if (myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock != 1 && myEAs.statusInternalHTL.sHL_mitigate_iOrderFlow != 1) {
-            if (myEAs.signalInternal.sg_iTrend == 1) {
-               checkAccessZoneForTrade(tfData, zArrBuy, 1, "NON OB OF 3 "+ text);
-            } else if (myEAs.signalInternal.sg_iTrend == -1){
-               checkAccessZoneForTrade(tfData, zArrSell, -1, "NON OB OF 3 "+ text);
-            }
-         }
-      }
-   }
-   
-   // Hàm scan PoiZone hợp lệ để đồng pha với điều kiện dành cho mục đích trade
-   void checkAccessZoneForTrade(TimeFrameData& tfData, PoiZone& zone[], int type = 0, string str_options = "") {
-      Print("Hàm checkAccessZoneForTrade");
-      int key = -1;
-      string result_str = "";
-      double g_stoploss = 0;
-      double entryPrice;
-      double risk = 2.0;           // Rủi ro 2% tài khoản
-      if (ArraySize(zone) > 0) {
-         for(int i=0;i<ArraySize(zone);i++) {
-            if (zone[i].mitigated == 1) {
-               key = i;
-               break;
-            }
-         }
-         if (key >= 0 
-            || key < 0 // Chấp nhận buy sell mọi thời điểm
-            ) {
-            // Lấy giá cao nhất và thấp nhất
-            double lastHigh = iHigh(_Symbol, tfData.timeFrame, 1);
-            double lastLow  = iLow(_Symbol, tfData.timeFrame, 1);
-            if (key >=0) {
-               g_stoploss = (type == 1)? zone[key].low : zone[key].high;
-            } else {
-               g_stoploss = myEAs.statusInternalHTL.sHL_iStoploss;
-            }
-            
-            if (type == 1) {
-               if (myEAs.marketStructStatus.iMSS_intSLowHTFRealTime == myEAs.marketStructStatus.iMSS_L_AF_LTFRealTime && myEAs.marketStructStatus.iMSS_L_pattern_signal == 1) {
-               
-                  //if (myEAs.signalInternal.sg_getIdmBuy) result_str += "; Dừng Buy vì đã get Global IDM Buy";
-                  //entryPrice = lastHigh;
-                  entryPrice = tfData.intSHighs[1];
-                  g_stoploss = (myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock == 1 || 1)? myEAs.marketStructStatus.iMSS_intSLowHTFRealTime : myEAs.statusInternalHTL.sHL_iStoploss;
-                  result_str = "BUY: với SL = "+ DoubleToString(g_stoploss, _Digits) + "; TP = " + DoubleToString(myEAs.statusInternalHTL.sHL_iTarget, _Digits);
-                  
-                   if(entryPrice < Ask) 
-                   {
-                     // Gọi lệnh Buy Limit
-                     ExecutePendingOrder(ORDER_TYPE_BUY_LIMIT, entryPrice, g_stoploss, myEAs.statusInternalHTL.sHL_iTarget, risk, InpMagic, str_options, InpRR);
-                   } else {
-                     // Gọi lệnh Buy Stop
-                     ExecutePendingOrder(ORDER_TYPE_BUY_STOP, entryPrice, g_stoploss, myEAs.statusInternalHTL.sHL_iTarget, risk, InpMagic, str_options, InpRR);
-                   }
-               }
-               
-            } else if (type == -1) {
-               if (myEAs.marketStructStatus.iMSS_intSHighHTFRealTime == myEAs.marketStructStatus.iMSS_H_AF_LTFRealTime && myEAs.marketStructStatus.iMSS_H_pattern_signal == 1) {
-                  
-                  //if (myEAs.signalInternal.sg_getIdmSell) result_str += "; Dừng Sell vì đã get Global IDM Sell";
-                  //entryPrice = lastLow;
-                  g_stoploss = (myEAs.statusInternalHTL.sHL_mitigate_iOrderBlock == 1 || 1) ? myEAs.marketStructStatus.iMSS_intSHighHTFRealTime : myEAs.statusInternalHTL.sHL_iStoploss;
-                  result_str = "SELL: với SL = "+ DoubleToString(g_stoploss, _Digits)+"; TP = " + DoubleToString(myEAs.statusInternalHTL.sHL_iTarget, _Digits);
-                  
-                  
-                  entryPrice = tfData.intSLows[1];
-                  if(entryPrice > Bid) {
-                     // Gọi lệnh Buy Limit
-                     ExecutePendingOrder(ORDER_TYPE_SELL_LIMIT, entryPrice, g_stoploss, myEAs.statusInternalHTL.sHL_iTarget, risk, InpMagic, str_options, InpRR);
-                  } else {
-                     ExecutePendingOrder(ORDER_TYPE_SELL_STOP, entryPrice, g_stoploss, myEAs.statusInternalHTL.sHL_iTarget, risk, InpMagic, str_options, InpRR);
-                  }
-                  
-               }
-               
-            }
-            Print(result_str + " " + str_options);
-            Print(getValueTrend(tfData));
-            
-         }
-      } else {
-         Print("Khong truyen duoc Array vao day");
       }
    }
    
@@ -7003,6 +6813,8 @@ int OnInit()
    ChartSetInteger(0, CHART_SHOW_GRID, false);
 //---   
    defaultGlobal();
+   //Setting scalping Robot
+   scalpingRobotSettings(0);
 //---
    prewHighTFStruct.originalDefinition(highTimeFrame);
    prewLowTFStruct.originalDefinition(lowTimeFrame);
@@ -7016,14 +6828,11 @@ int OnInit()
 // OnTick function
 void OnTick()
 {
-   Ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-   Bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   //Setting scalping Robot
+   scalpingRobotSettings(1);
    
-   // Update spread history array
-   double newSpread = NormalizeDouble(Ask - Bid, _Digits);
-   
-   // 1. Quản lý các lệnh đang chạy trước
-    ManageOrders(InpMagic);
+   // Quản lý các lệnh đang chạy trước
+   managerOrderScalpingRobotRunning();
    //demoOntick();
    
    // Kiểm tra nến mới cho M5
@@ -7529,63 +7338,6 @@ double CalculateLotSize(double riskPercent, double entryPrice, double stopLossPr
 }
 
 //+------------------------------------------------------------------+
-//| Hàm thực thi lệnh với bộ lọc R:R tối thiểu                       |
-//+------------------------------------------------------------------+
-void ExecutePendingOrder(ENUM_ORDER_TYPE type, 
-                         double price, 
-                         double sl, 
-                         double tp, 
-                         double riskPct, 
-                         long magic, 
-                         string comment,
-                         double minRR = 2.0) // Thêm tham số RR tối thiểu (mặc định 1:2)
-{
-    // 1. Kiểm tra tính hợp lệ của SL và TP
-    double riskDistance = MathAbs(price - sl);
-    double rewardDistance = MathAbs(tp - price);
-
-    if(riskDistance <= 0) {
-        Print("Lỗi: Khoảng cách SL không hợp lệ.");
-        return;
-    }
-
-    // 2. Tính toán tỉ lệ R:R thực tế
-    double actualRR = rewardDistance / riskDistance;
-
-    // 3. Kiểm tra điều kiện R:R tối thiểu
-    if(actualRR < minRR)
-    {
-        Print(">>> BỎ QUA LỆNH: Tỉ lệ R:R không đạt yêu cầu. (Thực tế: 1:", 
-              DoubleToString(actualRR, 2), " < Yêu cầu: 1:", DoubleToString(minRR, 2), ")");
-        return; 
-    }
-
-    // 4. Nếu đạt điều kiện R:R, bắt đầu tính Lot
-    double finalLot = CalculateLotSize(riskPct, price, sl, InpMinLot);
-    
-    if(finalLot > 0)
-    {
-        trade.SetExpertMagicNumber(magic);
-        
-        price = NormalizeDouble(price, _Digits);
-        sl    = NormalizeDouble(sl, _Digits);
-        tp    = NormalizeDouble(tp, _Digits);
-
-        bool success = false;
-        switch(type)
-        {
-            case ORDER_TYPE_BUY_STOP:   success = trade.BuyStop(finalLot, price, _Symbol, sl, tp, ORDER_TIME_GTC, 0, comment); break;
-            case ORDER_TYPE_SELL_STOP:  success = trade.SellStop(finalLot, price, _Symbol, sl, tp, ORDER_TIME_GTC, 0, comment); break;
-            case ORDER_TYPE_BUY_LIMIT:  success = trade.BuyLimit(finalLot, price, _Symbol, sl, tp, ORDER_TIME_GTC, 0, comment); break;
-            case ORDER_TYPE_SELL_LIMIT: success = trade.SellLimit(finalLot, price, _Symbol, sl, tp, ORDER_TIME_GTC, 0, comment); break;
-        }
-        
-        if(success) Print(">>> ĐÃ ĐẶT LỆNH RR OK: ", comment, " | RR: 1:", DoubleToString(actualRR, 2));
-        else Print(">>> LỖI ĐẶT LỆNH: ", GetLastError());
-    }
-}
-
-//+------------------------------------------------------------------+
 //| Hàm xoá tất cả các lệnh chờ của cặp tiền này và Magic này        |
 //+------------------------------------------------------------------+
 void DeleteAllPendingOrders(string symbol, long magic)
@@ -7619,65 +7371,144 @@ void DeleteAllPendingOrders(string symbol, long magic)
 }
 
 //+------------------------------------------------------------------+
-//| Hàm quản lý vị thế: Dời SL về Entry và Chốt 1/3 khi đạt RR 1:1   |
+//| Tổ hợp hàm scalping robot sẽ nằm ở khu vực này                   |
 //+------------------------------------------------------------------+
-void ManageOrders(long magic)
-{
-    for(int i = PositionsTotal() - 1; i >= 0; i--)
-    {
-        ulong ticket = PositionGetTicket(i);
-        if(PositionSelectByTicket(ticket))
-        {
-            // Chỉ quản lý lệnh đúng cặp tiền và đúng Magic Number
-            if(PositionGetString(POSITION_SYMBOL) == _Symbol && PositionGetInteger(POSITION_MAGIC) == magic)
-            {
-                double entryPrice = PositionGetDouble(POSITION_PRICE_OPEN);
-                double currentSL  = PositionGetDouble(POSITION_SL);
-                double currentLot = PositionGetDouble(POSITION_VOLUME);
-                double currentPrice = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY) 
-                                      ? SymbolInfoDouble(_Symbol, SYMBOL_BID) 
-                                      : SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-                
-                // 1. Tính toán khoảng cách SL ban đầu (Risk)
-                // Lưu ý: Chúng ta cần biết SL ban đầu. Nếu hiện tại SL đã bằng Entry, nghĩa là đã xử lý rồi.
-                if(currentSL == entryPrice) continue; 
-
-                double riskDistance = MathAbs(entryPrice - currentSL);
-                if(riskDistance <= 0) continue;
-
-                // 2. Kiểm tra xem giá đã đi được 1:1 chưa
-                double profitDistance = MathAbs(currentPrice - entryPrice);
-                
-                // Nếu lợi nhuận hiện tại >= rủi ro ban đầu (Tỉ lệ 1:1)
-                if(profitDistance >= riskDistance)
-                {
-                    // HÀNH ĐỘNG 1: Chốt lời 1/3 khối lượng
-                    double lotToClose = NormalizeDouble(currentLot / InpBE, 2);
-                    
-                    // Kiểm tra bước nhảy Lot của sàn để đảm bảo lotToClose hợp lệ
-                    double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
-                    lotToClose = MathFloor(lotToClose / lotStep) * lotStep;
-
-                    if(lotToClose >= SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN))
-                    {
-                        Print(">>> RR 1:1 đạt được. Đang chốt 1/3 khối lượng: ", lotToClose);
-                        trade.PositionClosePartial(ticket, lotToClose);
-                    }
-
-                    // HÀNH ĐỘNG 2: Dời Stop Loss về hòa vốn (Break Even)
-                    // Thêm một chút offset nếu muốn (ví dụ + 10 point để trả phí spread)
-                    double newSL = entryPrice; 
-                    
-                    if(trade.PositionModify(ticket, newSL, PositionGetDouble(POSITION_TP)))
-                    {
-                        Print(">>> Đã dời SL về hòa vốn cho lệnh #", ticket);
-                    }
-                }
-            }
-        }
-    }
+// Type = 0: call in Onnit -> ; type = 1: call in OnTick
+void scalpingRobotSettings(int type) {
+   // Onnit
+   if (type == 0) {
+      ChartSetInteger(0, CHART_SHOW_GRID, false);
+      ChartSetInteger(0, CHART_AUTOSCROLL, true);
+      ChartSetInteger(0, CHART_SHIFT, true);
+      ChartSetInteger(0, CHART_MODE, CHART_CANDLES);
+      SHChoice = (int)SHInput;
+      EHChoice = (int)EHInput;
+      SysChoice = (int)SType;
+            
+      // Xac dinh cap tien se trade
+      // Profile Adjustments
+      double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+      if (SysChoice == 0){
+         Tppoints = TppointsInput; Slpoints = SlpointsInput; OrderDistPoints = (int)(Tppoints/2);
+         TslPoints = TslPointsInput; TslTriggerPoints = TslTriggerPointsInput;
+         PairCurency = "Forex";
+      }else if (SysChoice == 1) { // Bitcoin
+         Tppoints = ask * TPasPct; Slpoints = ask * SLasPct; OrderDistPoints = (int)(Tppoints/2);
+         TslPoints = Tppoints * TSLasPctofTP/100; TslTriggerPoints = Tppoints * TSLTgrasPctofTP/100;
+         PairCurency = "Bitcoin";
+      } else if (SysChoice == 2) { // Gold
+         Tppoints = ask * TPasPctGold; Slpoints = ask * SLasPctGold; OrderDistPoints = (int)(Tppoints/2);
+         TslPoints = Tppoints * TSLasPctofTPGold/100; TslTriggerPoints = Tppoints * TSLTgrasPctofTPGold/100;
+         PairCurency = "Gold";
+      } else if (SysChoice == 3) { // Indices
+         Tppoints = ask * TPasPctIndices; Slpoints = ask * SLasPctIndices; OrderDistPoints = (int)(Tppoints/2);
+         TslPoints = Tppoints * TSLasPctofTPIndices/100; TslTriggerPoints = Tppoints * TSLTgrasPctofTPIndices/100;
+         PairCurency = "Indices";
+      }
+   } else 
+   // On Tick
+   if (type == 1) {
+      MqlDateTime tm={}, gmt;
+      time_server = TimeTradeServer(tm);
+      time_Local = TimeLocal();
+      time_gmt = TimeGMT(tm);
+      
+      today = EnumToString((ENUM_DAY_OF_WEEK)tm.day_of_week);
+      TimeGMT(gmt);
+      Hournow = gmt.hour;
+   }
 }
 
+void TrailStop() {
+   double sl = 0, tp = 0;
+   double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   for (int i = PositionsTotal() - 1; i>=0; i--) {
+      if (posinfo.SelectByIndex(i) && posinfo.Magic() == InpMagic && posinfo.Symbol() == _Symbol) {
+         ulong ticket = posinfo.Ticket();
+         if (posinfo.PositionType() == POSITION_TYPE_BUY) {
+            if((bid - posinfo.PriceOpen()) > TslTriggerPoints*_Point) {
+               tp = posinfo.TakeProfit(); sl = bid - (TslPoints * _Point);
+               if (sl > posinfo.StopLoss() || posinfo.StopLoss() == 0) trade.PositionModify(ticket,sl,tp);
+            }
+         } else {
+            if ((posinfo.PriceOpen() - ask) > TslTriggerPoints * _Point) {
+               tp = posinfo.TakeProfit(); sl = ask + (TslPoints * _Point);
+               if (sl < posinfo.StopLoss() || posinfo.StopLoss() == 0) trade.PositionModify(ticket,sl,tp);
+            }
+         }
+      }
+   }
+}
+
+bool IsUpcomingNews() {
+   if (!NewFilterOn) return false;
+   if (TrDisabledNews && TimeCurrent() - LastNewsAvoided < StartTradingMin*60) return true;
+   TrDisabledNews = false;
+   string sep = (separator == comma) ? "," : ";";
+   sep_code = StringGetCharacter(sep,0);
+   int k = StringSplit(KeyNews, sep_code, Newstoavoid);
+   MqlCalendarValue values[];
+   datetime starttime = TimeCurrent();
+   datetime endtime = starttime + 86400 * DaysNewsLookUp;
+   CalendarValueHistory(values, starttime, endtime, NULL, NULL);
+   for(int i=0; i<ArraySize(values); i++) {
+      MqlCalendarEvent event; CalendarEventById(values[i].event_id, event);
+      MqlCalendarCountry country; CalendarCountryById(event.country_id, country);
+      if(StringFind(NewsCurrencies, country.currency) < 0) continue;
+      for(int j=0; j<k; j++) {
+         if (StringFind(event.name, Newstoavoid[j]) >= 0) {
+            _news_text += "Next News: " + country.currency + ": " + event.name + " -> " + (string)values[i].time + "\n";
+            if (values[i].time - starttime < StopBeforeMin*60) {
+               LastNewsAvoided = values[i].time; TrDisabledNews = true;
+               TradingEnabledComm = "Trading disabled due to: " + event.name;
+               return true;
+            }
+         }
+      }
+   }
+   return false;
+}
+//+------------------------------------------------------------------+
+//| Hàm quản lý lệnh đang chạy                                       |
+//+------------------------------------------------------------------+
+void managerOrderScalpingRobotRunning() {
+   TrailStop();
+}
+
+string getInfoScalpingRobot() {
+   string text = "";
+   
+   int solenhbuy = 0, solenhsell = 0;
+   double profit = 0, lotBuy = 0, lotSell = 0;
+   double spread = SymbolInfoDouble(_Symbol, SYMBOL_ASK) - SymbolInfoDouble(_Symbol, SYMBOL_BID);
+      
+   text += "-----\nToday is "+ today +"\n" +
+         "Local Time  = "+ (string)time_Local + "\n"+
+         "GMT Time    = "+  (string)time_gmt +"\n"+
+         "Pair: System = "+_Symbol+" + Selected: = "+PairCurency+" - Spread = "+ DoubleToString(spread, Digits()) +"\n"+
+         "Risk: " + (string)((RiskPercent > 0) ? (string)RiskPercent + "%" : "Fixed Lot") +  " - 1 point = " + (string)_Point +"\n"+
+         "TP Point = " + DoubleToString((Tppoints * _Point), _Digits) + " - SL Point = "+ DoubleToString((Slpoints * _Point), _Digits) + "\n"+
+         "Price move : "+ DoubleToString((TslTriggerPoints*_Point), _Digits) + " with Entry. Begin Trailing with "+ DoubleToString((TslPoints * _Point), _Digits);
+
+   for(int i=0; i<PositionsTotal(); i++) {
+      ulong ticket = PositionGetTicket(i);
+      if(PositionSelectByTicket(ticket) && PositionGetString(POSITION_SYMBOL) == _Symbol && PositionGetInteger(POSITION_MAGIC) == InpMagic) {
+         ENUM_POSITION_TYPE type = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+         if(type == POSITION_TYPE_BUY) { solenhbuy++; lotBuy += PositionGetDouble(POSITION_VOLUME); }
+         else { solenhsell++; lotSell += PositionGetDouble(POSITION_VOLUME); }
+         profit += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+      }
+   }
+   text += "\nPositions Buy/Sell: " + (string)solenhbuy + "/" + (string)solenhsell + "\n" +
+                  "Profit: " + DoubleToString(profit, 2) + "\n" +
+                  "Equity: " + DoubleToString(AccountInfoDouble(ACCOUNT_EQUITY), 2);
+   return text;
+}
+
+//+------------------------------------------------------------------+
+//| KET THUC Tổ hợp hàm scalping robot                               |
+//+------------------------------------------------------------------+
 
 //+------------------------------------------------------------------+
 //| Tổ hợp hàm hiển thị thông tin cơ bản ra ngoài chart              |
@@ -7696,6 +7527,8 @@ void showInfoStruct() {
    comment += getInfoStruct(lowTimeFrame);
    comment += "\n";
    comment += getInfoStruct(highTimeFrame);
+   comment += "\n";
+   comment += getInfoScalpingRobot();
    Comment(comment);
 }
 
@@ -7709,6 +7542,7 @@ string getInfoStruct(ENUM_TIMEFRAMES timeframe) {
    text += " | Marjor Struct is : " + ((tfData.mTrend == 0) ? "Not defined" : ((tfData.mTrend == 1) ? "m UpTrend" : "m DownTrend")) + "( "+ (string) tfData.mTrend + " . "+ (string) tfData.vMTrend+" . "+ (string) tfData.wvMtrend+ ")";
    text += " | Internal is : " + ((tfData.iTrend == 0) ? "Not defined" : ((tfData.iTrend == 1) ? "i UpTrend" : "i DownTrend"))+ "( "+ (string) tfData.iTrend + " . "+ (string) tfData.vItrend + " . "+ (string) tfData.wvItrend+ ")";
    text += " | Gann wave is : " + ((tfData.gTrend == 0) ? "Not defined" : ((tfData.gTrend == 1) ? "g UpTrend" : " DownTrend"))+ "( "+ (string) tfData.gTrend + " . "+ (string) tfData.vGTrend+ ")";
+   
    return text;
 }
 
