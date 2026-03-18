@@ -155,9 +155,9 @@ int lookback = 100; // Số lượng thanh Bar được đếm ngược lại so
 datetime lookback_time = 0; 
 int lookback_LTF = 0;
 // định nghĩa riêng cặp khung thời gian trade
-enum pairTF {m1_m15 = 1, m5_h1 = 5, m15_h4 = 15, h1_d1 = 60};
-input pairTF pairTimeFrameInput = m5_h1; // Cặp khung thời gian trade: low TimeFrame _ high TimeFrame
-int lowPairTF = pairTimeFrameInput;
+enum pairTF {m3_m1 = 1, m5_m1 = 2, m10_m1 = 3, m15_m1 = 4, h1_m5 = 5, h4_m15 = 6, d1_h1 = 7};
+input pairTF pairTimeFrameInput = m15_m1; // Cặp khung thời gian trade: high TimeFrame _ low TimeFrame 
+int lowPairTF;
 int highPairTF;
 ENUM_TIMEFRAMES lowTimeFrame, highTimeFrame;
 input bool isDrawHighTF = true; // Draw Zone HighTimeframe
@@ -2862,9 +2862,17 @@ struct marketStructs{
            tfData.tfColor = clrGray;
            tfData.isTimeframe = 1;
            break;
+         case  PERIOD_M3:
+           tfData.tfColor = clrSkyBlue;
+           tfData.isTimeframe = 3;
+           break;
          case  PERIOD_M5:
            tfData.tfColor = clrSkyBlue;
            tfData.isTimeframe = 5;
+           break;
+         case  PERIOD_M10:
+           tfData.tfColor = clrBlue;
+           tfData.isTimeframe = 10;
            break;
          case  PERIOD_M15:
            tfData.tfColor = clrBlue;
@@ -6970,27 +6978,55 @@ void OnDeinit(const int reason)
 // Dinh nghia va xac nhan bien toan cuc
 void defaultGlobal() {
    // xac dinh cap low high time frame by minutes
-   switch(lowPairTF)
+   switch(pairTimeFrameInput)
      {
       case  1:
+        lowPairTF = 1;
+        highPairTF = 3;
+        lowTimeFrame = PERIOD_M1;
+        highTimeFrame = PERIOD_M3;
+        break;
+      case  2:
+        lowPairTF = 1;
+        highPairTF = 5;
+        lowTimeFrame = PERIOD_M1;
+        highTimeFrame = PERIOD_M5;
+        break;
+      case  3:
+        lowPairTF = 1;
+        highPairTF = 10;
+        lowTimeFrame = PERIOD_M1;
+        highTimeFrame = PERIOD_M10;
+        break;
+      case  4:
+        lowPairTF = 1;
         highPairTF = 15;
         lowTimeFrame = PERIOD_M1;
         highTimeFrame = PERIOD_M15;
         break;
-      case  15:
+      case  5:
+        lowPairTF = 5;
+        highPairTF = 60;
+        lowTimeFrame = PERIOD_M5;
+        highTimeFrame = PERIOD_H1;
+        break;
+      case  6:
+        lowPairTF = 15;
         highPairTF = 240;
         lowTimeFrame = PERIOD_M15;
         highTimeFrame = PERIOD_H4;
         break;
-      case  60:
-        highPairTF = 1440;
+      case  7:
+        lowPairTF = 60;
+        highPairTF = 3600;
         lowTimeFrame = PERIOD_H1;
         highTimeFrame = PERIOD_D1;
         break;
       default:
-         highPairTF = 60;
-         lowTimeFrame = PERIOD_M5;
-         highTimeFrame = PERIOD_H1;
+         lowPairTF = 1;
+         highPairTF = 15;
+         lowTimeFrame = PERIOD_M1;
+         highTimeFrame = PERIOD_M15;
         break;
      }
 }
