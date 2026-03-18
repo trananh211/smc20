@@ -3238,7 +3238,7 @@ struct marketStructs{
          text += "\n Kiem tra xem co vao duoc lenh sell hay khong? ";
          if (
             // đáy Tp khong duoc mitigated Poizone Marjor
-            (myEAs.valueInternal.vi_isMitigatedPoiZone == false && myEAs.valueInternal.vi_isSweptPoiZone == false && myEAs.valueInternal.vi_ITrend == -1 && myEAs.valueInternal.vi_wvITrend == -1 ) ||  
+            ( myEAs.valueInternal.vi_isMitigatedPoiZone == false && myEAs.valueInternal.vi_isSweptPoiZone == false && ((myEAs.valueInternal.vi_ITrend == -1 && myEAs.valueInternal.vi_wvITrend == -1) || (myEAs.valueInternal.vi_mTrend == -1 && myEAs.valueInternal.vi_ITrend == -1))) ||  
             (myEAs.valueInternal.vi_mTrend == -1 && myEAs.valueInternal.vi_ITrend == 1 && myEAs.valueInternal.vi_wvITrend == -1 && 
                (myEAs.valueInternal.vi_isMitigatedPoiZone || myEAs.valueInternal.vi_isSweptPoiZone || myEAs.valueInternal.vi_isSwept)
             )
@@ -3274,7 +3274,7 @@ struct marketStructs{
          text += "\n Kiem tra xem co vao duoc lenh Buy hay khong? ";
          if (
             // dinh Tp khong duoc mitigated Poizone Marjor
-            (myEAs.valueInternal.vi_isMitigatedPoiZone == false && myEAs.valueInternal.vi_isSweptPoiZone == false && myEAs.valueInternal.vi_ITrend == 1 && myEAs.valueInternal.vi_wvITrend == 1 ) ||  
+            (myEAs.valueInternal.vi_isMitigatedPoiZone == false && myEAs.valueInternal.vi_isSweptPoiZone == false && ((myEAs.valueInternal.vi_ITrend == 1 && myEAs.valueInternal.vi_wvITrend == 1) || (myEAs.valueInternal.vi_mTrend == 1 && myEAs.valueInternal.vi_ITrend == 1))) ||  
             (myEAs.valueInternal.vi_mTrend == 1 && myEAs.valueInternal.vi_ITrend == -1 && myEAs.valueInternal.vi_wvITrend == 1 && 
                (myEAs.valueInternal.vi_isMitigatedPoiZone || myEAs.valueInternal.vi_isSweptPoiZone || myEAs.valueInternal.vi_isSwept)
             )
