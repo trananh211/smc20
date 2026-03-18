@@ -3235,50 +3235,75 @@ struct marketStructs{
       string text = "Goi ham goTradeScalpingRobot()";
       // kiểm tra tồn tại điều kiện đồng thuận low và high tf hay chưa
       if (myEAs.valueInternal.vi_TempSwing_High.isActive == true && myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_LTF == 1) {
-         text += "\nVao lenh Sell";
-         double entry = myEAs.valueInternal.vi_TempSwing_High.vins_Entry_Stop;
-         if(entry == 0) return;
-         double bid = SymbolInfoDouble(_Symbol,SYMBOL_BID);
-         double tp = (myEAs.valueInternal.vi_intSLow != 0)? myEAs.valueInternal.vi_intSLow : entry - Tppoints * _Point;
-         tp = entry - Tppoints * _Point;
-         double sl = myEAs.valueInternal.vi_TempSwing_High.vins_SwingNew;
-         double lots = (RiskPercent > 0) ? CalculateLotSize(RiskPercent, entry, sl, minVolume) : minVolume;
-         datetime expiration = iTime(_Symbol, Timeframe, 0) + ExpirationBars * PeriodSeconds(Timeframe);
-         if (bid < entry + OrderDistPoints * _Point) {
-            text += "\nVao lenh limit";
-            //trade.SellLimit(lots, entry, _Symbol, sl, tp,ORDER_TIME_SPECIFIED, expiration);
-         } else {
-            text += "\nVao lenh stop";
-            if (trade.SellStop(lots, entry, _Symbol, sl, tp, ORDER_TIME_SPECIFIED, expiration)) {
-               myEAs.valueInternal.vi_TempSwing_High.isActive = false;
-               text += "=> [success] Vao lenh thanh cong";
+         text += "\n Kiem tra xem co vao duoc lenh sell hay khong? ";
+         if (
+            // đáy Tp khong duoc mitigated Poizone Marjor
+            (myEAs.valueInternal.vi_isMitigatedPoiZone == false && myEAs.valueInternal.vi_isSweptPoiZone == false && myEAs.valueInternal.vi_ITrend == -1 && myEAs.valueInternal.vi_wvITrend == -1 ) ||  
+            (myEAs.valueInternal.vi_mTrend == -1 && myEAs.valueInternal.vi_ITrend == 1 && myEAs.valueInternal.vi_wvITrend == -1 && 
+               (myEAs.valueInternal.vi_isMitigatedPoiZone || myEAs.valueInternal.vi_isSweptPoiZone || myEAs.valueInternal.vi_isSwept)
+            )
+            
+         ) {
+            text += " => Vao lenh Sell";
+            double entry = myEAs.valueInternal.vi_TempSwing_High.vins_Entry_Stop;
+            if(entry == 0) return;
+            double bid = SymbolInfoDouble(_Symbol,SYMBOL_BID);
+            double tp = (myEAs.valueInternal.vi_intSLow != 0)? myEAs.valueInternal.vi_intSLow : entry - Tppoints * _Point;
+            tp = entry - Tppoints * _Point;
+            double sl = myEAs.valueInternal.vi_TempSwing_High.vins_SwingNew;
+            double lots = (RiskPercent > 0) ? CalculateLotSize(RiskPercent, entry, sl, minVolume) : minVolume;
+            datetime expiration = iTime(_Symbol, Timeframe, 0) + ExpirationBars * PeriodSeconds(Timeframe);
+            if (bid < entry + OrderDistPoints * _Point) {
+               text += "=> Vao lenh limit ";
+               //trade.SellLimit(lots, entry, _Symbol, sl, tp,ORDER_TIME_SPECIFIED, expiration);
             } else {
-               text += "=> [error] Vao lenh that bai";
+               text += "=> Vao lenh stop ";
+               if (trade.SellStop(lots, entry, _Symbol, sl, tp, ORDER_TIME_SPECIFIED, expiration)) {
+                  myEAs.valueInternal.vi_TempSwing_High.isActive = false;
+                  text += "=> [success] Vao lenh thanh cong";
+               } else {
+                  text += "=> [error] Vao lenh that bai";
+               }
             }
+         } else {
+            text += " => Không đủ điều kiện vào lệnh sell.";
          }
          
+         
       } else if (myEAs.valueInternal.vi_TempSwing_Low.isActive == true && myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF == 1) {
-         text += "Vao lenh Buy";
-         double entry = myEAs.valueInternal.vi_TempSwing_Low.vins_Entry_Stop;
-         if(entry == 0) return;
-         double tp = (myEAs.valueInternal.vi_intSHigh != 0)? myEAs.valueInternal.vi_intSHigh : entry + Tppoints * _Point;
-         tp = entry + Tppoints * _Point;
-         double sl = myEAs.valueInternal.vi_TempSwing_Low.vins_SwingNew;
-         double lots = (RiskPercent > 0) ? CalculateLotSize(RiskPercent, entry, sl, minVolume) : minVolume;
-         datetime expiration = iTime(_Symbol, Timeframe, 0) + ExpirationBars * PeriodSeconds(Timeframe);
-         double ask = SymbolInfoDouble(_Symbol,SYMBOL_ASK);
-         if (ask > entry - OrderDistPoints * _Point) {
-            text += "Vao lenh limit";
-            //trade.BuyLimit(lots, entry, _Symbol, sl, tp,ORDER_TIME_SPECIFIED, expiration);
-         } else {
-            text += "Vao lenh stop";
-            if (trade.BuyStop(lots, entry, _Symbol, sl, tp, ORDER_TIME_SPECIFIED, expiration)) {
-               myEAs.valueInternal.vi_TempSwing_Low.isActive = false;
-               text += "=> [success] Vao lenh thanh cong";
-            } else {
-               text += "=> [error] Vao lenh that bai";
-            }
+         text += "\n Kiem tra xem co vao duoc lenh Buy hay khong? ";
+         if (
+            // dinh Tp khong duoc mitigated Poizone Marjor
+            (myEAs.valueInternal.vi_isMitigatedPoiZone == false && myEAs.valueInternal.vi_isSweptPoiZone == false && myEAs.valueInternal.vi_ITrend == 1 && myEAs.valueInternal.vi_wvITrend == 1 ) ||  
+            (myEAs.valueInternal.vi_mTrend == 1 && myEAs.valueInternal.vi_ITrend == -1 && myEAs.valueInternal.vi_wvITrend == 1 && 
+               (myEAs.valueInternal.vi_isMitigatedPoiZone || myEAs.valueInternal.vi_isSweptPoiZone || myEAs.valueInternal.vi_isSwept)
+            )
             
+         ) {
+            text += "=> Vao lenh Buy";
+            double entry = myEAs.valueInternal.vi_TempSwing_Low.vins_Entry_Stop;
+            if(entry == 0) return;
+            double tp = (myEAs.valueInternal.vi_intSHigh != 0)? myEAs.valueInternal.vi_intSHigh : entry + Tppoints * _Point;
+            tp = entry + Tppoints * _Point;
+            double sl = myEAs.valueInternal.vi_TempSwing_Low.vins_SwingNew;
+            double lots = (RiskPercent > 0) ? CalculateLotSize(RiskPercent, entry, sl, minVolume) : minVolume;
+            datetime expiration = iTime(_Symbol, Timeframe, 0) + ExpirationBars * PeriodSeconds(Timeframe);
+            double ask = SymbolInfoDouble(_Symbol,SYMBOL_ASK);
+            if (ask > entry - OrderDistPoints * _Point) {
+               text += "=> Vao lenh limit ";
+               //trade.BuyLimit(lots, entry, _Symbol, sl, tp,ORDER_TIME_SPECIFIED, expiration);
+            } else {
+               text += "=> Vao lenh stop ";
+               if (trade.BuyStop(lots, entry, _Symbol, sl, tp, ORDER_TIME_SPECIFIED, expiration)) {
+                  myEAs.valueInternal.vi_TempSwing_Low.isActive = false;
+                  text += "=> [success] Vao lenh thanh cong";
+               } else {
+                  text += "=> [error] Vao lenh that bai";
+               }
+               
+            }
+         } else {
+            text += " => Không đủ điều kiện vào lệnh Buy.";
          }
       } else {
          Print("Khong co LTF xac nhan. Bo qua");
