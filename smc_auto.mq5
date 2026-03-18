@@ -98,8 +98,8 @@ string                        TradingEnabledComm               = "";
 input group "=== Forex Trading Inputs ==="   
 input int                     TppointsInput                    = 350; // Take Profit (10 Points = 1 pip)
 input int                     SlpointsInput                    = 250; // Stoploss Points (10 Points = 1 pip)
-input int                     TslTriggerPointsInput            = 20;  // Points in Profit before Trailing
-input int                     TslPointsInput                   = 10;  // Trailing Stoploss Points
+input int                     TslTriggerPointsInput            = 20;  // Cach bao nhieu gia la kich hoat Trailing
+input int                     TslPointsInput                   = 10;  // Trailing Stoploss Points - step trailing
 
 input group "=== Cryto Related Inputs ==="   
 input double                  TPasPct                          = 0.4; // TP as % of Price
@@ -108,10 +108,10 @@ input double                  TSLasPctofTP                     = 5;   // Trail S
 input double                  TSLTgrasPctofTP                  = 7;   // Trigger of Trail SL % of Tp
 
 input group "=== Gold Related Inputs ==="   
-input double                  TPasPctGold                      = 1; // TP as % of Price (Cent) 1 - (Standard) - 1
+input double                  TPasPctGold                      = 2; // TP as % of Price (Cent) 1 - (Standard) - 1
 input double                  SLasPctGold                      = 2.5; // SL as % of Price (Cent) 2.5 - (Standard) - 0.35
-input double                  TSLasPctofTPGold                 = 20; // Trail SL as % of TP (Cent) 20 - (Standard) - 10 
-input double                  TSLTgrasPctofTPGold              = 30; // Trigger of Trail SL % of Tp (Cent) 30 - (Standard) - 15
+input double                  TSLasPctofTPGold                 = 10; // Trail SL as % of TP (Cent) 20 - (Standard) - 10 
+input double                  TSLTgrasPctofTPGold              = 55; // Trigger of Trail SL % of Tp (Cent) 30 - (Standard) - 15
 
 input group "=== Indices Related Inputs ==="   
 input double                  TPasPctIndices                   = 0.2;
@@ -210,6 +210,7 @@ input double WickRatio = 2.0; // Râu nến phải dài gấp ít nhất 2 lần
 
 double Ask;
 double Bid;
+double Spread;
 int volume_style; // 1: Real Volume, 2: Tick Volume
 // End #region variale declaration
 
@@ -3245,7 +3246,7 @@ struct marketStructs{
             
          ) {
             text += " => Vao lenh Sell";
-            double entry = myEAs.valueInternal.vi_TempSwing_High.vins_Entry_Stop;
+            double entry = myEAs.valueInternal.vi_TempSwing_High.vins_Entry_Stop - Spread;
             if(entry == 0) return;
             double bid = SymbolInfoDouble(_Symbol,SYMBOL_BID);
             double tp = (myEAs.valueInternal.vi_intSLow != 0)? myEAs.valueInternal.vi_intSLow : entry - Tppoints * _Point;
@@ -3253,7 +3254,7 @@ struct marketStructs{
             double sl = myEAs.valueInternal.vi_TempSwing_High.vins_SwingNew;
             double lots = (RiskPercent > 0) ? CalculateLotSize(RiskPercent, entry, sl, minVolume) : minVolume;
             datetime expiration = iTime(_Symbol, Timeframe, 0) + ExpirationBars * PeriodSeconds(Timeframe);
-            if (bid < entry + OrderDistPoints * _Point) {
+            if (bid < entry) {
                text += "=> Vao lenh limit ";
                //trade.SellLimit(lots, entry, _Symbol, sl, tp,ORDER_TIME_SPECIFIED, expiration);
             } else {
@@ -3281,7 +3282,7 @@ struct marketStructs{
             
          ) {
             text += "=> Vao lenh Buy";
-            double entry = myEAs.valueInternal.vi_TempSwing_Low.vins_Entry_Stop;
+            double entry = myEAs.valueInternal.vi_TempSwing_Low.vins_Entry_Stop + Spread;
             if(entry == 0) return;
             double tp = (myEAs.valueInternal.vi_intSHigh != 0)? myEAs.valueInternal.vi_intSHigh : entry + Tppoints * _Point;
             tp = entry + Tppoints * _Point;
@@ -3289,7 +3290,7 @@ struct marketStructs{
             double lots = (RiskPercent > 0) ? CalculateLotSize(RiskPercent, entry, sl, minVolume) : minVolume;
             datetime expiration = iTime(_Symbol, Timeframe, 0) + ExpirationBars * PeriodSeconds(Timeframe);
             double ask = SymbolInfoDouble(_Symbol,SYMBOL_ASK);
-            if (ask > entry - OrderDistPoints * _Point) {
+            if (ask > entry) {
                text += "=> Vao lenh limit ";
                //trade.BuyLimit(lots, entry, _Symbol, sl, tp,ORDER_TIME_SPECIFIED, expiration);
             } else {
@@ -3306,8 +3307,9 @@ struct marketStructs{
             text += " => Không đủ điều kiện vào lệnh Buy.";
          }
       } else {
-         Print("Khong co LTF xac nhan. Bo qua");
+         text += "Khong co LTF xac nhan. Bo qua";
       }
+      Print(text);
    }
    
    // Hàm vào lệnh theo đièu kiện SMC
@@ -7571,6 +7573,7 @@ void scalpingRobotSettings(int type) {
    if (type == 1) {
       Ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
       Bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+      Spread = Ask - Bid;
       MqlDateTime tm={}, gmt;
       time_server = TimeTradeServer(tm);
       time_Local = TimeLocal();
@@ -7677,7 +7680,7 @@ string getInfoScalpingRobot() {
          "Pair: System = "+_Symbol+" + Selected: = "+PairCurency+" - Spread = "+ DoubleToString(spread, Digits()) +"\n"+
          "Risk: " + (string)((RiskPercent > 0) ? (string)RiskPercent + "%" : "Fixed Lot") +  " - 1 point = " + (string)_Point +"\n"+
          "TP Point = " + DoubleToString((Tppoints * _Point), _Digits) + " - SL Point = "+ DoubleToString((Slpoints * _Point), _Digits) + "\n"+
-         "Price move : "+ DoubleToString((TslTriggerPoints*_Point), _Digits) + " with Entry. Begin Trailing with "+ DoubleToString((TslPoints * _Point), _Digits);
+         "Price start move when > : "+ DoubleToString((TslTriggerPoints*_Point), _Digits) + " with Entry. Step Trailing = "+ DoubleToString((TslPoints * _Point), _Digits);
 
    for(int i=0; i<PositionsTotal(); i++) {
       ulong ticket = PositionGetTicket(i);
