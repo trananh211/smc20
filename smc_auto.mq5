@@ -260,6 +260,7 @@ struct valueInternalNewSwing{
    // LTF sau khi xác nhận được swing ở HTF
    int vins_isSignalConfirm_LTF;
    int vins_isSignalConfirm_LTF_byWave; // 0: default. 1: gann wave. 2: internal wave; 
+   int vins_countBreakSwing; // thêm phần xác định phá break swing liên tiếp để xác nhận confirm LTF
    int vins_LTF_mTrend;
    int vins_LTF_wvmTrend;
    int vins_LTF_iTrend;
@@ -2765,9 +2766,11 @@ void checkStatusSettingPoiZone(TimeFrameData& tfData, MqlRates& bar1){
 	   // Check HTF bar break Body of swing sau mỗi nến HTF
 	   if (myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten == -1 && myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten_Again == 1) {
 	      //if (myEAs.valueInternal.vi_TempSwing_High.vins_isPoiZoneSwept || myEAs.valueInternal.vi_TempSwing_High.vins_isPoiZoneMitigated) {
-	         // Check nen EG tang: Neu la nen tang thi lay gia close, neu la nen giam thi lay gia open
-	         double price_need_compare = (myEAs.valueInternal.vi_TempSwing_High.vins_barSwing.close > myEAs.valueInternal.vi_TempSwing_High.vins_barSwing.open) ? myEAs.valueInternal.vi_TempSwing_High.vins_barSwing.close : myEAs.valueInternal.vi_TempSwing_High.vins_barSwing.open;
+	         // Check nen EG tang: Neu la nen tang thi lay gia open, neu la nen giam thi lay gia close
+	         double price_need_compare = (myEAs.valueInternal.vi_TempSwing_High.vins_barSwing.close > myEAs.valueInternal.vi_TempSwing_High.vins_barSwing.open) ? myEAs.valueInternal.vi_TempSwing_High.vins_barSwing.open : myEAs.valueInternal.vi_TempSwing_High.vins_barSwing.close;
 	         if (bar1.close < price_need_compare) {
+	            //Print("Swing High: "+myEAs.valueInternal.vi_TempSwing_High.vins_barSwing.high);
+	            Print("bar1.close ("+DoubleToString(bar1.close, _Digits)+") < Swing ("+DoubleToString(price_need_compare, _Digits)+") ");
 	            myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten_Again = 2;
 	            Print("Kich hoat Break Again Giam");
 	            Print("Kich hoat Break Again Giam");
@@ -2776,9 +2779,11 @@ void checkStatusSettingPoiZone(TimeFrameData& tfData, MqlRates& bar1){
 	   }
 	   if (myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten == -1 && myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten_Again == 1) {
 	      //if (myEAs.valueInternal.vi_TempSwing_Low.vins_isPoiZoneSwept || myEAs.valueInternal.vi_TempSwing_Low.vins_isPoiZoneMitigated)  {
-	         // Check nen EG giam: Neu la nen tang thi lay gia open, neu la nen giam thi lay gia close
-	         double price_need_compare = (myEAs.valueInternal.vi_TempSwing_Low.vins_barSwing.close > myEAs.valueInternal.vi_TempSwing_Low.vins_barSwing.open) ? myEAs.valueInternal.vi_TempSwing_Low.vins_barSwing.open : myEAs.valueInternal.vi_TempSwing_Low.vins_barSwing.close;
+	         // Check nen EG giam: Neu la nen tang thi lay gia close, neu la nen giam thi lay gia open
+	         double price_need_compare = (myEAs.valueInternal.vi_TempSwing_Low.vins_barSwing.close > myEAs.valueInternal.vi_TempSwing_Low.vins_barSwing.open) ? myEAs.valueInternal.vi_TempSwing_Low.vins_barSwing.close : myEAs.valueInternal.vi_TempSwing_Low.vins_barSwing.open;
 	         if (bar1.close > price_need_compare) {
+	            //Print("Swing Low: "+myEAs.valueInternal.vi_TempSwing_Low.vins_barSwing.low);
+	            Print("bar1.close ("+DoubleToString(bar1.close, _Digits)+") > Swing ("+DoubleToString(price_need_compare, _Digits)+") ");
 	            myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten_Again = 2;
 	            Print("Kich hoat Break Again Tăng");
 	            Print("Kich hoat Break Again Tăng");
@@ -3248,9 +3253,11 @@ struct marketStructs{
             text += " => Vao lenh Sell";
             double entry = myEAs.valueInternal.vi_TempSwing_High.vins_Entry_Stop - Spread;
             if(entry == 0) return;
+            
             double bid = SymbolInfoDouble(_Symbol,SYMBOL_BID);
             double tp = (myEAs.valueInternal.vi_intSLow != 0)? myEAs.valueInternal.vi_intSLow : entry - Tppoints * _Point;
             tp = entry - Tppoints * _Point;
+            //if(tp < myEAs.valueInternal.vi_intSLow) return;
             double sl = myEAs.valueInternal.vi_TempSwing_High.vins_SwingNew;
             double lots = (RiskPercent > 0) ? CalculateLotSize(RiskPercent, entry, sl, minVolume) : minVolume;
             datetime expiration = iTime(_Symbol, Timeframe, 0) + ExpirationBars * PeriodSeconds(Timeframe);
@@ -3286,6 +3293,7 @@ struct marketStructs{
             if(entry == 0) return;
             double tp = (myEAs.valueInternal.vi_intSHigh != 0)? myEAs.valueInternal.vi_intSHigh : entry + Tppoints * _Point;
             tp = entry + Tppoints * _Point;
+            //if(tp > myEAs.valueInternal.vi_intSHigh) return;
             double sl = myEAs.valueInternal.vi_TempSwing_Low.vins_SwingNew;
             double lots = (RiskPercent > 0) ? CalculateLotSize(RiskPercent, entry, sl, minVolume) : minVolume;
             datetime expiration = iTime(_Symbol, Timeframe, 0) + ExpirationBars * PeriodSeconds(Timeframe);
