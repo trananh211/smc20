@@ -252,7 +252,9 @@ struct valueInternalNewSwing{
    
    int vins_isSignalConfirm_Patten_Again; // 0: waiting. 1: breakout. -1. Scan ready
    MqlRates vins_barSwing; // Đánh dấu cây nến swing vào 1 biến barSwing
+   
    MqlRates vins_barOrderBlock; // Đánh dấu cây nến tăng hoặc giảm cuối cùng để kiểm tra break
+   int vins_isSignalConfirm_OB_Patten; // -1: Khong hinh thanh EG. 0: waiting. 1. Hinh thanh EG
    // Thông số HTF break: thuộc dạng swept hay không, mitigate POI hay không 
    bool vins_isOrderFlowMitigated;
    bool vins_isPoiZoneMitigated;
@@ -1683,107 +1685,110 @@ bool FindCandleByRates(int type, ENUM_TIMEFRAMES timeframe, MqlRates &current_ba
 //| Setup thông số swing High, Low tạm thời có thích hợp để trade hay không.   |     
 //| Mọi logic trade về lấy thông số sẽ được viết tại hàm này.                  |
 //+----------------------------------------------------------------------------+
-
-// Kiểm tra các cú pullback khi hình thành swing tại HTF
 void checkValueWithInternalSwingHTF(TimeFrameData& tfData, MqlRates& barPrev, MqlRates& barSwing, MqlRates& barNext, int type = 0) {
-   if(myEAs.valueInternal.vi_ITrend == 0) return;
-   int direction_nghich = (type == 1) ? -1 : 1;
+   if(myEAs.valueInternal.vi_ITrend == 0 || (type != 1 && type != -1)) return;
    
    myEAs.valueInternal.vi_ITrend = tfData.iTrend;
    myEAs.valueInternal.vi_wvITrend = tfData.wvItrend;
    myEAs.valueInternal.vi_mTrend = tfData.mTrend;
    myEAs.valueInternal.vi_wvmTrend = tfData.wvMtrend;
    
-   // Nếu xu hướng đang tăng. Kiểm tra swing Low PullBack
-   if (type == 1) {
-      // Check Swing Bull ( đúng xu hướng)
-      ZeroMemory(myEAs.valueInternal.vi_TempSwing_Low);
-      myEAs.valueInternal.vi_TempSwing_Low.vins_SwingNew = barSwing.low;
-      myEAs.valueInternal.vi_TempSwing_Low.vins_SwingTimeNew = barSwing.time;
-      myEAs.valueInternal.vi_TempSwing_Low.vins_barSwing = barSwing;
-      FindCandleByRates(-1, tfData.timeFrame, barSwing, myEAs.valueInternal.vi_intSHighTime, myEAs.valueInternal.vi_TempSwing_Low.vins_barOrderBlock);
-      Print("Swing Low: "+ DoubleToString(barSwing.low, _Digits) + " tai "+(string)barSwing.time+" - OrderBlock Buy: "+(string)myEAs.valueInternal.vi_TempSwing_Low.vins_barOrderBlock.time);
-      if (isCheckPullBackBySwept && CheckTheCandleCluster(barPrev, barSwing, barNext, type, true) == false) return; 
-      // Kiem tra cap nen swing co phai la EG hay khong.
-      if (CheckTheCandleCluster(barPrev, barSwing, barNext, type)) {
-         myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten = 1;
-         myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF = 0;
-         myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten_Again = -1;
-         Print("Kich hoat scan LTF && patten_again = -1");
+   if (type == 1) { 
+      #define sData myEAs.valueInternal.vi_TempSwing_Low
+      ZeroMemory(sData);
+      sData.vins_SwingNew = barSwing.low;
+      sData.vins_SwingTimeNew = barSwing.time;
+      sData.vins_barSwing = barSwing;
+      
+      FindCandleByRates(-1, tfData.timeFrame, barSwing, myEAs.valueInternal.vi_intSHighTime, sData.vins_barOrderBlock);
+      
+      // 1. Kiểm tra Swept (nếu có cài đặt)
+      if (isCheckPullBackBySwept && !CheckTheCandleCluster(barPrev, barSwing, barNext, type, true)) return;
+      
+      // 2. Kiểm tra Cấu trúc Cluster (Phân tầng tối ưu)
+      bool isCluster = CheckTheCandleCluster(barPrev, barSwing, barNext, type);
+      
+      if(isCluster) {
+         // Nếu Cluster thỏa mãn, bước vào check Engulfing nới lỏng so với nến OrderBlock
+         if(CheckTheCandleEngulfing(sData.vins_barOrderBlock, barNext, 1)) {
+            sData.vins_isSignalConfirm_Patten = 1;
+            sData.vins_isSignalConfirm_LTF = 0;
+            sData.vins_isSignalConfirm_Patten_Again = -1;
+         } else {
+            // Cluster thỏa mãn nhưng chưa Engulfing -> Chế độ chờ
+            sData.vins_isSignalConfirm_Patten = -1;
+            sData.vins_isSignalConfirm_LTF = 2;
+            sData.vins_isSignalConfirm_Patten_Again = 1;
+         }
       } else {
-         myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten = -1;
-         myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_LTF = 2;
-         myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten_Again = 1;
-         Print("Kich hoat scan LTF Again = 2 && patten_again = 1");
+         // Cluster không thỏa mãn -> Reset
+         sData.vins_isSignalConfirm_Patten = -1;
+         sData.vins_isSignalConfirm_LTF = 2;
+         sData.vins_isSignalConfirm_Patten_Again = 1;
       }
       
-      // Kiem tra mitigated 
-      // order flow
-      if(myEAs.valueInternal.vi_TempSwing_Low.vins_isOrderFlowMitigated == false && 
-         barSwing.low <= tfData.intSHighs[1] && barSwing.low >= tfData.intSLows[1]) myEAs.valueInternal.vi_TempSwing_Low.vins_isOrderFlowMitigated = true;
-      // Poizone
-      if((myEAs.valueInternal.vi_TempSwing_Low.vins_isPoiZoneMitigated == false || myEAs.valueInternal.vi_TempSwing_Low.vins_isPoiZoneSwept == false) && 
-         ArraySize(zGTradeZoneInternalBullishHTF) > 0) {
-         for(int i=0;i<ArraySize(zGTradeZoneInternalBullishHTF);i++){
-            if(zGTradeZoneInternalBullishHTF[i].mitigated == -1) continue; // poizone da bi vuot qua truoc do. bo qua
-            if(barSwing.low > zGTradeZoneInternalBullishHTF[i].high) continue; // gia chua cham toi poizone. bo qua
-            // kiem tra poizone co bi swept hay khong
-            if(barSwing.low < zGTradeZoneInternalBullishHTF[i].low && barSwing.close > zGTradeZoneInternalBullishHTF[i].low) myEAs.valueInternal.vi_TempSwing_Low.vins_isPoiZoneSwept = true;
-            // kiem tra mitigated poizone
-            if(barSwing.low <= zGTradeZoneInternalBullishHTF[i].high && barSwing.low >= zGTradeZoneInternalBullishHTF[i].low) {
-               myEAs.valueInternal.vi_TempSwing_Low.vins_isPoiZoneMitigated = true;
-               break;
-            } 
+      // Order Flow & POI (Giữ nguyên)
+      if(ArraySize(tfData.intSHighs) > 1 && ArraySize(tfData.intSLows) > 1) {
+         if(barSwing.low <= tfData.intSHighs[1] && barSwing.low >= tfData.intSLows[1]) sData.vins_isOrderFlowMitigated = true;
+      }
+      for(int i=0; i<ArraySize(zGTradeZoneInternalBullishHTF); i++){
+         if(zGTradeZoneInternalBullishHTF[i].mitigated == -1) continue;
+         if(barSwing.low > zGTradeZoneInternalBullishHTF[i].high) continue;
+         if(barSwing.low < zGTradeZoneInternalBullishHTF[i].low && barSwing.close > zGTradeZoneInternalBullishHTF[i].low) sData.vins_isPoiZoneSwept = true;
+         if(barSwing.low <= zGTradeZoneInternalBullishHTF[i].high && barSwing.low >= zGTradeZoneInternalBullishHTF[i].low) {
+            sData.vins_isPoiZoneMitigated = true; break;
          }
       }
-   // Nếu xu hướng đang giảm. Kiểm tra swing High PullBack
-   } else if (type == -1) {
-      // Check Swing Bear ( đúng xu hướng)
-      ZeroMemory(myEAs.valueInternal.vi_TempSwing_High);
-      myEAs.valueInternal.vi_TempSwing_High.vins_SwingNew = barSwing.high;
-      myEAs.valueInternal.vi_TempSwing_High.vins_SwingTimeNew = barSwing.time;
-      myEAs.valueInternal.vi_TempSwing_High.vins_barSwing = barSwing;
-      FindCandleByRates(1, tfData.timeFrame, barSwing, myEAs.valueInternal.vi_intSLowTime, myEAs.valueInternal.vi_TempSwing_High.vins_barOrderBlock);
-      Print("Swing High: "+ DoubleToString(barSwing.high, _Digits)+ " tai "+(string)barSwing.time+ " - OrderBlock Sell: "+(string)myEAs.valueInternal.vi_TempSwing_High.vins_barOrderBlock.time);
-      if (isCheckPullBackBySwept && CheckTheCandleCluster(barPrev, barSwing, barNext, type, true) == false) return;
-      // Kiem tra cap nen swing co phai la EG hay khong.
-      if (CheckTheCandleCluster(barPrev, barSwing, barNext, type)) {
-         myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten = 1;
-         myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_LTF = 0;
-         myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten_Again = -1;
-         Print("Kich hoat scan LTF && patten_again = -1");
+      #undef sData
+   } 
+   else { 
+      #define sData myEAs.valueInternal.vi_TempSwing_High
+      ZeroMemory(sData);
+      sData.vins_SwingNew = barSwing.high;
+      sData.vins_SwingTimeNew = barSwing.time;
+      sData.vins_barSwing = barSwing;
+      
+      FindCandleByRates(1, tfData.timeFrame, barSwing, myEAs.valueInternal.vi_intSLowTime, sData.vins_barOrderBlock);
+      
+      if (isCheckPullBackBySwept && !CheckTheCandleCluster(barPrev, barSwing, barNext, type, true)) return;
+      
+      // Kiểm tra Cấu trúc Cluster
+      bool isCluster = CheckTheCandleCluster(barPrev, barSwing, barNext, type);
+      
+      if(isCluster) {
+         // Nếu Cluster thỏa mãn, check Engulfing giảm so với nến OB
+         if(CheckTheCandleEngulfing(sData.vins_barOrderBlock, barNext, -1)) {
+            sData.vins_isSignalConfirm_Patten = 1;
+            sData.vins_isSignalConfirm_LTF = 0;
+            sData.vins_isSignalConfirm_Patten_Again = -1;
+         } else {
+            sData.vins_isSignalConfirm_Patten = -1;
+            sData.vins_isSignalConfirm_LTF = 2;
+            sData.vins_isSignalConfirm_Patten_Again = 1;
+         }
       } else {
-         myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten = -1;
-         myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_LTF = 2;
-         myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten_Again = 1;
-         Print("Kich hoat scan LTF Again = 2 && patten_again = 1");
+         sData.vins_isSignalConfirm_Patten = -1;
+         sData.vins_isSignalConfirm_LTF = 2;
+         sData.vins_isSignalConfirm_Patten_Again = 1;
       }
       
-      // Kiem tra mitigated 
-      // order flow
-      if(myEAs.valueInternal.vi_TempSwing_High.vins_isOrderFlowMitigated == false && 
-         barSwing.high >= tfData.intSLows[1] && barSwing.high <= tfData.intSHighs[1]) myEAs.valueInternal.vi_TempSwing_High.vins_isOrderFlowMitigated = true;
-      // Poizone
-      if((myEAs.valueInternal.vi_TempSwing_High.vins_isPoiZoneMitigated == false || myEAs.valueInternal.vi_TempSwing_High.vins_isPoiZoneSwept == false) && 
-         ArraySize(zGTradeZoneInternalBearishHTF) > 0) {
-         for(int i=0;i<ArraySize(zGTradeZoneInternalBearishHTF);i++){
-            if(zGTradeZoneInternalBearishHTF[i].mitigated == -1) continue; // poizone da bi vuot qua truoc do. bo qua
-            if(barSwing.high < zGTradeZoneInternalBearishHTF[i].low) continue; // gia chua cham toi poizone. bo qua
-            // kiem tra poizone co bi swept hay khong
-            if(barSwing.high > zGTradeZoneInternalBearishHTF[i].high && barSwing.close < zGTradeZoneInternalBearishHTF[i].high) myEAs.valueInternal.vi_TempSwing_High.vins_isPoiZoneSwept = true;
-            // kiem tra mitigated poizone
-            if(barSwing.high >= zGTradeZoneInternalBearishHTF[i].low && barSwing.high <= zGTradeZoneInternalBearishHTF[i].high) {
-               myEAs.valueInternal.vi_TempSwing_High.vins_isPoiZoneMitigated = true;
-               break;
-            } 
+      if(ArraySize(tfData.intSLows) > 1 && ArraySize(tfData.intSHighs) > 1) {
+         if(barSwing.high >= tfData.intSLows[1] && barSwing.high <= tfData.intSHighs[1]) sData.vins_isOrderFlowMitigated = true;
+      }
+      for(int i=0; i<ArraySize(zGTradeZoneInternalBearishHTF); i++){
+         if(zGTradeZoneInternalBearishHTF[i].mitigated == -1) continue;
+         if(barSwing.high < zGTradeZoneInternalBearishHTF[i].low) continue;
+         if(barSwing.high > zGTradeZoneInternalBearishHTF[i].high && barSwing.close < zGTradeZoneInternalBearishHTF[i].high) sData.vins_isPoiZoneSwept = true;
+         if(barSwing.high >= zGTradeZoneInternalBearishHTF[i].low && barSwing.high <= zGTradeZoneInternalBearishHTF[i].high) {
+            sData.vins_isPoiZoneMitigated = true; break;
          }
       }
+      #undef sData
    }
    
-   // Goi ham trade
    DeleteAllPendingOrders(_Symbol, InpMagic);
-   Print("========GET Swing HTF (Pullback Or Swept Swing) thành công==========");
-   Print("========GET Swing HTF (Pullback Or Swept Swing) thành công==========");
+   Print("======== Get Swing HTF (Pullback hoặc swept) hoàn tất ========");
+   Print("======== Get Swing HTF (Pullback hoặc swept) hoàn tất ========");
 }
 
 // Reset Internal HTF (valueInternal)
@@ -1955,6 +1960,37 @@ bool CheckTheCandleCluster(MqlRates& barPrev, MqlRates& barCenter, MqlRates& bar
       PrintFormat("[%s] Tín hiệu kém: Đã sweep nhưng không có nến Engulfing xác nhận.", side);
    }
 
+   return false;
+}
+
+// +------------------------------------------------------------------+
+// | Hàm kiểm tra nến nhấn chìm (Engulfing) - Điều kiện thân nến        |
+// | type = 1: Bullish EG (Close > Body nến trước)                     |
+// | type = -1: Bearish EG (Close < Body nến trước)                    |
+// +------------------------------------------------------------------+
+bool CheckTheCandleEngulfing(MqlRates &candlePrev, MqlRates &candleCurrent, int type) {
+   
+   if (type == 1) { // BULLISH ENGULFING
+      // 1. Nến hiện tại phải là nến tăng
+      if (candleCurrent.close <= candleCurrent.open) return false;
+      
+      // 2. Xác định phần cao nhất của thân nến trước (Body High)
+      double bodyHighPrev = MathMax(candlePrev.open, candlePrev.close);
+      
+      // 3. Chỉ cần giá đóng cửa vượt qua thân nến cao nhất trước đó
+      if (candleCurrent.close > bodyHighPrev) return true;
+   } 
+   else if (type == -1) { // BEARISH ENGULFING
+      // 1. Nến hiện tại phải là nến giảm
+      if (candleCurrent.close >= candleCurrent.open) return false;
+      
+      // 2. Xác định phần thấp nhất của thân nến trước (Body Low)
+      double bodyLowPrev = MathMin(candlePrev.open, candlePrev.close);
+      
+      // 3. Chỉ cần giá đóng cửa thấp hơn thân nến thấp nhất trước đó
+      if (candleCurrent.close < bodyLowPrev) return true;
+   }
+   
    return false;
 }
 
@@ -2846,33 +2882,47 @@ void checkStatusSettingPoiZone(TimeFrameData& tfData, MqlRates& bar1){
    	   //Print("----");
 	   }
 	   
-	   // Check HTF bar break Body of swing sau mỗi nến HTF
-	   if (myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten == -1 && myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten_Again == 1) {
-	      //if (myEAs.valueInternal.vi_TempSwing_High.vins_isPoiZoneSwept || myEAs.valueInternal.vi_TempSwing_High.vins_isPoiZoneMitigated) {
-	         // Check nen EG tang: Neu la nen tang thi lay gia open, neu la nen giam thi lay gia close
-	         double price_need_compare = (myEAs.valueInternal.vi_TempSwing_High.vins_barSwing.close > myEAs.valueInternal.vi_TempSwing_High.vins_barSwing.open) ? myEAs.valueInternal.vi_TempSwing_High.vins_barSwing.open : myEAs.valueInternal.vi_TempSwing_High.vins_barSwing.close;
-	         if (bar1.close < price_need_compare) {
-	            //Print("Swing High: "+myEAs.valueInternal.vi_TempSwing_High.vins_barSwing.high);
-	            Print("bar1.close ("+DoubleToString(bar1.close, _Digits)+") < Swing ("+DoubleToString(price_need_compare, _Digits)+") ");
-	            myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten_Again = 2;
-	            Print("Kich hoat Break Again Giam");
-	            Print("Kich hoat Break Again Giam");
-	         }
-	      //}
-	   }
-	   if (myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten == -1 && myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten_Again == 1) {
-	      //if (myEAs.valueInternal.vi_TempSwing_Low.vins_isPoiZoneSwept || myEAs.valueInternal.vi_TempSwing_Low.vins_isPoiZoneMitigated)  {
-	         // Check nen EG giam: Neu la nen tang thi lay gia close, neu la nen giam thi lay gia open
-	         double price_need_compare = (myEAs.valueInternal.vi_TempSwing_Low.vins_barSwing.close > myEAs.valueInternal.vi_TempSwing_Low.vins_barSwing.open) ? myEAs.valueInternal.vi_TempSwing_Low.vins_barSwing.close : myEAs.valueInternal.vi_TempSwing_Low.vins_barSwing.open;
-	         if (bar1.close > price_need_compare) {
-	            //Print("Swing Low: "+myEAs.valueInternal.vi_TempSwing_Low.vins_barSwing.low);
-	            Print("bar1.close ("+DoubleToString(bar1.close, _Digits)+") > Swing ("+DoubleToString(price_need_compare, _Digits)+") ");
-	            myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten_Again = 2;
-	            Print("Kich hoat Break Again Tăng");
-	            Print("Kich hoat Break Again Tăng");
-	         }
-	      //}
-	   }
+	   // --- Check HTF bar break Body of ORDER BLOCK sau mỗi nến HTF ---
+
+      // 1. XỬ LÝ CHO SWING HIGH (BEARISH - CHỜ PHÁ VỠ XUỐNG)
+      if (myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten == -1 && 
+          myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten_Again == 1) 
+      {
+          // Lấy tham chiếu đến nến OB đã tìm được trước đó
+          MqlRates obBar = myEAs.valueInternal.vi_TempSwing_High.vins_barOrderBlock;
+          
+          // ĐIỀU KIỆN NỚI LỎNG: Lấy giá thấp nhất của thân nến OB (Body Low)
+          double price_need_compare = MathMin(obBar.open, obBar.close);
+          
+          // Nếu nến hiện tại (bar1) đóng cửa dưới thân nến OB
+          if (bar1.close < price_need_compare) {
+              myEAs.valueInternal.vi_TempSwing_High.vins_isSignalConfirm_Patten_Again = 2;
+              
+              PrintFormat("Xác nhận Break OB Sell: bar1.close (%.5f) < OB Body Low (%.5f)", 
+                          bar1.close, price_need_compare);
+              Print(">>> Kich hoat Break Again Giam (Confirmed by OB Body)");
+          }
+      }
+      
+      // 2. XỬ LÝ CHO SWING LOW (BULLISH - CHỜ PHÁ VỠ LÊN)
+      if (myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten == -1 && 
+          myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten_Again == 1) 
+      {
+          // Lấy tham chiếu đến nến OB đã tìm được trước đó
+          MqlRates obBar = myEAs.valueInternal.vi_TempSwing_Low.vins_barOrderBlock;
+          
+          // ĐIỀU KIỆN NỚI LỎNG: Lấy giá cao nhất của thân nến OB (Body High)
+          double price_need_compare = MathMax(obBar.open, obBar.close);
+          
+          // Nếu nến hiện tại (bar1) đóng cửa trên thân nến OB
+          if (bar1.close > price_need_compare) {
+              myEAs.valueInternal.vi_TempSwing_Low.vins_isSignalConfirm_Patten_Again = 2;
+              
+              PrintFormat("Xác nhận Break OB Buy: bar1.close (%.5f) > OB Body High (%.5f)", 
+                          bar1.close, price_need_compare);
+              Print(">>> Kich hoat Break Again Tang (Confirmed by OB Body)");
+          }
+      }
    }   
 } // End checkStatusSettingPoiZone
 
