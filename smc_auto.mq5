@@ -1475,6 +1475,22 @@ PoiZone CreatePoiZone(TimeFrameData& tfData, double high, double low, double ope
    return zone;
 }
 
+void setValuteToCandidateSwingHTF(TimeFrameData& tfData, MqlRates& barBreak, MqlRates& barSwing, int direction = 0){
+   if (direction == 1) {
+      #define mainData myEAs.valueInternal.
+      #define sData myEAs.valueInternal.candidate_Low
+
+      
+   } else if (direction == -1){
+      #define sData myEAs.valueInternal.candidate_High
+   }
+
+
+   if (direction != 0) {
+      #undef sData
+   }
+}
+
 // Set thông số để có hướng trade theo Internal HTF. (valueInternal). Hàm được đặt sau khi tìm thấy new swing HTF            
 void setValueToInternalSwingHTF(TimeFrameData& tfData, MqlRates& barBreak, MqlRates& barSwing){
    myEAs.valueInternal.vi_mTrend = tfData.mTrend;
@@ -1576,8 +1592,8 @@ void setValueToInternalSwingHTF(TimeFrameData& tfData, MqlRates& barBreak, MqlRa
        
    } // End Kiem tra
    
-   Print("============= SET THONG SO THANH CONG==============");
-   Print("============= SET THONG SO THANH CONG==============");
+   Print("============= SET THONG SO SWING INTERNAL PULLBACK THANH CONG==============");
+   Print("============= SET THONG SO SWING INTERNAL PULLBACK THANH CONG==============");
 }
 
 
@@ -4611,7 +4627,7 @@ struct marketStructs{
             }
          }
          // Kiem tra xem co phai swing pullback hay khong
-         if(resulCheckPullbackGannHigh && tfData.isHighTF &&myEAs.valueInternal.vi_TempSwing_High.main.vins_SwingNew != 0) {
+         if(resulCheckPullbackGannHigh && tfData.isHighTF && myEAs.valueInternal.vi_TempSwing_High.main.vins_SwingNew != 0) {
             checkValueWithInternalSwingHTF(tfData,  bar3, bar2, bar1, -1, "sub");
          }
          
@@ -7728,11 +7744,10 @@ void DeleteAllPendingOrders(string symbol, long magic)
     for(int i = OrdersTotal() - 1; i >= 0; i--)
     {
         ulong ticket = OrderGetTicket(i); // Lấy Ticket của lệnh tại vị trí i
-        i[]
         if(OrderSelect(ticket)) // Chọn lệnh để kiểm tra thông tin
         {
             string orderSymbol = OrderGetString(ORDER_SYMBOL);
-            long   orderMagic  = OrderGetInteger(ORDER_MAGIC);
+            long  orderMagic  = OrderGetInteger(ORDER_MAGIC);
             
             // Kiểm tra xem có đúng cặp tiền và Magic Number không
             if(orderSymbol == symbol && orderMagic == magic)
