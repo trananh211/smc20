@@ -3384,7 +3384,7 @@ struct marketStructs{
    // Hàm vào lệnh theo điều kiện của EA bởi volume Wave
    void CheckMarketForTradeByWaveVolume(TimeFrameData& tfData){
       string text = "";
-      bool print_log = false;
+      bool print_log = true;
       if (print_log) Print("$ Ham CheckMarketForTradeByWaveVolume is running.");
       
       // 1. Kiểm tra xem đã có lệnh nào của cặp tiền này và Magic này chưa
@@ -3437,7 +3437,7 @@ struct marketStructs{
    }
    
    // Hàm vào lệnh theo scalping robot
-   void goTradeScalpingRobot(TimeFrameData& tfData, int direction_trade) {
+   void goTradeScalpingRobot(TimeFrameData& tfData, int direction_trade, int option_trade = 0) {
       string text = "Goi ham goTradeScalpingRobot()";
       bool print_log = true; 
       if (print_log) Print(text + " Direction Trade: "+(string) direction_trade);
@@ -3467,7 +3467,7 @@ struct marketStructs{
                //trade.SellLimit(lots, entry, _Symbol, sl, tp,ORDER_TIME_SPECIFIED, expiration);
             } else {
                text += "=> Vao lenh stop ";
-               if (trade.SellStop(lots, entry, _Symbol, sl, tp, ORDER_TIME_SPECIFIED, expiration)) {
+               if (trade.SellStop(lots, entry, _Symbol, sl, tp, ORDER_TIME_SPECIFIED, expiration, (string) option_trade)) {
                   myEAs.valueInternal.vi_TempSwing_High.sub.isActive = false;
                   text += "=> [success] Vao lenh thanh cong";
                } else {
@@ -3500,7 +3500,7 @@ struct marketStructs{
                //trade.BuyLimit(lots, entry, _Symbol, sl, tp,ORDER_TIME_SPECIFIED, expiration);
             } else {
                text += "=> Vao lenh stop ";
-               if (trade.BuyStop(lots, entry, _Symbol, sl, tp, ORDER_TIME_SPECIFIED, expiration)) {
+               if (trade.BuyStop(lots, entry, _Symbol, sl, tp, ORDER_TIME_SPECIFIED, expiration, (string) option_trade)) {
                   myEAs.valueInternal.vi_TempSwing_Low.sub.isActive = false;
                   text += "=> [success] Vao lenh thanh cong";
                } else {
@@ -3719,7 +3719,7 @@ struct marketStructs{
          text += "\n"+TAB_STRING+ "Kết luận hàm : ";
          if (callFunctionTrade) {
             text += "\n ===> Đạt điều kiện để trade. Tiếp tục gọi hàm: CheckMarketForTradeByPredefinedOptions để tìm kiếm điểm vào lệnh";
-            goTradeScalpingRobot(tfData, f_iTrend);
+            goTradeScalpingRobot(tfData, f_iTrend, option_trade);
             //CheckMarketForTradeByPredefinedOptions(tfData, f_iTrend, option_trade, conditions_typeA);
             result = 1;
          } else {
