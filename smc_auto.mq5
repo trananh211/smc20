@@ -13,6 +13,8 @@
 bool enabledComment = true;
 bool disableComment = false;
 
+bool enabledNotification = false;
+
 bool enabledDraw = true;
 bool disableDraw = false;
 
@@ -52,12 +54,6 @@ int iWingding_internal_high = 225;
 int iWingding_internal_low = 226;
 int iWingding_internal_key_high = 225;
 int iWingding_internal_key_low = 226;
-
-int ExSHChoice, ExEHChoice;
-datetime time_Local, time_server, time_gmt;
-string today;
-int Hournow;
-string _news_text = "";
 
 input group "=== Market Struct Inputs ==="   
 input int _PointSpace = 1000; // Khoảng cách để vẽ swing, line so với high và low 
@@ -252,6 +248,7 @@ struct ValueInternal{
    
    // Hàm Reset làm sạch dữ liệu (Cần thiết khi đổi xu hướng)
    void Reset() {
+      
       vi_mTrend = 0;
       vi_wvmTrend = 0;
       vi_ITrend = 0;
@@ -275,7 +272,7 @@ struct ValueInternal{
       candidate_High.Reset();
       candidate_Low.Reset();
       //Print("============= RESET THONG SO [ ValueInternal ] THANH CONG==============");
-      string message = "Reset valueInternal. Xoa pending order hoặc Take Profit - Cut Stoploss";
+      string message = "Reset valueInternal. Xoa pending order hoặc Take Profit - Cut Stoploss.";
       sendNoti(message);
       Print(TAB_STRING);
    }
@@ -1499,10 +1496,12 @@ void ProcessSwingLogic(InternalSwingData &main,
       candidate.vins_isOrderFlowMitigated = isOrderFlowMitigated;
       candidate.vins_isPoiZoneMitigated   = isPoiZoneMitigated;
       string text = "============= SET THONG SO SWING GANN PULLBACK THANH CONG ==============";
-      text += StringFormat("Direction: %d | Time: %s | Swing %s Price: %.5f", dir, TimeToString(bar.time), (dir==1)?"Low": "High",candidate.vins_SwingNew);
-      string message = StringFormat("[HTF] Set value Gann Swing Pullback: Direction: %s | Time: %s | Swing %s Price: %.5f", (dir==1)?"Bull": "Bear", TimeToString(bar.time), (dir==1)?"Low": "High",candidate.vins_SwingNew);
+      text += StringFormat("Direction: %d | Time: %s | Swing %s Price: %.3f", dir, TimeToString(bar.time), (dir==1)?"Low": "High",candidate.vins_SwingNew);
+      ///Print(text);
+      
+      string message = StringFormat("[HTF] Set value Gann Swing Pullback: Direction: %s | Time: %s | Swing %s Price: %.3f", (dir==1)?"Bull": "Bear", TimeToString(bar.time), (dir==1)?"Low": "High",candidate.vins_SwingNew);
       sendNoti(message);
-      //Print(text);
+      
       Print(TAB_STRING);
    }
 }
@@ -1651,14 +1650,13 @@ void setValueToInternalSwingHTF(TimeFrameData& tfData, MqlRates& barBreak, MqlRa
        
    } // End Kiem tra
    if(print_log && StringLen(text) > 0) {
-      string message = StringFormat("[HTF] Phát hiện Swing %s : %.3f - %s, mTrend: %d(%d) | iTrend: %d(%d)", 
-         (direction == 1)? "LOW" : "HIGH", (direction == 1)? barSwing.low : barSwing.high, TimeToString(barSwing.time), 
-         myEAs.valueInternal.vi_mTrend, myEAs.valueInternal.vi_wvmTrend, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend);
+      string message = StringFormat("[HTF] Phát hiện Swing %s : %.3f - %s", 
+         (direction == 1)? "LOW" : "HIGH", (direction == 1)? barSwing.low : barSwing.high, TimeToString(barSwing.time));
       text += "============= SET THONG SO SWING : ";
       text += ((direction == 1) ? ("LOW = "+DoubleToString(barSwing.low, _Digits)) : ("HIGH = "+ DoubleToString(barSwing.high, _Digits)) )+ " TAI THOI DIEM "+TimeToString(barSwing.time);
       text += "(KIỂM TRA THÊM CẢ TRƯƠNG HỢP BREAK SWING NÀY CÓ SWEPT HOAC MITIGATED POIZONE HAY KHÔNG)==============";
-      sendNoti(message);
       //Print(text);
+      sendNoti(message);
       Print(TAB_STRING);
    }
 }
@@ -1950,11 +1948,13 @@ void checkValueWithInternalSwingHTF(TimeFrameData& tfData, MqlRates& barPrev, Mq
    //DeleteAllPendingOrders(_Symbol, InpMagic);
    string message = "";
    string str_completed = (check_lowtf == 1)? "Completed" : "Not Yet";
-   message = StringFormat("Check PullBack Swing [%s] => Pattent: %s, Scan Again: %s, Check LowTF: %s, IsMitigatedPoizone: %s, IsSweptPoiZone: %s",
-                          str_completed, (pattent == 1)? "yes" : "no", (pattent_again == 1)? "yes" : "no", (check_lowtf == 1)? "yes" : "no", (isMitigated)? "yes" : "no", (isSwept)? "yes" : "no");
+   message = StringFormat("[HTF] Check PullBack %s Swing %.3f at %s is [%s] => Pattent: %s, Scan Again: %s, Check LowTF: %s, IsMitigatedPoizone: %s, IsSweptPoiZone: %s",
+                          (direction == 1)? "LOW" : "HIGH", (direction == 1)? barSwing.low : barSwing.high , TimeToString(barSwing.time), str_completed, (pattent == 1)? "yes" : "no", 
+                          (pattent_again == 1)? "yes" : "no", (check_lowtf == 1)? "yes" : "no", (isMitigated)? "yes" : "no", (isSwept)? "yes" : "no");
    
    string text = "========[CHECK "+((direction == 1)? "LOW":"HIGH")+"] Kiểm tra thông số tín hiệu PullBack (EG hoặc Swept) Swing HTF "+((type == INTERNAL_PULLBACK_MAIN)? "MAIN": "SUB")+" hoàn tất ========";
    //Print(text);
+   
    sendNoti(message);
    Print(TAB_STRING);
 }
@@ -2451,7 +2451,6 @@ void beginScanGlobalZoneInternalSelected(TimeFrameData& tfData, PoiZone& zGlobal
 // Kiểm tra trạng thái thời gian thực của Internal Swing đã target hoặc stoploss hay chưa
 void checkStatusRealTimeInternalStructHTF(ValueInternal& iVData, MqlRates& bar1) {
    string text = "";
-   bool print_log = enabledComment;
    //ValueInternal& iVData = myEAs.valueInternal;
    // Nếu giá vượt qua dữ liệu tổng của ValueInternal. Reset toàn bộ
    // Reset thông số ban đầu nếu Stoploss hoặc Take Profit
@@ -2496,9 +2495,8 @@ void checkStatusRealTimeInternalStructHTF(ValueInternal& iVData, MqlRates& bar1)
       //DeleteAllPendingOrders(_Symbol, InpMagic);
    }
    
-   if(print_log && StringLen(text) > 0) {
-      Print(text);
-      Print("===");
+   if(StringLen(text) > 0) {
+      sendNoti(text);
    }   
 }
 //+------------------------------------------------------------------+
@@ -2631,7 +2629,7 @@ void checkStatusBarBreakoutBodyToOrderBlock(MqlRates& bar1) {
        if (bar1.close < price_need_compare) {
            subHData.vins_isSignalConfirm_Patten_Again = 2;
            result = true;
-           text += (">>> Kich hoat Break Again Giam (Confirmed by OB Body)");
+           text += StringFormat(">>>[HTF] Scan High %.3f at %s: - Kich hoat Break Again Giam (Confirmed by OB Body)", subHData.vins_barSwing.high, TimeToString(subHData.vins_barSwing.time));
            text += "\n"+StringFormat("Xác nhận Break OB Sell: bar1.close (%.5f) < OB Body Low (%.5f)", bar1.close, price_need_compare);
            text += StringFormat("[Swing High OB bar info] Time: %s | Open: %.5f | High: %.5f | Low: %.5f | Close: %.5f | Vol: %lld", 
                 TimeToString(obBar.time), obBar.open, obBar.high, obBar.low, obBar.close, obBar.tick_volume);
@@ -2653,7 +2651,7 @@ void checkStatusBarBreakoutBodyToOrderBlock(MqlRates& bar1) {
        if (bar1.close > price_need_compare) {
            subLData.vins_isSignalConfirm_Patten_Again = 2;
            result = true;
-           text += (">>> Kich hoat Break Again Tang (Confirmed by OB Body)");
+           text += StringFormat(">>>[HTF] Scan Low %.3f at %s: Kich hoat Break Again Tang (Confirmed by OB Body)", subLData.vins_barSwing.low, TimeToString(subLData.vins_barSwing.time));
            text += "\n"+StringFormat("Xác nhận Break OB Buy: bar1.close (%.5f) > OB Body High (%.5f)", bar1.close, price_need_compare);
            text += StringFormat("[Swing Low OB bar info] Time: %s | Open: %.5f | High: %.5f | Low: %.5f | Close: %.5f | Vol: %lld", 
                 TimeToString(obBar.time), obBar.open, obBar.high, obBar.low, obBar.close, obBar.tick_volume);
@@ -2662,7 +2660,7 @@ void checkStatusBarBreakoutBodyToOrderBlock(MqlRates& bar1) {
    #undef subLData
    if (result && print_log && StringLen(text) > 0) {
       sendNoti(text);
-      Print(text);
+      //Print(text);
       Print(TAB_STRING);
    }
 }
@@ -2919,8 +2917,12 @@ void ProcessLowTFSignal(TimeFrameData& tfData, InternalSwingData& candidate, Str
       if(manager.main.vins_SwingNew == candidate.vins_SwingNew && manager.main.vins_SwingTimeNew == candidate.vins_SwingTimeNew)
          manager.main = candidate;
    }
-   text += ("Da tung kiem tra " + (string)((type == 1) ? "Low LTF" : "High LTF"));
-   string message = StringFormat("[LTF] Checked %s: %s", (type == 1) ? "Low" : "High", (candidate.vins_isSignalConfirm_LTF == 1)? "Confirm" : "Not Yet");
+   text += ("Da tung kiem tra " + ((type == 1) ? "Low LTF" : "High LTF"));
+   string message = StringFormat("[LTF] Checked %s: %s - at swing: %.3f at %s", 
+                               (type == 1) ? "Low" : "High", 
+                               (candidate.vins_isSignalConfirm_LTF == 1) ? "Confirm" : "Not Yet", 
+                               (type == 1) ? candidate.vins_barSwing.low : candidate.vins_barSwing.high, 
+                               TimeToString(candidate.vins_barSwing.time));
    sendNoti(message);
    //if (print_log && StringLen(text) > 0) Print(text);
    Print(TAB_STRING);
@@ -3214,12 +3216,12 @@ struct marketStructs{
    // Ham tim look back bar cua low timeframe tu High timeframe
    void lookBackCandle(TimeFrameData& tfData) {
       if (tfData.iTrend == 1) {
-         if (ArraySize(tfData.intSLowTime) >= 3) {
-            lookback_time = tfData.intSLowTime[2];
+         if (ArraySize(tfData.intSLowTime) >= 5) {
+            lookback_time = tfData.intSLowTime[4];
          }
       } else if (tfData.iTrend == -1) {
-         if (ArraySize(tfData.intSHighTime) >= 3) {
-            lookback_time = tfData.intSHighTime[2];
+         if (ArraySize(tfData.intSHighTime) >= 5) {
+            lookback_time = tfData.intSHighTime[4];
          }
       }
    }
@@ -7047,7 +7049,8 @@ int OnInit()
 //---
       
    //CurrentSpread = NormalizeDouble(Ask - Bid, _Digits);
-   
+   // Sau khi tất cả setup xong. bat dâu show noti 
+   enabledNotification = true;
    return(INIT_SUCCEEDED);
 }
 
@@ -7896,8 +7899,12 @@ void showComment(TimeFrameData& tfData) {
 } 
 
 void sendNoti(string message = "") {
-   Print(message);
-   SendNotification(message);
+   if(!enabledNotification) return;
+   string text = StringFormat("%s | %s | mTrend: %d(%d) - iTrend: %d(%d) | ", _Symbol, EnumToString(Period()), 
+                              myEAs.valueInternal.vi_mTrend, myEAs.valueInternal.vi_wvmTrend, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend);
+   Print(text + message);
+   Print(TAB_STRING);
+   SendNotification(text+message);
 }
 
 string getValueTrend(TimeFrameData& tfData) {
