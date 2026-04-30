@@ -2219,7 +2219,7 @@ void scanMarjorTradeZoneHighTF(TimeFrameData& tfData, MqlRates& bar1) {
             }
          }
          if (isFound) continue;  // ← Bỏ qua nếu đã tìm thấy trong Trade Zone
-         zone_tmp = tfData.zLows[i];
+         zone_tmp = tfData.zHighs[i];
          zone_tmp.mitigated = 0;
          zone_tmp.isSwept = false;
          // Kiểm tra Extreme zone
