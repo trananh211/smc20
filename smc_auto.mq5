@@ -237,6 +237,7 @@ struct ValueInternal{
    double vi_intSnR;
    double vi_isMitigatedPoiZone;
    double vi_isSweptPoiZone;
+   double vi_isMitigatedOrderFlow;
    
    // ĐÃ ĐỔI TÊN ĐỂ TRÁNH TRÙNG LẶP
    StructureManager vi_TempSwing_High; // Quản lý phía SELL
@@ -269,6 +270,7 @@ struct ValueInternal{
       vi_intSnR = 0;
       vi_isMitigatedPoiZone = false;
       vi_isSweptPoiZone = false;
+      vi_isMitigatedOrderFlow = false;
       
       vi_TempSwing_High.ResetAll();
       vi_TempSwing_Low.ResetAll();
@@ -1532,7 +1534,7 @@ void setValueToCandidateSwingHTF(TimeFrameData& tfData, MqlRates& barSwing, int 
 // Set thông số để có hướng trade theo Internal HTF. (valueInternal). Hàm được đặt sau khi tìm thấy new swing HTF            
 void setValueToInternalSwingHTF(TimeFrameData& tfData, MqlRates& barBreak, MqlRates& barSwing, int direction = 0){
    string text = "";
-   bool print_log = enabledComment;
+   bool print_log = disableComment;
    myEAs.valueInternal.vi_mTrend = tfData.mTrend;
    myEAs.valueInternal.vi_wvmTrend = tfData.wvMtrend;
    myEAs.valueInternal.vi_ITrend = tfData.iTrend;
@@ -1646,7 +1648,15 @@ void setValueToInternalSwingHTF(TimeFrameData& tfData, MqlRates& barBreak, MqlRa
       }
        
    } // End Kiem tra
-   if(print_log && StringLen(text) > 0) {
+   
+   // Kiểm tra bar swing đã mitigated Order Flow hay chưa
+   if (tfData.iTrend == 1 && direction == 1) {
+      myEAs.valueInternal.vi_isMitigatedOrderFlow = (barSwing.low <= myEAs.valueInternal.vi_intSnR)? true : false;
+   } else if (tfData.iTrend == -1 && direction == -1) {
+      myEAs.valueInternal.vi_isMitigatedOrderFlow = (barSwing.high >= myEAs.valueInternal.vi_intSnR)? true : false;
+   }
+   
+   if(StringLen(text) > 0) {
       string message = StringFormat("[HTF] Phát hiện Swing %s : %.3f - %s", 
          (direction == 1)? "LOW" : "HIGH", (direction == 1)? barSwing.low : barSwing.high, TimeToString(barSwing.time));
       text += "============= SET THONG SO SWING : ";
@@ -2854,8 +2864,8 @@ bool CheckInternalWaveSignal(TimeFrameData& tfData, InternalSwingData& subData, 
       subData.vins_LTF_wvmTrend = tfData.wvMtrend;
    } else text += (type == 1) ? "\nChưa tìm thấy Bullish Internal Break LTF" : "\nChưa tìm thấy Bearish Internal Break LTF";
 
-   Print(text);
-   Print(TAB_STRING);
+   //Print(text);
+   //Print(TAB_STRING);
    return result;
 }
 
@@ -2916,9 +2926,8 @@ void ProcessLowTFSignal(TimeFrameData& tfData, InternalSwingData& candidate, Str
                                ((candidate.vins_isSignalConfirm_LTF == 1) ? "Confirm" : "Unconfirm") + ((type == 1)? "->BUY" : "->SELL"), 
                                (type == 1) ? candidate.vins_barSwing.low : candidate.vins_barSwing.high, 
                                TimeToString(candidate.vins_barSwing.time));
-   sendNoti(message);
+   if(candidate.vins_isSignalConfirm_LTF == 1) sendNoti(message);
    //if (print_log && StringLen(text) > 0) Print(text);
-   Print(TAB_STRING);
 }
 
 void getStatusConfirmByLowTimeframe(TimeFrameData& tfData) {
@@ -4526,15 +4535,15 @@ struct marketStructs{
                tfData.line_direction_internal = (tfData.isDrawTarget_internal == tfData.iTrend)? tfData.wvItrend : 0;
                // Set thông số để có hướng trade theo Internal HTF. (valueInternal)
                if (tfData.isHighTF) {
-                  Print("1 Set thông số swing High trước. Sau đó sẽ check xem là swept hay không?");
+                  //Print("1 Set thông số swing High trước. Sau đó sẽ check xem là swept hay không?");
                   setValueToInternalSwingHTF(tfData, bar3, bar2, -1);
                   // Kiem tra dinh swept false breakout
                   if (myEAs.valueInternal.vi_ITrend != myEAs.valueInternal.vi_wvITrend && 
                      (myEAs.valueInternal.vi_isSwept || myEAs.valueInternal.vi_isMitigatedPoiZone || myEAs.valueInternal.vi_isSweptPoiZone)) {
-                     Print("Swept High hoac Mitigated poizone Marjor. Tiếp tục check Low timeframe để tìm tín hiệu sớm.");
+                     //Print("Swept High hoac Mitigated poizone Marjor. Tiếp tục check Low timeframe để tìm tín hiệu sớm.");
                      checkValueWithInternalSwingHTF(tfData,  bar3, bar2, bar1, -1, INTERNAL_PULLBACK_MAIN);
                      
-                     Print("Swept High hoac Mitigated poizone Marjor. ");
+                     //Print("Swept High hoac Mitigated poizone Marjor. ");
                   }
                   
                }
@@ -4615,14 +4624,14 @@ struct marketStructs{
                tfData.line_direction_internal = (tfData.isDrawTarget_internal == tfData.iTrend)? tfData.wvItrend : 0;
                // Set thông số để có hướng trade theo Internal HTF. (valueInternal)
                if (tfData.isHighTF) {
-                  Print("2 Set thông số swing High trước. Sau đó sẽ check xem là swept hay không?");
+                  //Print("2 Set thông số swing High trước. Sau đó sẽ check xem là swept hay không?");
                   setValueToInternalSwingHTF(tfData, bar3, bar2, -1);
                   // Kiem tra dinh swept false breakout
                   if (myEAs.valueInternal.vi_ITrend != myEAs.valueInternal.vi_wvITrend && 
                      (myEAs.valueInternal.vi_isSwept || myEAs.valueInternal.vi_isMitigatedPoiZone || myEAs.valueInternal.vi_isSweptPoiZone)) {
-                     Print("Swept High hoac Mitigated poizone Marjor. Tiếp tục check Low timeframe để tìm tín hiệu sớm.");
+                     //Print("Swept High hoac Mitigated poizone Marjor. Tiếp tục check Low timeframe để tìm tín hiệu sớm.");
                      checkValueWithInternalSwingHTF(tfData,  bar3, bar2, bar1, -1, INTERNAL_PULLBACK_MAIN);
-                     Print("Swept High hoac Mitigated poizone Marjor. ");
+                     //Print("Swept High hoac Mitigated poizone Marjor. ");
                   }
                }
             }
@@ -4915,14 +4924,14 @@ struct marketStructs{
                tfData.line_direction_internal = (tfData.isDrawTarget_internal == tfData.iTrend)? tfData.wvItrend : 0;
                // Set thông số để có hướng trade theo Internal HTF. (valueInternal)
                if (tfData.isHighTF) {
-                  Print("1 Set thông số swing Low trước. Sau đó sẽ check xem là swept hay không?");
+                  //Print("1 Set thông số swing Low trước. Sau đó sẽ check xem là swept hay không?");
                   setValueToInternalSwingHTF(tfData, bar3, bar2, 1);
                   // Kiem tra dinh swept false breakout
                   if (myEAs.valueInternal.vi_ITrend != myEAs.valueInternal.vi_wvITrend && 
                      (myEAs.valueInternal.vi_isSwept || myEAs.valueInternal.vi_isMitigatedPoiZone || myEAs.valueInternal.vi_isSweptPoiZone)) {
-                     Print("Swept High hoac Mitigated poizone Marjor. Tiếp tục check Low timeframe để tìm tín hiệu sớm.");
+                     //Print("Swept High hoac Mitigated poizone Marjor. Tiếp tục check Low timeframe để tìm tín hiệu sớm.");
                      checkValueWithInternalSwingHTF(tfData,  bar3, bar2, bar1, 1, INTERNAL_PULLBACK_MAIN);
-                     Print("Swept Low hoac Mitigated poizone Marjor. ");
+                     //Print("Swept Low hoac Mitigated poizone Marjor. ");
                   }
                }
             }
@@ -5001,14 +5010,14 @@ struct marketStructs{
                tfData.line_direction_internal = (tfData.isDrawTarget_internal == tfData.iTrend)? tfData.wvItrend : 0;
                // Set thông số để có hướng trade theo Internal HTF. (valueInternal)
                if (tfData.isHighTF) {
-                  Print("2 Set thông số swing Low trước. Sau đó sẽ check xem là swept hay không?");
+                  //Print("2 Set thông số swing Low trước. Sau đó sẽ check xem là swept hay không?");
                   setValueToInternalSwingHTF(tfData, bar3, bar2, 1);
                   // Kiem tra dinh swept false breakout
                   if (myEAs.valueInternal.vi_ITrend != myEAs.valueInternal.vi_wvITrend && 
                      (myEAs.valueInternal.vi_isSwept || myEAs.valueInternal.vi_isMitigatedPoiZone || myEAs.valueInternal.vi_isSweptPoiZone)) {        
-                     Print("Swept High hoac Mitigated poizone Marjor. Tiếp tục check Low timeframe để tìm tín hiệu sớm.");
+                     //Print("Swept High hoac Mitigated poizone Marjor. Tiếp tục check Low timeframe để tìm tín hiệu sớm.");
                      checkValueWithInternalSwingHTF(tfData,  bar3, bar2, bar1, 1, INTERNAL_PULLBACK_MAIN);
-                     Print("Swept Low hoac Mitigated poizone Marjor. ");
+                     //Print("Swept Low hoac Mitigated poizone Marjor. ");
                   }
                }
             }
@@ -7894,14 +7903,15 @@ void showComment(TimeFrameData& tfData) {
 void sendNoti(string message = "") {
    if(!enabledNotification) return;
    double iTarget = 0, iStoploss = 0;
-   bool iTarget_isMitigatedPoizone = false, iStoploss_isMitigatedPoizone = false,iTarget_isSweptSwing = false;
+   bool iTarget_isMitigatedPoizone = false, iTarget_isSweptSwing = false, iStoploss_isMitigatedPoizone = false, iStoploss_isSweptSwing = false;
+   double iSwingPullBack = 0;
    bool iSwingPullBack_isMitigatedPoizone = false, iSwingPullBack_isSweptPoizone = false;
+   bool iSwingPullBack_isMitigatedOrderFlow = false;
    if (myEAs.valueInternal.vi_wvIsBuyInternal) { // Buy
       iTarget = myEAs.valueInternal.vi_intSHigh;
       iStoploss = myEAs.valueInternal.vi_intSLow;
       iTarget_isMitigatedPoizone = (myEAs.valueInternal.vi_intSHigh_isMitigatedPoiZone)? true : false;
       iStoploss_isMitigatedPoizone = (myEAs.valueInternal.vi_intSLow_isMitigatedPoiZone)? true : false;
-      
    } else if (myEAs.valueInternal.vi_wvIsSellInternal) { // Sell
       iTarget = myEAs.valueInternal.vi_intSLow;
       iStoploss = myEAs.valueInternal.vi_intSHigh;
@@ -7921,13 +7931,26 @@ void sendNoti(string message = "") {
       }
    }
    iTarget_isSweptSwing = (myEAs.valueInternal.vi_isSwept)? true : false;
-   iSwingPullBack_isMitigatedPoizone = (myEAs.valueInternal.vi_isMitigatedPoiZone)? true: false;
-   iSwingPullBack_isSweptPoizone = (myEAs.valueInternal.vi_isSweptPoiZone)? true : false;
+   iStoploss_isSweptSwing = (myEAs.valueInternal.vi_isSweptPoiZone)? true : false;
+   // Set Swing Pullback
+   iSwingPullBack_isMitigatedOrderFlow = (myEAs.valueInternal.vi_isMitigatedOrderFlow)? true : false;
+   if(myEAs.valueInternal.vi_ITrend == 1) {
+      iSwingPullBack = myEAs.valueInternal.vi_TempSwing_Low.main.vins_SwingNew;
+      iSwingPullBack_isMitigatedPoizone = (myEAs.valueInternal.vi_TempSwing_Low.main.vins_isOrderFlowMitigated)? true: false;
+      iSwingPullBack_isSweptPoizone = (myEAs.valueInternal.vi_TempSwing_Low.main.vins_isPoiZoneSwept)? true: false;
+      
+   } else {
+      iSwingPullBack = myEAs.valueInternal.vi_TempSwing_High.main.vins_SwingNew;
+      iSwingPullBack_isMitigatedPoizone = (myEAs.valueInternal.vi_TempSwing_High.main.vins_isOrderFlowMitigated)? true: false;
+      iSwingPullBack_isSweptPoizone = (myEAs.valueInternal.vi_TempSwing_High.main.vins_isPoiZoneSwept)? true: false;
+   }
    
-   string text = StringFormat("%s | mTrend: %d(%d) | iTrend: %d(%d) | Target: %.3f , %s | Stoploss: %.3f, %s | ", _Symbol, 
+   string text = StringFormat("%s | mTrend: %d(%d) | iTrend: %d(%d) | Target: %.3f(%s) | Stoploss: %.3f(%s) | SnR: %.3f | PullBack (Swing %s): %.3f(%s)\n==> ", _Symbol, 
                               myEAs.valueInternal.vi_mTrend, myEAs.valueInternal.vi_wvmTrend, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend,
                               iTarget, ((iTarget_isMitigatedPoizone || iTarget_isSweptSwing)? "Warning!!!" : "OK"),  
-                              iStoploss, ((iStoploss_isMitigatedPoizone || iSwingPullBack_isSweptPoizone)? "OK": " Warning!!!")
+                              iStoploss, ((iStoploss_isMitigatedPoizone || iStoploss_isSweptSwing)? "OK": "Warning!!!"),
+                              myEAs.valueInternal.vi_intSnR,
+                              ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), iSwingPullBack, ((iSwingPullBack_isMitigatedPoizone || iSwingPullBack_isSweptPoizone || iSwingPullBack_isMitigatedOrderFlow)? "OK": "Warning!!!")
                               );
    Print(text + message);
    Print(TAB_STRING);
