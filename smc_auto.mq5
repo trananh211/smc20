@@ -248,6 +248,9 @@ struct ValueInternal{
    
    // Hàm Reset làm sạch dữ liệu (Cần thiết khi đổi xu hướng)
    void Reset() {
+      //Print("============= RESET THONG SO [ ValueInternal ] THANH CONG==============");
+      string message = "Reset valueInternal. Xoa pending order hoặc Take Profit - Cut Stoploss.";
+      sendNoti(message);
       
       vi_mTrend = 0;
       vi_wvmTrend = 0;
@@ -271,10 +274,6 @@ struct ValueInternal{
       vi_TempSwing_Low.ResetAll();
       candidate_High.Reset();
       candidate_Low.Reset();
-      //Print("============= RESET THONG SO [ ValueInternal ] THANH CONG==============");
-      string message = "Reset valueInternal. Xoa pending order hoặc Take Profit - Cut Stoploss.";
-      sendNoti(message);
-      Print(TAB_STRING);
    }
 };
 
@@ -1501,8 +1500,6 @@ void ProcessSwingLogic(InternalSwingData &main,
       
       string message = StringFormat("[HTF] Set value Gann Swing Pullback: Direction: %s | Time: %s | Swing %s Price: %.3f", (dir==1)?"Bull": "Bear", TimeToString(bar.time), (dir==1)?"Low": "High",candidate.vins_SwingNew);
       sendNoti(message);
-      
-      Print(TAB_STRING);
    }
 }
 
@@ -1551,7 +1548,7 @@ void setValueToInternalSwingHTF(TimeFrameData& tfData, MqlRates& barBreak, MqlRa
    if(print_log) text += "============= .1. SET THONG SO INTERNAL NGUOC TREND HTF " + (string)(tfData.timeFrame) + " =============\n";
    // Check Swing High
    if(direction == -1) {
-      if(print_log) text += StringFormat("============= Kiểm tra Poizone Intenal High: Có Swing High %.5f tại thời điểm %s\n", barSwing.high, TimeToString(barSwing.time));
+      if(print_log) text += StringFormat("============= Kiểm tra Poizone Intenal High: Có Swing High %.3f tại thời điểm %s\n", barSwing.high, TimeToString(barSwing.time));
                
       // Set thong so mitigated Poizone Internal High
       if(ArraySize(zGTradeZoneBearishHTF) > 0) {
@@ -1572,7 +1569,7 @@ void setValueToInternalSwingHTF(TimeFrameData& tfData, MqlRates& barBreak, MqlRa
    } else if (direction == 1){ // Check swing low
       // Set thong so mitigated Poizone Intenal Low
       if(ArraySize(zGTradeZoneBullishHTF) > 0) {
-         if(print_log) text += StringFormat("============= Kiểm tra Poizone Intenal Low: Có Swing Low %.5f tại thời điểm %s\n", barSwing.low, TimeToString(barSwing.time));
+         if(print_log) text += StringFormat("============= Kiểm tra Poizone Intenal Low: Có Swing Low %.3f tại thời điểm %s\n", barSwing.low, TimeToString(barSwing.time));
          
          for(int i=0;i<ArraySize(zGTradeZoneBullishHTF);i++) {
             if(zGTradeZoneBullishHTF[i].mitigated == -1) continue; // Poizone da bi pha qua truoc do. bo qua
@@ -1657,7 +1654,6 @@ void setValueToInternalSwingHTF(TimeFrameData& tfData, MqlRates& barBreak, MqlRa
       text += "(KIỂM TRA THÊM CẢ TRƯƠNG HỢP BREAK SWING NÀY CÓ SWEPT HOAC MITIGATED POIZONE HAY KHÔNG)==============";
       //Print(text);
       sendNoti(message);
-      Print(TAB_STRING);
    }
 }
 
@@ -1947,16 +1943,14 @@ void checkValueWithInternalSwingHTF(TimeFrameData& tfData, MqlRates& barPrev, Mq
    }
    //DeleteAllPendingOrders(_Symbol, InpMagic);
    string message = "";
-   string str_completed = (check_lowtf == 1)? "Completed" : "Not Yet";
+   string str_completed = (check_lowtf == 1)? "Completed" : "Not Completed";
    message = StringFormat("[HTF] Check PullBack %s Swing %.3f at %s is [%s] => Pattent: %s, Scan Again: %s, Check LowTF: %s, IsMitigatedPoizone: %s, IsSweptPoiZone: %s",
                           (direction == 1)? "LOW" : "HIGH", (direction == 1)? barSwing.low : barSwing.high , TimeToString(barSwing.time), str_completed, (pattent == 1)? "yes" : "no", 
                           (pattent_again == 1)? "yes" : "no", (check_lowtf == 1)? "yes" : "no", (isMitigated)? "yes" : "no", (isSwept)? "yes" : "no");
    
    string text = "========[CHECK "+((direction == 1)? "LOW":"HIGH")+"] Kiểm tra thông số tín hiệu PullBack (EG hoặc Swept) Swing HTF "+((type == INTERNAL_PULLBACK_MAIN)? "MAIN": "SUB")+" hoàn tất ========";
    //Print(text);
-   
-   sendNoti(message);
-   Print(TAB_STRING);
+   if(check_lowtf == 1) sendNoti(message);
 }
          
 
@@ -2037,7 +2031,7 @@ bool CheckTheCandleCluster(MqlRates& barPrev, MqlRates& barCenter, MqlRates& bar
       bool isSweep = (l0 < l1) && (c0 > l1);
       if(!isSweep) 
       {
-         //PrintFormat("[%s] Tín hiệu kém: Nến không quét râu dưới nến trước (L0:%.5f >= L1:%.5f)", side, l0, l1);
+         //PrintFormat("[%s] Tín hiệu kém: Nến không quét râu dưới nến trước (L0:%.3f >= L1:%.3f)", side, l0, l1);
          return false;
       } else {
          //PrintFormat("[%s] XÁC NHẬN: Nến swing swept nến trước thành công!", side);
@@ -2074,7 +2068,7 @@ bool CheckTheCandleCluster(MqlRates& barPrev, MqlRates& barCenter, MqlRates& bar
       bool isSweep = (h0 > h1) && (c0 < h1);
       if(!isSweep) 
       {
-         //PrintFormat("[%s] Tín hiệu kém: Nến không quét râu trên nến trước (H0:%.5f <= H1:%.5f)", side, h0, h1);
+         //PrintFormat("[%s] Tín hiệu kém: Nến không quét râu trên nến trước (H0:%.3f <= H1:%.3f)", side, h0, h1);
          return false;
       } else {
          //PrintFormat("[%s] XÁC NHẬN: Nến swing swept nến trước thành công!", side);
@@ -2630,8 +2624,8 @@ void checkStatusBarBreakoutBodyToOrderBlock(MqlRates& bar1) {
            subHData.vins_isSignalConfirm_Patten_Again = 2;
            result = true;
            text += StringFormat(">>>[HTF] Scan High %.3f at %s: - Kich hoat Break Again Giam (Confirmed by OB Body)", subHData.vins_barSwing.high, TimeToString(subHData.vins_barSwing.time));
-           text += "\n"+StringFormat("Xác nhận Break OB Sell: bar1.close (%.5f) < OB Body Low (%.5f)", bar1.close, price_need_compare);
-           text += StringFormat("[Swing High OB bar info] Time: %s | Open: %.5f | High: %.5f | Low: %.5f | Close: %.5f | Vol: %lld", 
+           text += "\n"+StringFormat("Xác nhận Break OB Sell: bar1.close (%.3f) < OB Body Low (%.3f)", bar1.close, price_need_compare);
+           text += StringFormat("[Swing High OB bar info] Time: %s | Open: %.3f | High: %.3f | Low: %.3f | Close: %.3f | Vol: %lld", 
                 TimeToString(obBar.time), obBar.open, obBar.high, obBar.low, obBar.close, obBar.tick_volume);
        }
    }
@@ -2652,8 +2646,8 @@ void checkStatusBarBreakoutBodyToOrderBlock(MqlRates& bar1) {
            subLData.vins_isSignalConfirm_Patten_Again = 2;
            result = true;
            text += StringFormat(">>>[HTF] Scan Low %.3f at %s: Kich hoat Break Again Tang (Confirmed by OB Body)", subLData.vins_barSwing.low, TimeToString(subLData.vins_barSwing.time));
-           text += "\n"+StringFormat("Xác nhận Break OB Buy: bar1.close (%.5f) > OB Body High (%.5f)", bar1.close, price_need_compare);
-           text += StringFormat("[Swing Low OB bar info] Time: %s | Open: %.5f | High: %.5f | Low: %.5f | Close: %.5f | Vol: %lld", 
+           text += "\n"+StringFormat("Xác nhận Break OB Buy: bar1.close (%.3f) > OB Body High (%.3f)", bar1.close, price_need_compare);
+           text += StringFormat("[Swing Low OB bar info] Time: %s | Open: %.3f | High: %.3f | Low: %.3f | Close: %.3f | Vol: %lld", 
                 TimeToString(obBar.time), obBar.open, obBar.high, obBar.low, obBar.close, obBar.tick_volume);
        }
    }
@@ -2661,7 +2655,6 @@ void checkStatusBarBreakoutBodyToOrderBlock(MqlRates& bar1) {
    if (result && print_log && StringLen(text) > 0) {
       sendNoti(text);
       //Print(text);
-      Print(TAB_STRING);
    }
 }
 
@@ -2918,9 +2911,9 @@ void ProcessLowTFSignal(TimeFrameData& tfData, InternalSwingData& candidate, Str
          manager.main = candidate;
    }
    text += ("Da tung kiem tra " + ((type == 1) ? "Low LTF" : "High LTF"));
-   string message = StringFormat("[LTF] Checked %s: %s - at swing: %.3f at %s", 
+   string message = StringFormat("[LTF] Checked %s: %s at swing: %.3f at %s", 
                                (type == 1) ? "Low" : "High", 
-                               (candidate.vins_isSignalConfirm_LTF == 1) ? "Confirm" : "Not Yet", 
+                               ((candidate.vins_isSignalConfirm_LTF == 1) ? "Confirm" : "Unconfirm") + ((type == 1)? "->BUY" : "->SELL"), 
                                (type == 1) ? candidate.vins_barSwing.low : candidate.vins_barSwing.high, 
                                TimeToString(candidate.vins_barSwing.time));
    sendNoti(message);
@@ -7900,8 +7893,42 @@ void showComment(TimeFrameData& tfData) {
 
 void sendNoti(string message = "") {
    if(!enabledNotification) return;
-   string text = StringFormat("%s | %s | mTrend: %d(%d) - iTrend: %d(%d) | ", _Symbol, EnumToString(Period()), 
-                              myEAs.valueInternal.vi_mTrend, myEAs.valueInternal.vi_wvmTrend, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend);
+   double iTarget = 0, iStoploss = 0;
+   bool iTarget_isMitigatedPoizone = false, iStoploss_isMitigatedPoizone = false,iTarget_isSweptSwing = false;
+   bool iSwingPullBack_isMitigatedPoizone = false, iSwingPullBack_isSweptPoizone = false;
+   if (myEAs.valueInternal.vi_wvIsBuyInternal) { // Buy
+      iTarget = myEAs.valueInternal.vi_intSHigh;
+      iStoploss = myEAs.valueInternal.vi_intSLow;
+      iTarget_isMitigatedPoizone = (myEAs.valueInternal.vi_intSHigh_isMitigatedPoiZone)? true : false;
+      iStoploss_isMitigatedPoizone = (myEAs.valueInternal.vi_intSLow_isMitigatedPoiZone)? true : false;
+      
+   } else if (myEAs.valueInternal.vi_wvIsSellInternal) { // Sell
+      iTarget = myEAs.valueInternal.vi_intSLow;
+      iStoploss = myEAs.valueInternal.vi_intSHigh;
+      iTarget_isMitigatedPoizone = (myEAs.valueInternal.vi_intSLow_isMitigatedPoiZone)? true : false;
+      iStoploss_isMitigatedPoizone = (myEAs.valueInternal.vi_intSHigh_isMitigatedPoiZone)? true : false;
+   } else {
+      if (myEAs.valueInternal.vi_ITrend == 1) { // Buy
+         iTarget = myEAs.valueInternal.vi_intSHigh;
+         iStoploss = myEAs.valueInternal.vi_intSLow;   
+         iTarget_isMitigatedPoizone = (myEAs.valueInternal.vi_intSHigh_isMitigatedPoiZone)? true : false;
+         iStoploss_isMitigatedPoizone = (myEAs.valueInternal.vi_intSLow_isMitigatedPoiZone)? true : false;
+      } else if (myEAs.valueInternal.vi_ITrend == -1) { // Sell
+         iTarget = myEAs.valueInternal.vi_intSLow;
+         iStoploss = myEAs.valueInternal.vi_intSHigh;
+         iTarget_isMitigatedPoizone = (myEAs.valueInternal.vi_intSLow_isMitigatedPoiZone)? true : false;
+         iStoploss_isMitigatedPoizone = (myEAs.valueInternal.vi_intSHigh_isMitigatedPoiZone)? true : false;
+      }
+   }
+   iTarget_isSweptSwing = (myEAs.valueInternal.vi_isSwept)? true : false;
+   iSwingPullBack_isMitigatedPoizone = (myEAs.valueInternal.vi_isMitigatedPoiZone)? true: false;
+   iSwingPullBack_isSweptPoizone = (myEAs.valueInternal.vi_isSweptPoiZone)? true : false;
+   
+   string text = StringFormat("%s | mTrend: %d(%d) | iTrend: %d(%d) | Target: %.3f , %s | Stoploss: %.3f, %s | ", _Symbol, 
+                              myEAs.valueInternal.vi_mTrend, myEAs.valueInternal.vi_wvmTrend, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend,
+                              iTarget, ((iTarget_isMitigatedPoizone || iTarget_isSweptSwing)? "Warning!!!" : "OK"),  
+                              iStoploss, ((iStoploss_isMitigatedPoizone || iSwingPullBack_isSweptPoizone)? "OK": " Warning!!!")
+                              );
    Print(text + message);
    Print(TAB_STRING);
    SendNotification(text+message);
