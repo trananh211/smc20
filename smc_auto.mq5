@@ -18,6 +18,8 @@ bool enabledNotification = false;
 bool enabledDraw = true;
 bool disableDraw = false;
 
+string webhook = "";
+
 int GANN_STRUCTURE = 1;
 int INTERNAL_STRUCTURE = 2;
 int INTERNAL_STRUCTURE_KEY = 3;
@@ -2621,8 +2623,6 @@ void checkStatusSettingPoiZone(TimeFrameData& tfData, MqlRates& bar1){
    	   //Print("myEAs.marketStructStatus.iMSS_intSLowHTFRealTime(New) = "+DoubleToString(myEAs.marketStructStatus.iMSS_intSLowHTFRealTime, _Digits));
    	   //Print("----");
 	   }
-	   
-      
    }   
 } // End checkStatusSettingPoiZone
 
@@ -3061,6 +3061,7 @@ struct marketStructs{
    }
    
    void definedFunction(TimeFrameData& tfData, ENUM_TIMEFRAMES timeframe) {
+      
       int count_lookback = 0;
       tfData.timeFrame = timeframe;
       setDefautTimeframe(tfData, timeframe);
@@ -7087,8 +7088,14 @@ int OnInit()
    //CurrentSpread = NormalizeDouble(Ask - Bid, _Digits);
    // Sau khi tất cả setup xong. bat dâu show noti 
    enabledNotification = true;
+   
+   // Gửi tin nhắn chào khi EA được gắn vào biểu đồ
+   webhook = GetWebhookForSymbol(_Symbol);
+   SendDiscordMessage("EA đã được khởi động trên " + _Symbol);
+   
    return(INIT_SUCCEEDED);
 }
+
 
 // OnTick function
 void OnTick()
@@ -7934,6 +7941,24 @@ void showComment(TimeFrameData& tfData) {
       
 } 
 
+string GetWebhookForSymbol(string symbol)
+{
+   string sym = symbol;
+   StringToUpper(sym);   // Đưa về chữ hoa
+
+   // Kiểm tra lần lượt từng cặp – ưu tiên các chuỗi dài trước
+   if (StringFind(sym, "XAUUSD") >= 0)  return "https://discordapp.com/api/webhooks/1196670174904975460/AcKbwdXZHEKSXZbfFsPI5IX1qqQHaOpKM6gxEhOoI2ydK8nGBIbkZAlxe509FF-vq5c_";
+   if (StringFind(sym, "EURUSD") >= 0)  return "https://discordapp.com/api/webhooks/1196675986440343593/Fabtob_JEI1RZHN_C8FLAFCmARWgE2XyhppyiUqon9RkBzhHFycdfbrPO7flgZPxI7e5";
+   if (StringFind(sym, "GBPUSD") >= 0)  return "https://discordapp.com/api/webhooks/1196647435058032640/vYJEFRk1z8VGouAPadhermW3yy385Nu9fOAp6b7ghI5M6mJa7e2-nQixStbBS4rfZeJ0";
+   if (StringFind(sym, "AUDUSD") >= 0)  return "https://discordapp.com/api/webhooks/1196671358432710677/_ewRs73g3Qr6fp3yYeZf1_horv6RrKAErjCfo6knwVCyDahlX-wlX3D8UKzvNJayDZqv";
+   if (StringFind(sym, "NZDUSD") >= 0)  return "https://discordapp.com/api/webhooks/1196674321242927125/WOTOQPuvx-ZHzi-b6oDg9hl-KWnXjTx39e7NSEeLvgB-5EUoGs_Dn73VHZ45N_rH1WpX";
+   if (StringFind(sym, "USDJPY") >= 0)  return "https://discordapp.com/api/webhooks/1196677537363918929/oeW9hvEfGedNmdqCQMjuSW7ZaCvq9Wo4GnEODQeclTX_TwJwBl2JubNJsuDtY46IcZow";
+   if (StringFind(sym, "BTCUSD") >= 0)  return "https://discordapp.com/api/webhooks/1500489285584027700/WQFRl8c8HhX11EuTe1iaYXnyOhag4X-tbSuZW8gt-7-zDXacRVrnmPmmZ0mRdyn5s9nd";
+
+   // Mặc định: kênh chung cho các symbol khác (có thể để rỗng để không gửi)
+   return "https://discordapp.com/api/webhooks/1143626665461821552/eQUQ_OYEn--k6wlEFVJiEdi4s9d8qx7pb9zm_E87lFotnG1lQLIY4t9aU25Y61LWOPM9";
+}
+
 void sendNoti(string message = "") {
    if(!enabledNotification) return;
    double iTarget = 0, iStoploss = 0;
@@ -7988,8 +8013,79 @@ void sendNoti(string message = "") {
                               );
    Print(text + message);
    Print(TAB_STRING);
-   SendNotification(text+message);
+   SendDiscordMessage(text+message);
+   //SendNotification(text+message);
 }
+
+void SendDiscordMessage(string message) {
+
+    string webhookURL = webhook;
+    string json = "{\"content\":\"" + message + "\"}";
+    char data[];
+    StringToCharArray(json, data, 0, StringLen(json), CP_UTF8);
+    char result[];
+    string headers = "Content-Type: application/json\r\n";
+    int res = WebRequest("POST", webhookURL, headers, 5000, data, result, headers);
+    if (res < 0) {
+        Print("Error sending message: ", GetLastError());
+    } else {
+        Print("Message sent, HTTP code: ", res);
+    }
+}
+
+////+------------------------------------------------------------------+
+////| Hàm gửi tin nhắn đến Discord                                      |
+////+------------------------------------------------------------------+
+//bool SendDiscordMessage2(string webhook_url, string message)
+//{
+//   // 1. Xử lý ký tự đặc biệt trong message nếu cần
+//   StringReplace(message, "\n", "\\n"); // Escape ký tự xuống dòng
+//
+//   // 2. Tạo JSON payload hợp lệ (không có dấu phẩy thừa)
+//   string jsonPayload = StringFormat("{\"content\": \"%s\"}", message);
+//   
+//   // 3. In ra JSON để kiểm tra
+//   Print("Đang gửi JSON: ", jsonPayload);
+//
+//   // 4. Chuyển đổi sang mảng char một cách chính xác
+//   char postData[];
+//   // CHỈ định rõ độ dài của chuỗi, tránh ký tự null thừa
+//   StringToCharArray(jsonPayload, postData, 0, StringLen(jsonPayload));
+//
+//   char resultData[];
+//   string resultHeaders;
+//   int timeout = 5000;
+//   
+//   // 5. Thiết lập header cho request
+//   string headers = "Content-Type: application/json\r\n";
+//
+//   // Reset Last Error trước khi gửi
+//   ResetLastError();
+//
+//   // 6. Gửi yêu cầu WebRequest
+//   int response = WebRequest("POST", webhook_url, headers, timeout, postData, resultData, resultHeaders);
+//
+//   // 7. Xử lý phản hồi
+//   if(response == -1)
+//     {
+//      // Lấy và in mã lỗi để chẩn đoán
+//      int errorCode = GetLastError();
+//      PrintFormat("Lỗi trong WebRequest. Mã lỗi: %d", errorCode);
+//      return false;
+//     }
+//   else if(response == 204)
+//     {
+//      Print("Đã gửi tin nhắn đến Discord thành công!");
+//      return true;
+//     }
+//   else
+//     {
+//      string result = CharArrayToString(resultData);
+//      PrintFormat("Gửi thất bại! Mã trạng thái HTTP: %d, nội dung phản hồi: %s", response, result);
+//      return false;
+//     }
+//}
+
 
 string getValueTrend(TimeFrameData& tfData) {
    
