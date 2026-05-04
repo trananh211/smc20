@@ -8014,7 +8014,7 @@ void sendNoti(string message = "") {
    Print(text + message);
    Print(TAB_STRING);
    SendDiscordMessage(text+message);
-   //SendNotification(text+message);
+   SendNotification(text+message);
 }
 
 void SendDiscordMessage(string message) {
