@@ -8004,17 +8004,18 @@ void sendNoti(string message = "") {
       iSwingPullBack_isSweptPoizone = (myEAs.valueInternal.vi_TempSwing_High.main.vins_isPoiZoneSwept)? true: false;
    }
    string getIdm = (myEAs.signalInternal.sg_mTrend == 1) ? (string)myEAs.signalInternal.sg_getIdmBuy : (string)myEAs.signalInternal.sg_getIdmSell;
-   string text = StringFormat("%s| M: %d(%d)| IDM: %s| I: %d(%d)| TP: %s(%s)| SL: %s(%s)| SnR: %s| PB %s: %s(%s)\n==> ", 
+   string text = StringFormat("%s| Mtrend: %d(%d) | get IDM: %s | Itrend: %d(%d) | TP: %s(%s) | SL: %s(%s) | SnR: %s | PB %s: %s(%s)\n==> ", 
                               _Symbol, myEAs.valueInternal.vi_mTrend, myEAs.valueInternal.vi_wvmTrend, getIdm, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend,
                               DoubleToString(iTarget,_Digits), ((iTarget_isMitigatedPoizone || iTarget_isSweptSwing)? "W!" : "OK"),  
                               DoubleToString(iStoploss, _Digits), ((iStoploss_isMitigatedPoizone || iStoploss_isSweptSwing)? "OK": "W!"),
                               DoubleToString(myEAs.valueInternal.vi_intSnR,_Digits),
                               ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), DoubleToString(iSwingPullBack,_Digits), ((iSwingPullBack_isMitigatedPoizone || iSwingPullBack_isSweptPoizone || iSwingPullBack_isMitigatedOrderFlow)? "OK": "W!")
                               );
-   Print(text + message);
+   string str_result = text + message + "\n";                              
+   Print(str_result);
    Print(TAB_STRING);
-   SendDiscordMessage(text+message);
-   SendNotification(text+message);
+   SendDiscordMessage(str_result);
+   SendNotification(str_result);
 }
 
 void SendDiscordMessage2(string message) {
