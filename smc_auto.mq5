@@ -8017,7 +8017,7 @@ void sendNoti(string message = "") {
    SendNotification(text+message);
 }
 
-void SendDiscordMessage(string message) {
+void SendDiscordMessage2(string message) {
 
     string webhookURL = webhook;
     string json = "{\"content\":\"" + message + "\"}";
@@ -8033,58 +8033,50 @@ void SendDiscordMessage(string message) {
     }
 }
 
-////+------------------------------------------------------------------+
-////| Hàm gửi tin nhắn đến Discord                                      |
-////+------------------------------------------------------------------+
-//bool SendDiscordMessage2(string webhook_url, string message)
-//{
-//   // 1. Xử lý ký tự đặc biệt trong message nếu cần
-//   StringReplace(message, "\n", "\\n"); // Escape ký tự xuống dòng
-//
-//   // 2. Tạo JSON payload hợp lệ (không có dấu phẩy thừa)
-//   string jsonPayload = StringFormat("{\"content\": \"%s\"}", message);
-//   
-//   // 3. In ra JSON để kiểm tra
-//   Print("Đang gửi JSON: ", jsonPayload);
-//
-//   // 4. Chuyển đổi sang mảng char một cách chính xác
-//   char postData[];
-//   // CHỈ định rõ độ dài của chuỗi, tránh ký tự null thừa
-//   StringToCharArray(jsonPayload, postData, 0, StringLen(jsonPayload));
-//
-//   char resultData[];
-//   string resultHeaders;
-//   int timeout = 5000;
-//   
-//   // 5. Thiết lập header cho request
-//   string headers = "Content-Type: application/json\r\n";
-//
-//   // Reset Last Error trước khi gửi
-//   ResetLastError();
-//
-//   // 6. Gửi yêu cầu WebRequest
-//   int response = WebRequest("POST", webhook_url, headers, timeout, postData, resultData, resultHeaders);
-//
-//   // 7. Xử lý phản hồi
-//   if(response == -1)
-//     {
-//      // Lấy và in mã lỗi để chẩn đoán
-//      int errorCode = GetLastError();
-//      PrintFormat("Lỗi trong WebRequest. Mã lỗi: %d", errorCode);
-//      return false;
-//     }
-//   else if(response == 204)
-//     {
-//      Print("Đã gửi tin nhắn đến Discord thành công!");
-//      return true;
-//     }
-//   else
-//     {
-//      string result = CharArrayToString(resultData);
-//      PrintFormat("Gửi thất bại! Mã trạng thái HTTP: %d, nội dung phản hồi: %s", response, result);
-//      return false;
-//     }
-//}
+bool SendDiscordMessage(string message)
+{
+   // Escape tất cả ký tự đặc biệt theo chuẩn JSON
+   // Cần escape backslash trước tiên để không phá hỏng các lần escape sau
+   StringReplace(message, "\\", "\\\\"); // \ -> \\
+   StringReplace(message, "\"", "\\\""); // " -> \"
+   StringReplace(message, "\n", "\\n");  // xuống dòng thực -> \n
+   StringReplace(message, "\r", "");     // loại bỏ ký tự carriage return (nếu có)
+
+   // Tạo JSON payload
+   string jsonPayload = StringFormat("{\"content\": \"%s\"}", message);
+   
+   // In ra để kiểm tra – đây là bước rất quan trọng để bạn biết JSON gửi đi là gì
+   Print("Đang gửi JSON: ", jsonPayload);
+
+   // Chuyển sang mảng char đúng độ dài, hỗ trợ UTF-8
+   char postData[];
+   StringToCharArray(jsonPayload, postData, 0, StringLen(jsonPayload), CP_UTF8);
+
+   char resultData[];
+   string resultHeaders;
+   int timeout = 5000;
+   string headers = "Content-Type: application/json\r\n";
+
+   ResetLastError();
+   int response = WebRequest("POST", webhook, headers, timeout, postData, resultData, resultHeaders);
+
+   if(response == -1)
+     {
+      PrintFormat("Lỗi trong WebRequest. Mã lỗi: %d", GetLastError());
+      return false;
+     }
+   else if(response == 204)
+     {
+      Print("Đã gửi tin nhắn đến Discord thành công!");
+      return true;
+     }
+   else
+     {
+      string result = CharArrayToString(resultData);
+      PrintFormat("Gửi thất bại! Mã HTTP: %d, phản hồi: %s", response, result);
+      return false;
+     }
+}
 
 
 string getValueTrend(TimeFrameData& tfData) {
