@@ -8011,7 +8011,7 @@ void sendNoti(string message = "") {
                               DoubleToString(myEAs.valueInternal.vi_intSnR,_Digits),
                               ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), DoubleToString(iSwingPullBack,_Digits), ((iSwingPullBack_isMitigatedPoizone || iSwingPullBack_isSweptPoizone || iSwingPullBack_isMitigatedOrderFlow)? "OK": "W!")
                               );
-   string str_result = text + message + "\n";                              
+   string str_result = text + message + "\n------------------------------------------------------------------------\n";                              
    Print(str_result);
    Print(TAB_STRING);
    SendDiscordMessage(str_result);
