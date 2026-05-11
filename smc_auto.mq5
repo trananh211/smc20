@@ -8004,34 +8004,19 @@ void sendNoti(string message = "") {
       iSwingPullBack_isSweptPoizone = (myEAs.valueInternal.vi_TempSwing_High.main.vins_isPoiZoneSwept)? true: false;
    }
    string getIdm = (myEAs.signalInternal.sg_mTrend == 1) ? (string)myEAs.signalInternal.sg_getIdmBuy : (string)myEAs.signalInternal.sg_getIdmSell;
-   string text = StringFormat("%s| Mtrend: %d(%d) | get IDM: %s | Itrend: %d(%d) | TP: %s(%s) | SL: %s(%s) | SnR: %s | PB %s: %s(%s)\n==> ", 
+   string text = StringFormat("[ %s| Mtrend: %d(%d) | get IDM: %s | Itrend: %d(%d) | TP: %s(%s) | SL: %s(%s) | SnR: %s | PB %s: %s(%s) ]", 
                               _Symbol, myEAs.valueInternal.vi_mTrend, myEAs.valueInternal.vi_wvmTrend, getIdm, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend,
                               DoubleToString(iTarget,_Digits), ((iTarget_isMitigatedPoizone || iTarget_isSweptSwing)? "W!" : "OK"),  
                               DoubleToString(iStoploss, _Digits), ((iStoploss_isMitigatedPoizone || iStoploss_isSweptSwing)? "OK": "W!"),
                               DoubleToString(myEAs.valueInternal.vi_intSnR,_Digits),
                               ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), DoubleToString(iSwingPullBack,_Digits), ((iSwingPullBack_isMitigatedPoizone || iSwingPullBack_isSweptPoizone || iSwingPullBack_isMitigatedOrderFlow)? "OK": "W!")
                               );
-   string str_result = text + message + "\n------------------------------------------------------------------------\n";                              
-   Print(str_result);
-   Print(TAB_STRING);
+   string str_result = message +"\n==> "+ text + "\n------------------------------------------------------------------------\n";                              
+   //Print(str_result);
+   //Print(TAB_STRING);
    SendDiscordMessage(str_result);
-   SendNotification(str_result);
-}
-
-void SendDiscordMessage2(string message) {
-
-    string webhookURL = webhook;
-    string json = "{\"content\":\"" + message + "\"}";
-    char data[];
-    StringToCharArray(json, data, 0, StringLen(json), CP_UTF8);
-    char result[];
-    string headers = "Content-Type: application/json\r\n";
-    int res = WebRequest("POST", webhookURL, headers, 5000, data, result, headers);
-    if (res < 0) {
-        Print("Error sending message: ", GetLastError());
-    } else {
-        Print("Message sent, HTTP code: ", res);
-    }
+   //SendNotification(str_result);
+   
 }
 
 bool SendDiscordMessage(string message)
