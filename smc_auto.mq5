@@ -250,10 +250,10 @@ struct ValueInternal{
    InternalSwingData candidate_Low;
    
    // Hàm Reset làm sạch dữ liệu (Cần thiết khi đổi xu hướng)
-   void Reset() {
+   void Reset(string text = "") {
       //Print("============= RESET THONG SO [ ValueInternal ] THANH CONG==============");
-      string message = "Reset valueInternal. Xoa pending order hoặc Take Profit - Cut Stoploss.";
-      sendNoti(message);
+      string message = "Reset valueInternal. Xoa pending order.";
+      sendNoti(text+message);
       
       vi_mTrend = 0;
       vi_wvmTrend = 0;
@@ -2473,12 +2473,22 @@ void checkStatusRealTimeInternalStructHTF(ValueInternal& iVData, MqlRates& bar1)
    // Reset thông số ban đầu nếu Stoploss hoặc Take Profit
    if (bar1.high > iVData.vi_intSHigh || bar1.low < iVData.vi_intSLow) {
       if (bar1.high > iVData.vi_intSHigh) {
-         text += "Giá "+DoubleToString(bar1.high, _Digits)+" vượt qua Internal High: "+ DoubleToString(iVData.vi_intSHigh,_Digits);
+         if((iVData.vi_ITrend == 1 && iVData.vi_wvITrend == 1) || (iVData.vi_ITrend == -1 && iVData.vi_wvITrend == 1)) {
+            text += "[Success]Take profit.";
+         } else if ((iVData.vi_ITrend == -1 && iVData.vi_wvITrend == -1) || (iVData.vi_ITrend == 1 && iVData.vi_wvITrend == -1)) {
+            text += "[Error]Stoploss.";
+         }
+         text += " Giá "+DoubleToString(bar1.high, _Digits)+" vượt qua Internal High: "+ DoubleToString(iVData.vi_intSHigh,_Digits)+". ";
       }else if (bar1.low < iVData.vi_intSLow) {
-         text += "Giá "+DoubleToString(bar1.low, _Digits)+" vượt qua Internal High: "+ DoubleToString(iVData.vi_intSLow,_Digits);
+         if((iVData.vi_ITrend == -1 && iVData.vi_wvITrend == -1) || (iVData.vi_ITrend == 1 && iVData.vi_wvITrend == -1)) {
+            text += "[Success]Take profit.";
+         } else if ((iVData.vi_ITrend == 1 && iVData.vi_wvITrend == 1) || (iVData.vi_ITrend == -1 && iVData.vi_wvITrend == 1)) {
+            text += "[Error]Stoploss.";
+         }
+         text += " Giá "+DoubleToString(bar1.low, _Digits)+" vượt qua Internal High: "+ DoubleToString(iVData.vi_intSLow,_Digits)+". ";
       }
       // Reset Value Internal
-		myEAs.valueInternal.Reset();
+		myEAs.valueInternal.Reset(text);
 		//DeleteAllPendingOrders(_Symbol, InpMagic);
 		
 		return;
@@ -2501,13 +2511,13 @@ void checkStatusRealTimeInternalStructHTF(ValueInternal& iVData, MqlRates& bar1)
    }
    
    if(iVData.candidate_High.vins_SwingNew != 0 && bar1.high > iVData.candidate_High.vins_SwingNew) {
-      text += "Deleted Candidate Pullback Swing High "+DoubleToString(iVData.candidate_High.vins_SwingNew, _Digits);
+      text += "Deleted Candidate (SUB) Pullback Swing High "+DoubleToString(iVData.candidate_High.vins_SwingNew, _Digits);
       iVData.candidate_High.Reset();
       //DeleteAllPendingOrders(_Symbol, InpMagic);
    }
    
    if(iVData.candidate_Low.vins_SwingNew != 0 && bar1.low < iVData.candidate_Low.vins_SwingNew) {
-      text += "Deleted Candidate Pullback Swing Low "+DoubleToString(iVData.candidate_Low.vins_SwingNew, _Digits);
+      text += "Deleted Candidate (SUBi[) Pullback Swing Low "+DoubleToString(iVData.candidate_Low.vins_SwingNew, _Digits);
       iVData.candidate_Low.Reset();
       //DeleteAllPendingOrders(_Symbol, InpMagic);
    }
@@ -4497,7 +4507,7 @@ struct marketStructs{
          if (tfData.isHighTF && resulCheckPullbackGannHigh && myEAs.valueInternal.vi_TempSwing_High.main.vins_SwingNew != 0){
             setValueToCandidateSwingHTF(tfData, bar2, -1);
             if(myEAs.valueInternal.candidate_High.vins_SwingNew != 0) {
-               Print("Gann High 1");
+               //Print("Gann High 1");
                checkValueWithInternalSwingHTF(tfData,  bar3, bar2, bar1, -1, INTERNAL_PULLBACK_SUB);
             }
          }
@@ -4555,7 +4565,7 @@ struct marketStructs{
                   if (myEAs.valueInternal.vi_ITrend != myEAs.valueInternal.vi_wvITrend && 
                      (myEAs.valueInternal.vi_isSwept || myEAs.valueInternal.vi_isMitigatedPoiZone || myEAs.valueInternal.vi_isSweptPoiZone)) {
                      //Print("Swept High hoac Mitigated poizone Marjor. Tiếp tục check Low timeframe để tìm tín hiệu sớm.");
-                     Print("High 1 iBOS");
+                     //Print("High 1 iBOS");
                      checkValueWithInternalSwingHTF(tfData,  bar3, bar2, bar1, -1, INTERNAL_PULLBACK_MAIN);
                      
                      //Print("Swept High hoac Mitigated poizone Marjor. ");
@@ -4645,7 +4655,7 @@ struct marketStructs{
                   if (myEAs.valueInternal.vi_ITrend != myEAs.valueInternal.vi_wvITrend && 
                      (myEAs.valueInternal.vi_isSwept || myEAs.valueInternal.vi_isMitigatedPoiZone || myEAs.valueInternal.vi_isSweptPoiZone)) {
                      //Print("Swept High hoac Mitigated poizone Marjor. Tiếp tục check Low timeframe để tìm tín hiệu sớm.");
-                     Print("High 2");
+                     //Print("High 2");
                      checkValueWithInternalSwingHTF(tfData,  bar3, bar2, bar1, -1, INTERNAL_PULLBACK_MAIN);
                      //Print("Swept High hoac Mitigated poizone Marjor. ");
                   }
@@ -4724,7 +4734,7 @@ struct marketStructs{
             // Set thông số swing high có đủ điều kiện để trade hay không. (valueInternal)
             if (tfData.isHighTF) {
                if (myEAs.valueInternal.vi_TempSwing_High.main.vins_SwingNew == 0) {
-                  Print("High 4");
+                  //Print("High 4");
                   checkValueWithInternalSwingHTF(tfData,  bar3, bar2, bar1, tfData.iTrend, INTERNAL_PULLBACK_MAIN);
                }
                   
@@ -4760,7 +4770,7 @@ struct marketStructs{
                // Set thông số swing high có đủ điều kiện để trade hay không. (valueInternal)
                if (tfData.isHighTF) {
                   if (myEAs.valueInternal.vi_TempSwing_High.main.vins_SwingNew == 0) {
-                     Print("High 5");
+                     //Print("High 5");
                      checkValueWithInternalSwingHTF(tfData,  bar3, bar2, bar1, tfData.iTrend, INTERNAL_PULLBACK_MAIN);
                   }
                      
@@ -4902,7 +4912,7 @@ struct marketStructs{
          if (tfData.isHighTF && resulCheckPullbackGannLow && myEAs.valueInternal.vi_TempSwing_Low.main.vins_SwingNew != 0){
             setValueToCandidateSwingHTF(tfData, bar2, 1);
             if(myEAs.valueInternal.candidate_Low.vins_SwingNew != 0) {
-               Print("Gann Low -1");
+               //Print("Gann Low -1");
                checkValueWithInternalSwingHTF(tfData,  bar3, bar2, bar1, 1, INTERNAL_PULLBACK_SUB);
             }
          }
@@ -4955,7 +4965,7 @@ struct marketStructs{
                   if (myEAs.valueInternal.vi_ITrend != myEAs.valueInternal.vi_wvITrend && 
                      (myEAs.valueInternal.vi_isSwept || myEAs.valueInternal.vi_isMitigatedPoiZone || myEAs.valueInternal.vi_isSweptPoiZone)) {
                      //Print("Swept High hoac Mitigated poizone Marjor. Tiếp tục check Low timeframe để tìm tín hiệu sớm.");
-                     Print("Low 1");
+                     //Print("Low 1");
                      checkValueWithInternalSwingHTF(tfData,  bar3, bar2, bar1, 1, INTERNAL_PULLBACK_MAIN);
                      //Print("Swept Low hoac Mitigated poizone Marjor. ");
                   }
@@ -5127,7 +5137,7 @@ struct marketStructs{
             // Set thông số swing high có đủ điều kiện để trade hay không. (valueInternal)
             if (tfData.isHighTF) {
                if (myEAs.valueInternal.vi_TempSwing_Low.main.vins_SwingNew == 0) {
-                  Print("Low 4");
+                  //Print("Low 4");
                   checkValueWithInternalSwingHTF(tfData,  bar3, bar2, bar1, tfData.iTrend, INTERNAL_PULLBACK_MAIN);
                }
                   
@@ -5163,7 +5173,7 @@ struct marketStructs{
                // Set thông số swing high có đủ điều kiện để trade hay không. (valueInternal)
                if (tfData.isHighTF) {
                   if (myEAs.valueInternal.vi_TempSwing_Low.main.vins_SwingNew == 0) {
-                     Print("Low 5");
+                     //Print("Low 5");
                      checkValueWithInternalSwingHTF(tfData,  bar3, bar2, bar1, tfData.iTrend, INTERNAL_PULLBACK_MAIN);
                   }
                      
@@ -8012,10 +8022,11 @@ void sendNoti(string message = "") {
                               ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), DoubleToString(iSwingPullBack,_Digits), ((iSwingPullBack_isMitigatedPoizone || iSwingPullBack_isSweptPoizone || iSwingPullBack_isMitigatedOrderFlow)? "OK": "W!")
                               );
    string str_result = message +"\n==> "+ text + "\n------------------------------------------------------------------------\n";                              
-   //Print(str_result);
-   //Print(TAB_STRING);
+   
    SendDiscordMessage(str_result);
    //SendNotification(str_result);
+   //Print(str_result);
+   //Print(TAB_STRING);
    
 }
 
