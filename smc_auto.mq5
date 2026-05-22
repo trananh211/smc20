@@ -2474,18 +2474,18 @@ void checkStatusRealTimeInternalStructHTF(ValueInternal& iVData, MqlRates& bar1)
    if (bar1.high > iVData.vi_intSHigh || bar1.low < iVData.vi_intSLow) {
       if (bar1.high > iVData.vi_intSHigh) {
          if((iVData.vi_ITrend == 1 && iVData.vi_wvITrend == 1) || (iVData.vi_ITrend == -1 && iVData.vi_wvITrend == 1)) {
-            text += "[Success]Take profit.";
+            text += "[Success]Take profit "+ ((iVData.vi_ITrend == 1)? "Internal Uptrend." : "Swept Internal DownTrend.");
          } else if ((iVData.vi_ITrend == -1 && iVData.vi_wvITrend == -1) || (iVData.vi_ITrend == 1 && iVData.vi_wvITrend == -1)) {
-            text += "[Error]Stoploss.";
+            text += "[Error]Stoploss "+ ((iVData.vi_ITrend == -1)? "Internal DownTrend." : "Swept Internal Uptrend.");
          }
-         text += " Giá "+DoubleToString(bar1.high, _Digits)+" vượt qua Internal High: "+ DoubleToString(iVData.vi_intSHigh,_Digits)+". ";
+         text += " Giá "+DoubleToString(bar1.high, _Digits)+" vượt lên Internal High: "+ DoubleToString(iVData.vi_intSHigh,_Digits)+". ";
       }else if (bar1.low < iVData.vi_intSLow) {
          if((iVData.vi_ITrend == -1 && iVData.vi_wvITrend == -1) || (iVData.vi_ITrend == 1 && iVData.vi_wvITrend == -1)) {
-            text += "[Success]Take profit.";
+            text += "[Success]Take profit " + ((iVData.vi_ITrend == -1)? "Internal DownTrend." : "Swept Internal Uptrend.");
          } else if ((iVData.vi_ITrend == 1 && iVData.vi_wvITrend == 1) || (iVData.vi_ITrend == -1 && iVData.vi_wvITrend == 1)) {
-            text += "[Error]Stoploss.";
+            text += "[Error]Stoploss "+ ((iVData.vi_ITrend == 1)? "Internal Uptrend." : "Swept Internal DownTrend.");
          }
-         text += " Giá "+DoubleToString(bar1.low, _Digits)+" vượt qua Internal High: "+ DoubleToString(iVData.vi_intSLow,_Digits)+". ";
+         text += " Giá "+DoubleToString(bar1.low, _Digits)+" giảm qua Internal Low: "+ DoubleToString(iVData.vi_intSLow,_Digits)+". ";
       }
       // Reset Value Internal
 		myEAs.valueInternal.Reset(text);
@@ -2517,7 +2517,7 @@ void checkStatusRealTimeInternalStructHTF(ValueInternal& iVData, MqlRates& bar1)
    }
    
    if(iVData.candidate_Low.vins_SwingNew != 0 && bar1.low < iVData.candidate_Low.vins_SwingNew) {
-      text += "Deleted Candidate (SUBi[) Pullback Swing Low "+DoubleToString(iVData.candidate_Low.vins_SwingNew, _Digits);
+      text += "Deleted Candidate (SUB) Pullback Swing Low "+DoubleToString(iVData.candidate_Low.vins_SwingNew, _Digits);
       iVData.candidate_Low.Reset();
       //DeleteAllPendingOrders(_Symbol, InpMagic);
    }
@@ -2941,7 +2941,7 @@ void ProcessLowTFSignal(TimeFrameData& tfData, InternalSwingData& candidate, Str
          manager.main = candidate;
    }
    text += ("Da tung kiem tra " + ((type == 1) ? "Low LTF" : "High LTF"));
-   string message = StringFormat("[LTF] Checked %s: %s swing: %s at %s \nIsMitigatedPoizone: %s | IsSweptPoizone: %s | IsPattent: %s\n", 
+   string message = StringFormat("[LTF] Checked %s: %s swing: %s at %s \nIsMitigatedPoizone: %s | IsSweptPoizone: %s | IsPattent: %s", 
                                (type == 1) ? "Low" : "High", 
                                ((candidate.vins_isSignalConfirm_LTF == 1) ? "Confirm" : "Unconfirm") + ((type == 1)? "->BUY" : "->SELL"), 
                                (type == 1) ? DoubleToString(candidate.vins_barSwing.low, _Digits) : DoubleToString(candidate.vins_barSwing.high, _Digits), 
@@ -8025,8 +8025,8 @@ void sendNoti(string message = "") {
    
    SendDiscordMessage(str_result);
    //SendNotification(str_result);
-   //Print(str_result);
-   //Print(TAB_STRING);
+   Print(str_result);
+   Print(TAB_STRING);
    
 }
 
