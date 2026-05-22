@@ -2495,14 +2495,14 @@ void checkStatusRealTimeInternalStructHTF(ValueInternal& iVData, MqlRates& bar1)
    }
    
    // Nếu giá vượt qua dữ liệu pullback. Xoá thông tin của pullback đó.
-   // nếu giá vượt qua Pullback High. Xoá dữ liệu pullback High
+   // Main High
    if(iVData.vi_TempSwing_High.main.vins_SwingNew != 0 && bar1.high > iVData.vi_TempSwing_High.main.vins_SwingNew) {
       text += "Deleted MAIN Pullback Swing High "+DoubleToString(iVData.vi_TempSwing_High.main.vins_SwingNew, _Digits);
       iVData.vi_TempSwing_High.ResetAll();
       iVData.candidate_High.Reset();
       //DeleteAllPendingOrders(_Symbol, InpMagic);
    }
-   
+   // Main Low
    if(iVData.vi_TempSwing_Low.main.vins_SwingNew != 0 && bar1.low < iVData.vi_TempSwing_Low.main.vins_SwingNew) {
       text += "Deleted MAIN Pullback Swing Low "+DoubleToString(iVData.vi_TempSwing_Low.main.vins_SwingNew, _Digits);
       iVData.vi_TempSwing_Low.ResetAll();
@@ -2510,14 +2510,29 @@ void checkStatusRealTimeInternalStructHTF(ValueInternal& iVData, MqlRates& bar1)
       //DeleteAllPendingOrders(_Symbol, InpMagic);
    }
    
+   // Sub High
+   if(iVData.vi_TempSwing_High.sub.vins_SwingNew != 0 && bar1.high > iVData.vi_TempSwing_High.sub.vins_SwingNew) {
+      text += "Deleted SUB Pullback Swing High "+DoubleToString(iVData.vi_TempSwing_High.sub.vins_SwingNew, _Digits)+". ";
+      iVData.vi_TempSwing_High.sub.Reset();
+      //DeleteAllPendingOrders(_Symbol, InpMagic);
+   }
+   // Sub Low
+   if(iVData.vi_TempSwing_Low.sub.vins_SwingNew != 0 && bar1.low < iVData.vi_TempSwing_Low.sub.vins_SwingNew) {
+      text += "Deleted SUB Pullback Swing Low "+DoubleToString(iVData.vi_TempSwing_Low.sub.vins_SwingNew, _Digits)+". ";
+      iVData.vi_TempSwing_Low.sub.Reset();
+      //DeleteAllPendingOrders(_Symbol, InpMagic);
+   }
+   
+   // Candidate High
    if(iVData.candidate_High.vins_SwingNew != 0 && bar1.high > iVData.candidate_High.vins_SwingNew) {
-      text += "Deleted Candidate (SUB) Pullback Swing High "+DoubleToString(iVData.candidate_High.vins_SwingNew, _Digits);
+      text += "Deleted Candidate Pullback Swing High "+DoubleToString(iVData.candidate_High.vins_SwingNew, _Digits);
       iVData.candidate_High.Reset();
       //DeleteAllPendingOrders(_Symbol, InpMagic);
    }
    
+   // Candidate Low
    if(iVData.candidate_Low.vins_SwingNew != 0 && bar1.low < iVData.candidate_Low.vins_SwingNew) {
-      text += "Deleted Candidate (SUB) Pullback Swing Low "+DoubleToString(iVData.candidate_Low.vins_SwingNew, _Digits);
+      text += "Deleted Candidate Pullback Swing Low "+DoubleToString(iVData.candidate_Low.vins_SwingNew, _Digits);
       iVData.candidate_Low.Reset();
       //DeleteAllPendingOrders(_Symbol, InpMagic);
    }
@@ -2647,14 +2662,14 @@ void checkStatusBarBreakoutBodyToOrderBlock(MqlRates& bar1) {
        // Lấy tham chiếu đến nến OB đã tìm được trước đó
        MqlRates obBar = subHData.vins_barOrderBlock;
        // ĐIỀU KIỆN NỚI LỎNG: Lấy giá thấp nhất của thân nến OB (Body Low)
-       double price_need_compare = MathMin(obBar.open, obBar.close);
+       double price_need_compare = MathMin(obBar.high, obBar.low);
        
        // Nếu nến hiện tại (bar1) đóng cửa dưới thân nến OB
        if (bar1.close < price_need_compare && (bar1.low <= obBar.low || bar1.high >= obBar.high)) {
            subHData.vins_isSignalConfirm_Patten_Again = 2;
            result = true;
            text += StringFormat("[HTF] Active Break Again giảm | Swing High %s at %s", DoubleToString(subHData.vins_barSwing.high, _Digits), TimeToString(subHData.vins_barSwing.time));
-           text += "\n"+StringFormat("Xác nhận Break OB Sell: bar1.close (%s) < OB Body Low (%s)", DoubleToString(bar1.close, _Digits), DoubleToString(price_need_compare, _Digits));
+           text += "\n"+StringFormat("Xác nhận Break OB Sell: bar1.close (%s) < OB Bar Low (%s)", DoubleToString(bar1.close, _Digits), DoubleToString(price_need_compare, _Digits));
            text += StringFormat("[Swing High OB bar info] Time: %s | Open: %s | High: %s | Low: %s | Close: %s | Vol: %lld", 
                 TimeToString(obBar.time), DoubleToString(obBar.open, _Digits), DoubleToString(obBar.high, _Digits), DoubleToString(obBar.low, _Digits), DoubleToString(obBar.close, _Digits), obBar.tick_volume);
        }
@@ -2669,14 +2684,14 @@ void checkStatusBarBreakoutBodyToOrderBlock(MqlRates& bar1) {
        MqlRates obBar = subLData.vins_barOrderBlock;
        
        // ĐIỀU KIỆN NỚI LỎNG: Lấy giá cao nhất của thân nến OB (Body High)
-       double price_need_compare = MathMax(obBar.open, obBar.close);
+       double price_need_compare = MathMax(obBar.high, obBar.low);
        
        // Nếu nến hiện tại (bar1) đóng cửa trên thân nến OB
        if (bar1.close > price_need_compare && (bar1.low <= obBar.low || bar1.high >= obBar.high)) {
            subLData.vins_isSignalConfirm_Patten_Again = 2;
            result = true;
            text += StringFormat("[HTF] Active Break Again tăng | Swing Low %s at %s: ", DoubleToString(subLData.vins_barSwing.low, _Digits), TimeToString(subLData.vins_barSwing.time));
-           text += "\n"+StringFormat("Xác nhận Break OB Buy: bar1.close (%s) > OB Body High (%s)", DoubleToString(bar1.close, _Digits), DoubleToString(price_need_compare, _Digits));
+           text += "\n"+StringFormat("Xác nhận Break OB Buy: bar1.close (%s) > OB Bar High (%s)", DoubleToString(bar1.close, _Digits), DoubleToString(price_need_compare, _Digits));
            text += StringFormat("[Swing Low OB bar info] Time: %s | Open: %s | High: %s | Low: %s | Close: %s | Vol: %lld", 
                 TimeToString(obBar.time), DoubleToString(obBar.open, _Digits), DoubleToString(obBar.high, _Digits), DoubleToString(obBar.low, _Digits), DoubleToString(obBar.close, _Digits), obBar.tick_volume);
        }
@@ -7805,7 +7820,7 @@ string GetSwingDataLog(string name, const InternalSwingData &data) {
    string log = "--- LOG " + name + " ---\n";
    log += TAB_STRING+"Price: " + DoubleToString(data.vins_SwingNew, _Digits) + " | Time: " + TimeToString(data.vins_SwingTimeNew);
    // Thông tin LTF trend
-   log += "LTF mTrend/: " + (string)data.vins_LTF_mTrend + "("+(string) data.vins_LTF_wvmTrend+") | iTrend: " + (string)data.vins_LTF_iTrend + "("+(string) data.vins_LTF_wviTrend+")";
+   log += " || LTF mTrend/: " + (string)data.vins_LTF_mTrend + "("+(string) data.vins_LTF_wvmTrend+") | iTrend: " + (string)data.vins_LTF_iTrend + "("+(string) data.vins_LTF_wviTrend+")";
    // Thông tin nến OB
    log += " - OB Price: " + DoubleToString(data.vins_barOrderBlock.high, _Digits) + " - " + DoubleToString(data.vins_barOrderBlock.low, _Digits);
    
@@ -7973,9 +7988,17 @@ void sendNoti(string message = "") {
    if(!enabledNotification) return;
    double iTarget = 0, iStoploss = 0;
    bool iTarget_isMitigatedPoizone = false, iTarget_isSweptSwing = false, iStoploss_isMitigatedPoizone = false, iStoploss_isSweptSwing = false;
+   
    double iSwingPullBack = 0;
    bool iSwingPullBack_isMitigatedPoizone = false, iSwingPullBack_isSweptPoizone = false;
    bool iSwingPullBack_isMitigatedOrderFlow = false;
+   bool iSwingPullBack_isConfirmLTF = false;
+   
+   double iSubSwingPullBack = 0;
+   bool iSubSwingPullBack_isMitigatedPoizone = false, iSubSwingPullBack_isSweptPoizone = false;
+   bool iSubSwingPullBack_isMitigatedOrderFlow = false;
+   bool iSubSwingPullBack_isConfirmLTF = false;
+   
    if (myEAs.valueInternal.vi_wvIsBuyInternal) { // Buy
       iTarget = myEAs.valueInternal.vi_intSHigh;
       iStoploss = myEAs.valueInternal.vi_intSLow;
@@ -8004,22 +8027,39 @@ void sendNoti(string message = "") {
    // Set Swing Pullback
    iSwingPullBack_isMitigatedOrderFlow = (myEAs.valueInternal.vi_isMitigatedOrderFlow)? true : false;
    if(myEAs.valueInternal.vi_ITrend == 1) {
+      //Main
       iSwingPullBack = myEAs.valueInternal.vi_TempSwing_Low.main.vins_SwingNew;
       iSwingPullBack_isMitigatedPoizone = (myEAs.valueInternal.vi_TempSwing_Low.main.vins_isOrderFlowMitigated)? true: false;
       iSwingPullBack_isSweptPoizone = (myEAs.valueInternal.vi_TempSwing_Low.main.vins_isPoiZoneSwept)? true: false;
+      iSwingPullBack_isConfirmLTF = (myEAs.valueInternal.vi_TempSwing_Low.main.vins_isSignalConfirm_LTF == 1)? true: false;
+      //Candidate Sub
+      iSubSwingPullBack = myEAs.valueInternal.vi_TempSwing_Low.sub.vins_SwingNew;
+      iSubSwingPullBack_isMitigatedPoizone = (myEAs.valueInternal.vi_TempSwing_Low.sub.vins_isOrderFlowMitigated)? true: false;
+      iSubSwingPullBack_isSweptPoizone = (myEAs.valueInternal.vi_TempSwing_Low.sub.vins_isPoiZoneSwept)? true: false;
+      iSubSwingPullBack_isConfirmLTF = (myEAs.valueInternal.vi_TempSwing_Low.sub.vins_isSignalConfirm_LTF == 1)? true: false;
       
    } else {
+      //Main
       iSwingPullBack = myEAs.valueInternal.vi_TempSwing_High.main.vins_SwingNew;
       iSwingPullBack_isMitigatedPoizone = (myEAs.valueInternal.vi_TempSwing_High.main.vins_isOrderFlowMitigated)? true: false;
       iSwingPullBack_isSweptPoizone = (myEAs.valueInternal.vi_TempSwing_High.main.vins_isPoiZoneSwept)? true: false;
+      iSwingPullBack_isConfirmLTF = (myEAs.valueInternal.vi_TempSwing_High.main.vins_isSignalConfirm_LTF  == 1)? true: false;
+      //Candidate Sub
+      iSubSwingPullBack = myEAs.valueInternal.vi_TempSwing_High.sub.vins_SwingNew;
+      iSubSwingPullBack_isMitigatedPoizone = (myEAs.valueInternal.vi_TempSwing_High.sub.vins_isOrderFlowMitigated)? true: false;
+      iSubSwingPullBack_isSweptPoizone = (myEAs.valueInternal.vi_TempSwing_High.sub.vins_isPoiZoneSwept)? true: false;
+      iSubSwingPullBack_isConfirmLTF = (myEAs.valueInternal.vi_TempSwing_High.sub.vins_isSignalConfirm_LTF  == 1)? true: false;
    }
+   string text = "";
+   
    string getIdm = (myEAs.signalInternal.sg_mTrend == 1) ? (string)myEAs.signalInternal.sg_getIdmBuy : (string)myEAs.signalInternal.sg_getIdmSell;
-   string text = StringFormat("[ %s| Mtrend: %d(%d) | get IDM: %s | Itrend: %d(%d) | TP: %s(%s) | SL: %s(%s) | SnR: %s | PB %s: %s(%s) ]", 
+   text += StringFormat("[ %s| Mtrend: %d(%d) | get IDM: %s | Itrend: %d(%d) - TP: %s(%s) - SL: %s(%s) - SnR: %s | PullBack Swing => Main: %s: %s(%s), LTF: %s | Sub: %s: %s(%s), LTF: %s ]", 
                               _Symbol, myEAs.valueInternal.vi_mTrend, myEAs.valueInternal.vi_wvmTrend, getIdm, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend,
                               DoubleToString(iTarget,_Digits), ((iTarget_isMitigatedPoizone || iTarget_isSweptSwing)? "W!" : "OK"),  
                               DoubleToString(iStoploss, _Digits), ((iStoploss_isMitigatedPoizone || iStoploss_isSweptSwing)? "OK": "W!"),
                               DoubleToString(myEAs.valueInternal.vi_intSnR,_Digits),
-                              ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), DoubleToString(iSwingPullBack,_Digits), ((iSwingPullBack_isMitigatedPoizone || iSwingPullBack_isSweptPoizone || iSwingPullBack_isMitigatedOrderFlow)? "OK": "W!")
+                              ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), DoubleToString(iSwingPullBack,_Digits), ((iSwingPullBack_isMitigatedPoizone || iSwingPullBack_isSweptPoizone || iSwingPullBack_isMitigatedOrderFlow)? "OK": "W!"), ((iSwingPullBack_isConfirmLTF)? "Confirm": "UnConfirm"),
+                              ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), DoubleToString(iSubSwingPullBack,_Digits), ((iSubSwingPullBack_isMitigatedPoizone || iSubSwingPullBack_isSweptPoizone || iSubSwingPullBack_isMitigatedOrderFlow)? "OK": "W!"),((iSubSwingPullBack_isConfirmLTF)? "Confirm": "UnConfirm")
                               );
    string str_result = message +"\n==> "+ text + "\n------------------------------------------------------------------------\n";                              
    
@@ -8080,14 +8120,14 @@ string getValueTrend(TimeFrameData& tfData) {
    
    string text; 
    
-   //text += "\n -------------------------------------------------------------------------------------------------------------------- \n";
-   //text += GetSwingDataLog("myEAs.valueInternal.candidate_High", myEAs.valueInternal.candidate_High);
-   //text += GetSwingDataLog("myEAs.valueInternal.vi_TempSwing_High.main", myEAs.valueInternal.vi_TempSwing_High.main);
-   //text += GetSwingDataLog("myEAs.valueInternal.vi_TempSwing_High.sub", myEAs.valueInternal.vi_TempSwing_High.sub);
-   //text += "\n ================================== \n";
-   //text += GetSwingDataLog("myEAs.valueInternal.candidate_Low", myEAs.valueInternal.candidate_Low);
-   //text += GetSwingDataLog("myEAs.valueInternal.vi_TempSwing_Low.main", myEAs.valueInternal.vi_TempSwing_Low.main);
-   //text += GetSwingDataLog("myEAs.valueInternal.vi_TempSwing_Low.sub", myEAs.valueInternal.vi_TempSwing_Low.sub);
+   text += "\n -------------------------------------------------------------------------------------------------------------------- \n";
+   text += GetSwingDataLog("myEAs.valueInternal.candidate_High", myEAs.valueInternal.candidate_High);
+   text += GetSwingDataLog("myEAs.valueInternal.vi_TempSwing_High.main", myEAs.valueInternal.vi_TempSwing_High.main);
+   text += GetSwingDataLog("myEAs.valueInternal.vi_TempSwing_High.sub", myEAs.valueInternal.vi_TempSwing_High.sub);
+   text += "\n ================================== \n";
+   text += GetSwingDataLog("myEAs.valueInternal.candidate_Low", myEAs.valueInternal.candidate_Low);
+   text += GetSwingDataLog("myEAs.valueInternal.vi_TempSwing_Low.main", myEAs.valueInternal.vi_TempSwing_Low.main);
+   text += GetSwingDataLog("myEAs.valueInternal.vi_TempSwing_Low.sub", myEAs.valueInternal.vi_TempSwing_Low.sub);
    
    #define siData myEAs.signalInternal
    text += "\n -------------------------------------------------------------------------------------------------------------------- \n";
