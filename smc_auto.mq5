@@ -8111,19 +8111,19 @@ void sendNoti(string message = "") {
    string getIdm = (myEAs.signalInternal.sg_mTrend == 1) ? (string)myEAs.signalInternal.sg_getIdmBuy : (string)myEAs.signalInternal.sg_getIdmSell;
    string isBuyHTF = (myEAs.valueInternal.vi_wvIsBuyInternal)? "Yes" : "No";
    string isSellHTF = (myEAs.valueInternal.vi_wvIsSellInternal)? "Yes" : "No";
-   text += StringFormat("[ IsBuyHTF: %s | IsSellHTF: %s] - [ %s| Mtrend: %d(%d) | get IDM: %s | Itrend: %d(%d) - TP: %s(%s) - SL: %s(%s) - SnR: %s | \nPullBack Swing => Main: %s: %s(%s), LTF: %s | Sub: %s: %s(%s), LTF: %s ]",
+   text += StringFormat("IsBuy: %s - IsSell: %s || %s| Mtrend: %d(%d) | get IDM: %s | Itrend: %d(%d) - TP: %s(%s) - SL: %s(%s) - SnR: %s | PullBack Swing => Main: %s: %s(%s), LTF: %s | Sub: %s: %s(%s), LTF: %s",
                               isBuyHTF, isSellHTF, _Symbol, myEAs.valueInternal.vi_mTrend, myEAs.valueInternal.vi_wvmTrend, getIdm, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend,
                               DoubleToString(iTarget,_Digits), ((iTarget_isMitigatedPoizone || iTarget_isSweptSwing)? "W!" : "OK"),  
                               DoubleToString(iStoploss, _Digits), ((iStoploss_isMitigatedPoizone || iStoploss_isSweptSwing)? "OK": "W!"),
-                              DoubleToString(myEAs.valueInternal.vi_intSnR,_Digits),                              ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), DoubleToString(iSwingPullBack,_Digits), ((iSwingPullBack_isMitigatedPoizone || iSwingPullBack_isSweptPoizone || iSwingPullBack_isMitigatedOrderFlow)? "OK": "W!"), ((iSwingPullBack_isConfirmLTF)? "Confirm": "UnConfirm"),
+                              DoubleToString(myEAs.valueInternal.vi_intSnR,_Digits), ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), DoubleToString(iSwingPullBack,_Digits), ((iSwingPullBack_isMitigatedPoizone || iSwingPullBack_isSweptPoizone || iSwingPullBack_isMitigatedOrderFlow)? "OK": "W!"), ((iSwingPullBack_isConfirmLTF)? "Confirm": "UnConfirm"),
                               ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), DoubleToString(iSubSwingPullBack,_Digits), ((iSubSwingPullBack_isMitigatedPoizone || iSubSwingPullBack_isSweptPoizone || iSubSwingPullBack_isMitigatedOrderFlow)? "OK": "W!"),((iSubSwingPullBack_isConfirmLTF)? "Confirm": "UnConfirm")
                               );
-   string str_result = message +"\n==> "+ text + "\n------------------------------------------------------------------------\n";                              
+   string str_result = message +"\n==> "+ text + "\n---------------END---------------\n";                              
    
    SendDiscordMessage(str_result);
    //SendNotification(str_result);
-   Print(str_result);
-   Print(TAB_STRING);
+   //Print(str_result);
+   //Print(TAB_STRING);
    
 }
 
