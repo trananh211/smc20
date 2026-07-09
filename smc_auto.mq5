@@ -2490,21 +2490,34 @@ void checkStatusRealTimeInternalStructHTF(ValueInternal& iVData, MqlRates& bar1)
    string text = "";
    //ValueInternal& iVData = myEAs.valueInternal;
    // Nếu giá vượt qua dữ liệu tổng của ValueInternal. Reset toàn bộ
+
    // Reset thông số ban đầu nếu Stoploss hoặc Take Profit
    if (bar1.high > iVData.vi_intSHigh || bar1.low < iVData.vi_intSLow) {
       if (bar1.high > iVData.vi_intSHigh) {
-         if((iVData.vi_ITrend == 1 && iVData.vi_wvITrend == 1) || (iVData.vi_ITrend == -1 && iVData.vi_wvITrend == 1)) {
+         if(myEAs.valueInternal.vi_wvIsBuyInternal) {
             text += "[Success]Take profit "+ ((iVData.vi_ITrend == 1)? "Internal Uptrend." : "Swept Internal DownTrend.");
-         } else if ((iVData.vi_ITrend == -1 && iVData.vi_wvITrend == -1) || (iVData.vi_ITrend == 1 && iVData.vi_wvITrend == -1)) {
+         } else if (myEAs.valueInternal.vi_wvIsSellInternal) {
             text += "[Error]Stoploss "+ ((iVData.vi_ITrend == -1)? "Internal DownTrend." : "Swept Internal Uptrend.");
-         }
+         } 
+         
+         // if((iVData.vi_ITrend == 1 && iVData.vi_wvITrend == 1) || (iVData.vi_ITrend == -1 && iVData.vi_wvITrend == 1)) {
+         //    text += "[Success]Take profit "+ ((iVData.vi_ITrend == 1)? "Internal Uptrend." : "Swept Internal DownTrend.");
+         // } else if ((iVData.vi_ITrend == -1 && iVData.vi_wvITrend == -1) || (iVData.vi_ITrend == 1 && iVData.vi_wvITrend == -1)) {
+         //    text += "[Error]Stoploss "+ ((iVData.vi_ITrend == -1)? "Internal DownTrend." : "Swept Internal Uptrend.");
+         // }
          text += " Giá "+DoubleToString(bar1.high, _Digits)+" vượt lên Internal High: "+ DoubleToString(iVData.vi_intSHigh,_Digits)+". ";
       }else if (bar1.low < iVData.vi_intSLow) {
-         if((iVData.vi_ITrend == -1 && iVData.vi_wvITrend == -1) || (iVData.vi_ITrend == 1 && iVData.vi_wvITrend == -1)) {
-            text += "[Success]Take profit " + ((iVData.vi_ITrend == -1)? "Internal DownTrend." : "Swept Internal Uptrend.");
-         } else if ((iVData.vi_ITrend == 1 && iVData.vi_wvITrend == 1) || (iVData.vi_ITrend == -1 && iVData.vi_wvITrend == 1)) {
-            text += "[Error]Stoploss "+ ((iVData.vi_ITrend == 1)? "Internal Uptrend." : "Swept Internal DownTrend.");
-         }
+         if(myEAs.valueInternal.vi_wvIsSellInternal) {
+            text += "[Success]Take profit "+ ((iVData.vi_ITrend == 1)? "Internal Uptrend." : "Swept Internal DownTrend.");
+         } else if (myEAs.valueInternal.vi_wvIsBuyInternal) {
+            text += "[Error]Stoploss "+ ((iVData.vi_ITrend == -1)? "Internal DownTrend." : "Swept Internal Uptrend.");
+         } 
+
+         // if((iVData.vi_ITrend == -1 && iVData.vi_wvITrend == -1) || (iVData.vi_ITrend == 1 && iVData.vi_wvITrend == -1)) {
+         //    text += "[Success]Take profit " + ((iVData.vi_ITrend == -1)? "Internal DownTrend." : "Swept Internal Uptrend.");
+         // } else if ((iVData.vi_ITrend == 1 && iVData.vi_wvITrend == 1) || (iVData.vi_ITrend == -1 && iVData.vi_wvITrend == 1)) {
+         //    text += "[Error]Stoploss "+ ((iVData.vi_ITrend == 1)? "Internal Uptrend." : "Swept Internal DownTrend.");
+         // }
          text += " Giá "+DoubleToString(bar1.low, _Digits)+" giảm qua Internal Low: "+ DoubleToString(iVData.vi_intSLow,_Digits)+". ";
       }
       // Reset Value Internal
@@ -8118,12 +8131,12 @@ void sendNoti(string message = "") {
                               DoubleToString(myEAs.valueInternal.vi_intSnR,_Digits), ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), DoubleToString(iSwingPullBack,_Digits), ((iSwingPullBack_isMitigatedPoizone || iSwingPullBack_isSweptPoizone || iSwingPullBack_isMitigatedOrderFlow)? "OK": "W!"), ((iSwingPullBack_isConfirmLTF)? "Confirm": "UnConfirm"),
                               ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), DoubleToString(iSubSwingPullBack,_Digits), ((iSubSwingPullBack_isMitigatedPoizone || iSubSwingPullBack_isSweptPoizone || iSubSwingPullBack_isMitigatedOrderFlow)? "OK": "W!"),((iSubSwingPullBack_isConfirmLTF)? "Confirm": "UnConfirm")
                               );
-   string str_result = message +"\n==> "+ text + "\n---------------END---------------\n";                              
+   string str_result = message +"\n==> "+ text + "\n---------------END---------------\n\n";                              
    
    SendDiscordMessage(str_result);
    //SendNotification(str_result);
    //Print(str_result);
-   //Print(TAB_STRING);
+   Print(TAB_STRING);
    
 }
 
