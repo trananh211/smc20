@@ -1,4 +1,4 @@
-﻿//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 //|                                                      GlobalVars.mqh |
 //|                        Copyright 2023, MetaQuotes Software Corp. |
 //|                                             https://www.mql5.com |
@@ -12,6 +12,7 @@
 //#region variable declaration
 bool enabledComment = true;
 bool disableComment = false;
+bool g_needRedraw = false; // Cờ kiểm soát việc vẽ lại biểu đồ
 
 bool enabledNotification = false;
 
@@ -1185,11 +1186,23 @@ public:
    // Destructor
    ~CGlobalVariables()
    {
+      Clear();
+   }
+
+   // Giải phóng toàn bộ bộ nhớ dynamic an toàn
+   void Clear()
+   {
       for(int i = 0; i < m_total; i++)
       {
          if(CheckPointer(m_timeframeData[i]) == POINTER_DYNAMIC)
+         {
             delete m_timeframeData[i];
+            m_timeframeData[i] = NULL;
+         }
       }
+      m_total = 0;
+      ArrayResize(m_timeframeData, 0);
+      ArrayResize(m_timeframes, 0);
    }
 
    // Get data for specific timeframe
@@ -1498,11 +1511,11 @@ void ProcessSwingLogic(InternalSwingData &main,
 
       candidate.vins_isOrderFlowMitigated = isOrderFlowMitigated;
       candidate.vins_isPoiZoneMitigated   = isPoiZoneMitigated;
-      string text = "============= SET THONG SO SWING GANN PULLBACK THANH CONG ==============";
-      text += StringFormat("Direction: %d | Time: %s | Swing %s Price: %s", dir, TimeToString(bar.time), (dir==1)?"Low": "High",DoubleToString(candidate.vins_SwingNew, _Digits));
+      //string text = "============= SET THONG SO SWING GANN PULLBACK THANH CONG ==============";
+      //text += StringFormat("Direction: %d | Time: %s | Swing %s Price: %s", dir, TimeToString(bar.time), (dir==1)?"Low": "High",DoubleToString(candidate.vins_SwingNew, _Digits));
       ///Print(text);
       
-      string message = StringFormat("[HTF] PB Gann Swing %s Price: %s - Time: %s | IsOfMitigated: %s | IsObMitigated: %s", 
+      string message = StringFormat("[HTF] PB Gann Swing %s Price: %s - Time: %s \n  = IsOfMitigated: %s | IsObMitigated: %s", 
                                     (dir==1)?"Low": "High", DoubleToString(candidate.vins_SwingNew,_Digits), TimeToString(bar.time), 
                                     (candidate.vins_isOrderFlowMitigated)? "Yes": "No", (candidate.vins_isPoiZoneMitigated)? "Yes": "No"
                                     );
@@ -1660,14 +1673,14 @@ void setValueToInternalSwingHTF(TimeFrameData& tfData, MqlRates& barBreak, MqlRa
       myEAs.valueInternal.vi_isMitigatedOrderFlow = (barSwing.high >= myEAs.valueInternal.vi_intSnR)? true : false;
    }
    
-   if(StringLen(text) > 0) {
-      
-      text += "============= SET THONG SO SWING : ";
-      text += ((direction == 1) ? ("LOW = "+DoubleToString(barSwing.low, _Digits)) : ("HIGH = "+ DoubleToString(barSwing.high, _Digits)) )+ " TAI THOI DIEM "+TimeToString(barSwing.time);
-      text += "(KIỂM TRA THÊM CẢ TRƯƠNG HỢP BREAK SWING NÀY CÓ SWEPT HOAC MITIGATED POIZONE HAY KHÔNG)==============";
-      //Print(text);
-      
-   }
+//   if(StringLen(text) > 0) {
+//      
+//      text += "============= SET THONG SO SWING : ";
+//      text += ((direction == 1) ? ("LOW = "+DoubleToString(barSwing.low, _Digits)) : ("HIGH = "+ DoubleToString(barSwing.high, _Digits)) )+ " TAI THOI DIEM "+TimeToString(barSwing.time);
+//      text += "(KIỂM TRA THÊM CẢ TRƯƠNG HỢP BREAK SWING NÀY CÓ SWEPT HOAC MITIGATED POIZONE HAY KHÔNG)==============";
+//      //Print(text);
+//      
+//   }
    string message = StringFormat("[HTF] Found TP Swing %s: %s - %s", 
          (direction == 1)? "LOW" : "HIGH", (direction == 1)? DoubleToString(barSwing.low, _Digits) : DoubleToString(barSwing.high, _Digits), TimeToString(barSwing.time));
    sendNoti(message);
@@ -1786,8 +1799,10 @@ bool FindCandleByRates(int type, ENUM_TIMEFRAMES timeframe, MqlRates &current_ba
    ArraySetAsSeries(rates, true); // Đảo ngược mảng để index 0 là nến mới nhất
    
    // Lấy dữ liệu nến từ biểu đồ (lấy đủ nhiều để đảm bảo tới được limit_time)
-   // Ở đây ta lấy từ thời gian của current_bar lùi về quá khứ
-   int copied = CopyRates(_Symbol, timeframe, current_bar.time, limit_time, rates);
+   // Sử dụng thời gian nhỏ hơn làm start_time và thời gian lớn hơn làm stop_time để đảm bảo CopyRates thành công
+   datetime t_start = (current_bar.time < limit_time) ? current_bar.time : limit_time;
+   datetime t_stop  = (current_bar.time > limit_time) ? current_bar.time : limit_time;
+   int copied = CopyRates(_Symbol, timeframe, t_start, t_stop, rates);
    
    if(copied <= 1) return false; // Không có dữ liệu nến nào khác để tìm
 
@@ -1967,11 +1982,11 @@ void checkValueWithInternalSwingHTF(TimeFrameData& tfData, MqlRates& barPrev, Mq
    //DeleteAllPendingOrders(_Symbol, InpMagic);
    string message = "";
    string str_completed = (check_lowtf == 1)? "Completed" : "Not Completed";
-   message = StringFormat("[HTF] PB %s Swing %s at %s is [%s] => Pattent: %s, Scan Again: %s, Check LowTF: %s, IsMitigatedPoizone: %s, IsSweptPoiZone: %s",
+   message = StringFormat("[HTF] PB %s Swing %s at %s is [%s] \n  => Pattent: %s | Scan Again: %s | Check LowTF: %s | IsMitigatedPoizone: %s | IsSweptPoiZone: %s",
                           (direction == 1)? "LOW" : "HIGH", (direction == 1)? DoubleToString(barSwing.low, _Digits) : DoubleToString(barSwing.high, _Digits) , TimeToString(barSwing.time), str_completed, (pattent == 1)? "yes" : "no", 
                           (pattent_again == 1)? "yes" : "no", (check_lowtf == 1)? "yes" : "no", (isMitigated)? "yes" : "no", (isSwept)? "yes" : "no");
    
-   string text = "========[CHECK "+((direction == 1)? "LOW":"HIGH")+"] Kiểm tra thông số tín hiệu PullBack (EG hoặc Swept) Swing HTF "+((type == INTERNAL_PULLBACK_MAIN)? "MAIN": "SUB")+" hoàn tất ========";
+   //string text = "========[CHECK "+((direction == 1)? "LOW":"HIGH")+"] Kiểm tra thông số tín hiệu PullBack (EG hoặc Swept) Swing HTF "+((type == INTERNAL_PULLBACK_MAIN)? "MAIN": "SUB")+" hoàn tất ========";
    //Print(text);
    sendNoti(message);
 }
@@ -2020,6 +2035,11 @@ int CheckCandleByTime(datetime checkTime, ENUM_TIMEFRAMES tf, int mode)
    int count = 3;     // Số lượng nến cần lấy
    // Tham số: Symbol, Timeframe, vị trí bắt đầu, số lượng nến cần lấy, mảng đích
    int copied = CopyRates(_Symbol, tf, shift - 1, count, bars);
+   if(copied < count)
+   {
+      PrintFormat(">>> Lỗi sao chép dữ liệu nến cho CheckCandleByTime: chỉ copy được %d/%d nến.", copied, count);
+      return 0;
+   }
    MqlRates barNext = bars[0];
    MqlRates barCenter = bars[1];
    MqlRates barPrev = bars[2];
@@ -2470,22 +2490,35 @@ void checkStatusRealTimeInternalStructHTF(ValueInternal& iVData, MqlRates& bar1)
    string text = "";
    //ValueInternal& iVData = myEAs.valueInternal;
    // Nếu giá vượt qua dữ liệu tổng của ValueInternal. Reset toàn bộ
+
    // Reset thông số ban đầu nếu Stoploss hoặc Take Profit
    if (bar1.high > iVData.vi_intSHigh || bar1.low < iVData.vi_intSLow) {
       if (bar1.high > iVData.vi_intSHigh) {
-         if((iVData.vi_ITrend == 1 && iVData.vi_wvITrend == 1) || (iVData.vi_ITrend == -1 && iVData.vi_wvITrend == 1)) {
+         if(myEAs.valueInternal.vi_wvIsBuyInternal) {
             text += "[Success]Take profit "+ ((iVData.vi_ITrend == 1)? "Internal Uptrend." : "Swept Internal DownTrend.");
-         } else if ((iVData.vi_ITrend == -1 && iVData.vi_wvITrend == -1) || (iVData.vi_ITrend == 1 && iVData.vi_wvITrend == -1)) {
+         } else if (myEAs.valueInternal.vi_wvIsSellInternal) {
             text += "[Error]Stoploss "+ ((iVData.vi_ITrend == -1)? "Internal DownTrend." : "Swept Internal Uptrend.");
-         }
-         text += " Giá "+DoubleToString(bar1.high, _Digits)+" vượt lên Internal High: "+ DoubleToString(iVData.vi_intSHigh,_Digits)+". ";
+         } 
+         
+         // if((iVData.vi_ITrend == 1 && iVData.vi_wvITrend == 1) || (iVData.vi_ITrend == -1 && iVData.vi_wvITrend == 1)) {
+         //    text += "[Success]Take profit "+ ((iVData.vi_ITrend == 1)? "Internal Uptrend." : "Swept Internal DownTrend.");
+         // } else if ((iVData.vi_ITrend == -1 && iVData.vi_wvITrend == -1) || (iVData.vi_ITrend == 1 && iVData.vi_wvITrend == -1)) {
+         //    text += "[Error]Stoploss "+ ((iVData.vi_ITrend == -1)? "Internal DownTrend." : "Swept Internal Uptrend.");
+         // }
+         text += "\n  - Giá "+DoubleToString(bar1.high, _Digits)+" vượt lên Internal High: "+ DoubleToString(iVData.vi_intSHigh,_Digits)+".\n";
       }else if (bar1.low < iVData.vi_intSLow) {
-         if((iVData.vi_ITrend == -1 && iVData.vi_wvITrend == -1) || (iVData.vi_ITrend == 1 && iVData.vi_wvITrend == -1)) {
+         if(myEAs.valueInternal.vi_wvIsSellInternal) {
             text += "[Success]Take profit " + ((iVData.vi_ITrend == -1)? "Internal DownTrend." : "Swept Internal Uptrend.");
-         } else if ((iVData.vi_ITrend == 1 && iVData.vi_wvITrend == 1) || (iVData.vi_ITrend == -1 && iVData.vi_wvITrend == 1)) {
+         } else if (myEAs.valueInternal.vi_wvIsBuyInternal) {
             text += "[Error]Stoploss "+ ((iVData.vi_ITrend == 1)? "Internal Uptrend." : "Swept Internal DownTrend.");
-         }
-         text += " Giá "+DoubleToString(bar1.low, _Digits)+" giảm qua Internal Low: "+ DoubleToString(iVData.vi_intSLow,_Digits)+". ";
+         } 
+
+         // if((iVData.vi_ITrend == -1 && iVData.vi_wvITrend == -1) || (iVData.vi_ITrend == 1 && iVData.vi_wvITrend == -1)) {
+         //    text += "[Success]Take profit " + ((iVData.vi_ITrend == -1)? "Internal DownTrend." : "Swept Internal Uptrend.");
+         // } else if ((iVData.vi_ITrend == 1 && iVData.vi_wvITrend == 1) || (iVData.vi_ITrend == -1 && iVData.vi_wvITrend == 1)) {
+         //    text += "[Error]Stoploss "+ ((iVData.vi_ITrend == 1)? "Internal Uptrend." : "Swept Internal DownTrend.");
+         // }
+         text += "\n  - Giá "+DoubleToString(bar1.low, _Digits)+" giảm qua Internal Low: "+ DoubleToString(iVData.vi_intSLow,_Digits)+".\n";
       }
       // Reset Value Internal
 		myEAs.valueInternal.Reset(text);
@@ -2669,8 +2702,8 @@ void checkStatusBarBreakoutBodyToOrderBlock(MqlRates& bar1) {
            subHData.vins_isSignalConfirm_Patten_Again = 2;
            result = true;
            text += StringFormat("[HTF] Active Break Again giảm | Swing High %s at %s", DoubleToString(subHData.vins_barSwing.high, _Digits), TimeToString(subHData.vins_barSwing.time));
-           text += "\n"+StringFormat("Xác nhận Break OB Sell: bar1.close (%s) < OB Bar Low (%s)", DoubleToString(bar1.close, _Digits), DoubleToString(price_need_compare, _Digits));
-           text += StringFormat("[Swing High OB bar info] Time: %s | Open: %s | High: %s | Low: %s | Close: %s | Vol: %lld", 
+           text += StringFormat("\n  => Xác nhận Break OB Sell: bar1.close (%s) < OB Bar Low (%s)", DoubleToString(bar1.close, _Digits), DoubleToString(price_need_compare, _Digits));
+           text += StringFormat("\n =>  [Swing High OB bar info] Time: %s | Open: %s | High: %s | Low: %s | Close: %s | Vol: %lld", 
                 TimeToString(obBar.time), DoubleToString(obBar.open, _Digits), DoubleToString(obBar.high, _Digits), DoubleToString(obBar.low, _Digits), DoubleToString(obBar.close, _Digits), obBar.tick_volume);
        }
    }
@@ -2690,9 +2723,9 @@ void checkStatusBarBreakoutBodyToOrderBlock(MqlRates& bar1) {
        if (bar1.close > price_need_compare && (bar1.low <= obBar.low || bar1.high >= obBar.high)) {
            subLData.vins_isSignalConfirm_Patten_Again = 2;
            result = true;
-           text += StringFormat("[HTF] Active Break Again tăng | Swing Low %s at %s: ", DoubleToString(subLData.vins_barSwing.low, _Digits), TimeToString(subLData.vins_barSwing.time));
-           text += "\n"+StringFormat("Xác nhận Break OB Buy: bar1.close (%s) > OB Bar High (%s)", DoubleToString(bar1.close, _Digits), DoubleToString(price_need_compare, _Digits));
-           text += StringFormat("[Swing Low OB bar info] Time: %s | Open: %s | High: %s | Low: %s | Close: %s | Vol: %lld", 
+           text += StringFormat("[HTF] Active Break Again tăng | Swing Low %s at %s", DoubleToString(subLData.vins_barSwing.low, _Digits), TimeToString(subLData.vins_barSwing.time));
+           text += StringFormat("\n  => Xác nhận Break OB Buy: bar1.close (%s) > OB Bar High (%s)", DoubleToString(bar1.close, _Digits), DoubleToString(price_need_compare, _Digits));
+           text += StringFormat("\n  => [Swing Low OB bar info] Time: %s | Open: %s | High: %s | Low: %s | Close: %s | Vol: %lld", 
                 TimeToString(obBar.time), DoubleToString(obBar.open, _Digits), DoubleToString(obBar.high, _Digits), DoubleToString(obBar.low, _Digits), DoubleToString(obBar.close, _Digits), obBar.tick_volume);
        }
    }
@@ -2956,7 +2989,7 @@ void ProcessLowTFSignal(TimeFrameData& tfData, InternalSwingData& candidate, Str
          manager.main = candidate;
    }
    text += ("Da tung kiem tra " + ((type == 1) ? "Low LTF" : "High LTF"));
-   string message = StringFormat("[LTF] Checked %s: %s swing: %s at %s \nIsMitigatedPoizone: %s | IsSweptPoizone: %s | IsPattent: %s", 
+   string message = StringFormat("[LTF] Checked %s: %s swing: %s at %s \n =>  IsMitigatedPoizone: %s | IsSweptPoizone: %s | IsPattent: %s", 
                                (type == 1) ? "Low" : "High", 
                                ((candidate.vins_isSignalConfirm_LTF == 1) ? "Confirm" : "Unconfirm") + ((type == 1)? "->BUY" : "->SELL"), 
                                (type == 1) ? DoubleToString(candidate.vins_barSwing.low, _Digits) : DoubleToString(candidate.vins_barSwing.high, _Digits), 
@@ -3107,6 +3140,11 @@ struct marketStructs{
       
       // Copy toan bo Lookback = 100 Bar tu Bar hien tai vao mang waveRates
       int copied = CopyRates(_Symbol, timeframe, 0, count_lookback, waveRates);
+      if(copied <= 0)
+      {
+         PrintFormat(">>> Lỗi: Không thể sao chép dữ liệu lịch sử nến cho definedFunction (Copied = %d)", copied);
+         return;
+      }
       
       //int firstBar = ArraySize(waveRates) - 1;
       int firstBar = 0;
@@ -3318,6 +3356,7 @@ struct marketStructs{
       string resultMarjorStruct = "";
       textall += "----------------------------------------------------------------------> START "+EnumToString(timeframe)+" bar formed: "+ TimeToString(TimeCurrent())+" <-----------------------------------------------------------------------";
       int copied = CopyRates(_Symbol, timeframe, 0, 4, rates);
+      if(copied < 3) return;
       
       MqlRates bar1, bar2, bar3;
       bar1 = rates[2];
@@ -7125,40 +7164,68 @@ int OnInit()
 // OnTick function
 void OnTick()
 {
-   
    // Quản lý các lệnh đang chạy trước
    managerOrderScalpingRobotRunning();
-   //demoOntick();
+   
+   bool isNewBarLow = IsNewBar(lowTimeFrame);
+   bool isNewBarHigh = IsNewBar(highTimeFrame);
    
    // Kiểm tra nến mới cho M5
-   if(IsNewBar(lowTimeFrame)) {
+   if(isNewBarLow) {
      lowTFStruct.realTimeDefinition(lowTimeFrame);
-     // Thêm logic xử lý tại đây
    }
    
    // Kiểm tra nến mới cho H1
-   if(IsNewBar(highTimeFrame)) {
+   if(isNewBarHigh) {
      highTFStruct.realTimeDefinition(highTimeFrame);
-     // Thêm logic xử lý tại đây
    }
    
-   // ham hien thi thong tin struct len chart
-   showInfoStruct();
+   // Chỉ hiển thị info struct khi có nến mới hoặc sự thay đổi để tránh quá tải Comment() liên tục
+   static datetime lastShowTime = 0;
+   datetime currentLowTime = iTime(_Symbol, lowTimeFrame, 0);
+   if(currentLowTime != lastShowTime) {
+      showInfoStruct();
+      lastShowTime = currentLowTime;
+   }
 
-   ChartRedraw(0);
+   // Chỉ vẽ lại chart khi thực sự có thay đổi đối tượng đồ thị
+   if(g_needRedraw) {
+      ChartRedraw(0);
+      g_needRedraw = false;
+   }
+}
+
+// Hàm xóa toàn bộ đối tượng đồ thị do EA tạo ra
+void DeleteEAObjects()
+{
+   int total = ObjectsTotal(0, 0, -1);
+   for(int i = total - 1; i >= 0; i--)
+   {
+      string name = ObjectName(0, i, 0, -1);
+      if(StringSubstr(name, 0, 7) == "Signal@" ||
+         StringSubstr(name, 0, 7) == "DirSeg_" ||
+         StringSubstr(name, 0, 5) == "ePOI_" ||
+         StringFind(name, "G-LTF-Internal") >= 0 ||
+         StringFind(name, "G-Internal") >= 0 ||
+         StringFind(name, "G-Marjor") >= 0 ||
+         StringFind(name, "Marjor_") >= 0 ||
+         StringFind(name, "Internal_") >= 0)
+      {
+         ObjectDelete(0, name);
+      }
+   }
 }
 
 // OnDeinit function
 void OnDeinit(const int reason)
 {
    // Dọn dẹp tất cả dữ liệu
-   ENUM_TIMEFRAMES timeframes[];
-   int count = GlobalVars.GetTimeframes(timeframes);
+   GlobalVars.Clear();
    
-   for(int i = 0; i < count; i++)
-   {
-      GlobalVars.RemoveTimeFrame(timeframes[i]);
-   }
+   // Xóa tất cả đối tượng đồ thị do EA tạo ra
+   DeleteEAObjects();
+   
+   ChartRedraw(0);
 }
 
 // Dinh nghia va xac nhan bien toan cuc
@@ -7222,43 +7289,29 @@ void defaultGlobal() {
 //| Hàm kiểm tra nến mới cho bất kỳ khung thời gian nào               |
 //+------------------------------------------------------------------+
 bool IsNewBar(ENUM_TIMEFRAMES timeframe) {
-    // Tạo key duy nhất từ symbol + timeframe
-    static string _prevKeys[];    // Lưu trữ các key đã kiểm tra
-    static datetime _prevTimes[]; // Lưu trữ thời gian mở nến trước đó
+    static datetime prevLowTime = 0;
+    static datetime prevHighTime = 0;
+    static datetime prevOtherTime = 0;
     
-    string key = _Symbol + "|" + IntegerToString(timeframe);
-    
-    // Lấy thời gian mở nến hiện tại
     datetime currentTime = iTime(_Symbol, timeframe, 0);
-    if(currentTime == 0) return false; // Kiểm tra dữ liệu hợp lệ
+    if(currentTime == 0) return false;
     
-    // Tìm key trong mảng lưu trữ
-    int index = -1;
-    for(int i = 0; i < ArraySize(_prevKeys); i++) {
-        if(_prevKeys[i] == key) {
-            index = i;
-            break;
+    if(timeframe == lowTimeFrame) {
+        if(prevLowTime != currentTime) {
+            prevLowTime = currentTime;
+            return true;
+        }
+    } else if(timeframe == highTimeFrame) {
+        if(prevHighTime != currentTime) {
+            prevHighTime = currentTime;
+            return true;
+        }
+    } else {
+        if(prevOtherTime != currentTime) {
+            prevOtherTime = currentTime;
+            return true;
         }
     }
-    
-    // Xử lý khi gặp khung thời gian mới
-    if(index == -1) {
-        int newSize = ArraySize(_prevKeys) + 1;
-        ArrayResize(_prevKeys, newSize);
-        ArrayResize(_prevTimes, newSize);
-        
-        _prevKeys[newSize-1] = key;
-        _prevTimes[newSize-1] = currentTime;
-        return false; // Không trả true ở lần đầu tiên
-    }
-    
-    // Kiểm tra nến mới
-    if(_prevTimes[index] != currentTime) {
-        _prevTimes[index] = currentTime;
-        return true;
-    }
-    //ArrayPrint(_prevKeys);
-    //ArrayPrint(_prevTimes);
     return false;
 }
 
@@ -7278,6 +7331,7 @@ void createObj(datetime time, double price, int arrowCode, int direction, color 
       price += _PointSpace*spread * _Point;
    }
 
+   bool created = false;
    if(ObjectCreate(0, objName, OBJ_ARROW, 0, time, price))
      {
       ObjectSetInteger(0, objName, OBJPROP_ARROWCODE, arrowCode);
@@ -7286,6 +7340,7 @@ void createObj(datetime time, double price, int arrowCode, int direction, color 
          ObjectSetInteger(0, objName, OBJPROP_ANCHOR, ANCHOR_TOP);
       if(direction < 0)
          ObjectSetInteger(0, objName, OBJPROP_ANCHOR, ANCHOR_BOTTOM);
+      created = true;
    }
    string objNameDesc = objName + txt;
    if (ObjectCreate(0, objNameDesc, OBJ_TEXT, 0, time, price)) {
@@ -7295,7 +7350,9 @@ void createObj(datetime time, double price, int arrowCode, int direction, color 
          ObjectSetInteger(0, objNameDesc, OBJPROP_ANCHOR, ANCHOR_TOP);
       if(direction < 0)
          ObjectSetInteger(0, objNameDesc, OBJPROP_ANCHOR, ANCHOR_BOTTOM);
+      created = true;
    }
+   if(created) g_needRedraw = true;
 }
 
 //+------------------------------------------------------------------+
@@ -7306,10 +7363,12 @@ void deleteObj(datetime time, double price, int arrowCode, string txt) {
    string objName = "";
    StringConcatenate(objName, "Signal@", time, "at", DoubleToString(price, _Digits), "(", arrowCode, ")");
    
+   bool deleted = false;
    // Delete the arrow object
    if(ObjectFind(0, objName) != -1) // Check if the object exists
      {
       ObjectDelete(0, objName);
+      deleted = true;
      }
    
    // Create the description object name
@@ -7319,7 +7378,9 @@ void deleteObj(datetime time, double price, int arrowCode, string txt) {
    if(ObjectFind(0, objNameDesc) != -1) // Check if the object exists
      {
       ObjectDelete(0, objNameDesc);
+      deleted = true;
      }
+   if(deleted) g_needRedraw = true;
 }
 
 
@@ -7349,6 +7410,7 @@ void DrawBox(long chart_ID, string name, int sub_window,
       // Cập nhật lại màu sắc (đề phòng trường hợp chuyển trạng thái zone)
       ObjectSetInteger(chart_ID, name, OBJPROP_COLOR, clr);
       ObjectSetInteger(chart_ID, name, OBJPROP_FILL, fill);
+      g_needRedraw = true;
       return; // Kết thúc sớm, không cần tạo mới
    }
 
@@ -7364,6 +7426,7 @@ void DrawBox(long chart_ID, string name, int sub_window,
       ObjectSetInteger(chart_ID, name, OBJPROP_RAY_RIGHT, ray_right);
       ObjectSetInteger(chart_ID, name, OBJPROP_FILL, fill);
       ObjectSetInteger(chart_ID, name, OBJPROP_ZORDER, zorder);
+      g_needRedraw = true;
    }
 }
 
@@ -7371,19 +7434,21 @@ void DrawBox(long chart_ID, string name, int sub_window,
 void drawLine(string name, datetime  time_start, double price_start, datetime time_end, double price_end, int direction, string displayName, color iColor, int styleDot){
    string objname = name + TimeToString(time_start);
    if (ObjectFind(0, objname) < 0) {
-      ObjectCreate(0, objname, OBJ_TREND, 0, time_start, price_start, time_end, price_end);
-      ObjectSetInteger(0, objname, OBJPROP_COLOR, iColor);
-      ObjectSetInteger(0, objname, OBJPROP_WIDTH, 1);
-      if (styleDot == STYLE_DASH) {
-         ObjectSetInteger(0, objname, OBJPROP_STYLE, STYLE_DASH);
-      } else if (styleDot == STYLE_DASHDOT) {
-         ObjectSetInteger(0, objname, OBJPROP_STYLE, STYLE_DASHDOT);
-      } else if (styleDot == STYLE_DASHDOTDOT) {
-         ObjectSetInteger(0, objname, OBJPROP_STYLE, STYLE_DASHDOTDOT);
-      } else if (styleDot == STYLE_DOT) {
-         ObjectSetInteger(0, objname, OBJPROP_STYLE, STYLE_DOT);
-      } else if (styleDot == STYLE_SOLID) {
-         ObjectSetInteger(0, objname, OBJPROP_STYLE, STYLE_SOLID);
+      if(ObjectCreate(0, objname, OBJ_TREND, 0, time_start, price_start, time_end, price_end)) {
+         ObjectSetInteger(0, objname, OBJPROP_COLOR, iColor);
+         ObjectSetInteger(0, objname, OBJPROP_WIDTH, 1);
+         if (styleDot == STYLE_DASH) {
+            ObjectSetInteger(0, objname, OBJPROP_STYLE, STYLE_DASH);
+         } else if (styleDot == STYLE_DASHDOT) {
+            ObjectSetInteger(0, objname, OBJPROP_STYLE, STYLE_DASHDOT);
+         } else if (styleDot == STYLE_DASHDOTDOT) {
+            ObjectSetInteger(0, objname, OBJPROP_STYLE, STYLE_DASHDOTDOT);
+         } else if (styleDot == STYLE_DOT) {
+            ObjectSetInteger(0, objname, OBJPROP_STYLE, STYLE_DOT);
+         } else if (styleDot == STYLE_SOLID) {
+            ObjectSetInteger(0, objname, OBJPROP_STYLE, STYLE_SOLID);
+         }
+         g_needRedraw = true;
       }
        
       createObj(time_start, price_start, 0, direction, iColor, displayName);
@@ -7402,6 +7467,7 @@ void deleteLine(datetime time, double price, string name) {
    if(ObjectFind(0, objName) != -1) // Check if the object exists
      {
       ObjectDelete(0, objName);
+      g_needRedraw = true;
      }
 }
 
@@ -7550,6 +7616,7 @@ bool DrawDirectionalSegment(
 
     // 4. XỬ LÝ ĐƯỜNG THẲNG (OBJ_TREND)
     // Kiểm tra xem đối tượng với tên này đã tồn tại trên biểu đồ chưa
+    bool changed = false;
     if(ObjectFind(0, seg_name) < 0)
     {
         // TRƯỜNG HỢP 1: CHƯA TỒN TẠI -> TẠO MỚI
@@ -7558,6 +7625,7 @@ bool DrawDirectionalSegment(
             Print("Lỗi tạo Line: ", GetLastError());
             return false;
         }
+        changed = true;
     }
     else
     {
@@ -7566,6 +7634,7 @@ bool DrawDirectionalSegment(
         ObjectMove(0, seg_name, 0, time_coord, price_start_draw);
         // Di chuyển điểm kết thúc (Point 1)
         ObjectMove(0, seg_name, 1, time_coord, end_price);
+        changed = true;
     }
 
     // 5. THIẾT LẬP CÁC THUỘC TÍNH HIỂN THỊ
@@ -7587,7 +7656,7 @@ bool DrawDirectionalSegment(
     ObjectSetInteger(0, seg_name, OBJPROP_STYLE, m_style);
 
     // 6. CẬP NHẬT LẠI BIỂU ĐỒ ĐỂ HIỂN THỊ NGAY LẬP TỨC
-    ChartRedraw();
+    if(changed) g_needRedraw = true;
     return true;
 }
 
@@ -8050,23 +8119,31 @@ void sendNoti(string message = "") {
       iSubSwingPullBack_isSweptPoizone = (myEAs.valueInternal.vi_TempSwing_High.sub.vins_isPoiZoneSwept)? true: false;
       iSubSwingPullBack_isConfirmLTF = (myEAs.valueInternal.vi_TempSwing_High.sub.vins_isSignalConfirm_LTF  == 1)? true: false;
    }
+   
    string text = "";
    
    string getIdm = (myEAs.signalInternal.sg_mTrend == 1) ? (string)myEAs.signalInternal.sg_getIdmBuy : (string)myEAs.signalInternal.sg_getIdmSell;
-   text += StringFormat("[ %s| Mtrend: %d(%d) | get IDM: %s | Itrend: %d(%d) - TP: %s(%s) - SL: %s(%s) - SnR: %s | PullBack Swing => Main: %s: %s(%s), LTF: %s | Sub: %s: %s(%s), LTF: %s ]", 
-                              _Symbol, myEAs.valueInternal.vi_mTrend, myEAs.valueInternal.vi_wvmTrend, getIdm, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend,
+   string isBuyHTF = (myEAs.valueInternal.vi_wvIsBuyInternal)? "Yes" : "No";
+   string isSellHTF = (myEAs.valueInternal.vi_wvIsSellInternal)? "Yes" : "No";
+   string first_text = StringFormat("[%s] IsBuy: %s - IsSell: %s",_Symbol, isBuyHTF, isSellHTF);
+   text += StringFormat(" - Mtrend: %d(%d) | get IDM: %s | Itrend: %d(%d) - TP: %s(%s) - SL: %s(%s) - SnR: %s \n - PullBack Swing => Main: %s: %s(%s), LTF: %s | Sub: %s: %s(%s), LTF: %s",
+                              myEAs.valueInternal.vi_mTrend, myEAs.valueInternal.vi_wvmTrend, getIdm, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend,
                               DoubleToString(iTarget,_Digits), ((iTarget_isMitigatedPoizone || iTarget_isSweptSwing)? "W!" : "OK"),  
                               DoubleToString(iStoploss, _Digits), ((iStoploss_isMitigatedPoizone || iStoploss_isSweptSwing)? "OK": "W!"),
-                              DoubleToString(myEAs.valueInternal.vi_intSnR,_Digits),
-                              ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), DoubleToString(iSwingPullBack,_Digits), ((iSwingPullBack_isMitigatedPoizone || iSwingPullBack_isSweptPoizone || iSwingPullBack_isMitigatedOrderFlow)? "OK": "W!"), ((iSwingPullBack_isConfirmLTF)? "Confirm": "UnConfirm"),
+                              DoubleToString(myEAs.valueInternal.vi_intSnR,_Digits), ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), DoubleToString(iSwingPullBack,_Digits), ((iSwingPullBack_isMitigatedPoizone || iSwingPullBack_isSweptPoizone || iSwingPullBack_isMitigatedOrderFlow)? "OK": "W!"), ((iSwingPullBack_isConfirmLTF)? "Confirm": "UnConfirm"),
                               ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), DoubleToString(iSubSwingPullBack,_Digits), ((iSubSwingPullBack_isMitigatedPoizone || iSubSwingPullBack_isSweptPoizone || iSubSwingPullBack_isMitigatedOrderFlow)? "OK": "W!"),((iSubSwingPullBack_isConfirmLTF)? "Confirm": "UnConfirm")
                               );
-   string str_result = message +"\n==> "+ text + "\n------------------------------------------------------------------------\n";                              
+   string str_result = first_text +"\n"+" - "+message +"\n"+ text;
+   // Lấy thời gian đóng cửa nến trước của lowTimeFrame
+   datetime closeTime = iTime(_Symbol, lowTimeFrame, 1);
+   if(closeTime == 0) closeTime = TimeCurrent(); // fallback nếu không lấy được
+   string endStr = TimeToString(closeTime, TIME_DATE|TIME_SECONDS);
+   str_result += "\n------" + endStr + "------\n\n";                 
    
    SendDiscordMessage(str_result);
    //SendNotification(str_result);
-   Print(str_result);
-   Print(TAB_STRING);
+   //Print(str_result);
+   //Print(TAB_STRING);
    
 }
 
