@@ -66,7 +66,7 @@ int lookback = 100; // Số lượng thanh Bar được đếm ngược lại so
 datetime lookback_time = 0; 
 int lookback_LTF = 0;
 // định nghĩa riêng cặp khung thời gian trade
-enum pairTF {m3_m1 = 1, m5_m1 = 2, m10_m1 = 3, m15_m1 = 4, h1_m5 = 5, h4_m15 = 6, d1_h1 = 7};
+enum pairTF {m5_m1 = 2, m10_m1 = 3, m15_m1 = 4, h1_m5 = 5, h4_m15 = 6, d1_h1 = 7};
 input pairTF pairTimeFrameInput = m15_m1; // Cặp khung thời gian trade: high TimeFrame _ low TimeFrame 
 int lowPairTF;
 int highPairTF;
@@ -3405,7 +3405,7 @@ struct marketStructs{
    // Hàm vào lệnh theo điều kiện của EA bởi volume Wave
    void CheckMarketForTradeByWaveVolume(TimeFrameData& tfData){
       string text = "";
-      bool print_log = false;
+      bool print_log = true;
       if (print_log) Print("$ Ham CheckMarketForTradeByWaveVolume is running.");
       
       // 1. Kiểm tra xem đã có lệnh nào của cặp tiền này và Magic này chưa
@@ -3656,7 +3656,7 @@ struct marketStructs{
          text += "\n"+TAB_STRING+ "Kết luận hàm : ";
          if (callFunctionTrade) {
             text += "\n ===> Đạt điều kiện để trade. Tiếp tục gọi hàm: CheckMarketForTradeByPredefinedOptions để tìm kiếm điểm vào lệnh";
-            //CheckMarketForTradeByPredefinedOptions(tfData, f_iTrend, option_trade, conditions_typeA);
+            CheckMarketForTradeByPredefinedOptions(tfData, f_iTrend, option_trade, conditions_typeA);
             result = 1;
          } else {
             text += "\n ===> Không đạt điều kiện nên không thể call Function Trade.";
@@ -3675,7 +3675,7 @@ struct marketStructs{
    // Hàm lọc dữ liệu đầu vào để quyết định vào lệnh theo kiểu nào được định sẵn
    void CheckMarketForTradeByPredefinedOptions(TimeFrameData& tfData, int direction_trade, int option_trade, bool getIDM = false){
        string text = "";
-       bool print_log = enabledComment;
+       bool print_log = true;
        if(print_log) Print("Timeframe: "+EnumToString(tfData.timeFrame)+"- Kiem tra dieu kien vao lenh theo huong : " + (string) direction_trade +" voi option: " + (string) option_trade +" - " + ((getIDM)? "Da ": "Chua") + " Get IDM");
        if (direction_trade == 1) {
          if (option_trade == 1 || option_trade == 2 || option_trade ==3 || option_trade ==4) {
@@ -7170,12 +7170,12 @@ void OnTick()
    bool isNewBarLow = IsNewBar(lowTimeFrame);
    bool isNewBarHigh = IsNewBar(highTimeFrame);
    
-   // Kiểm tra nến mới cho M5
+   // Kiểm tra nến mới cho LTF
    if(isNewBarLow) {
      lowTFStruct.realTimeDefinition(lowTimeFrame);
    }
    
-   // Kiểm tra nến mới cho H1
+   // Kiểm tra nến mới cho HTF
    if(isNewBarHigh) {
      highTFStruct.realTimeDefinition(highTimeFrame);
    }
@@ -7233,12 +7233,12 @@ void defaultGlobal() {
    // xac dinh cap low high time frame by minutes
    switch(pairTimeFrameInput)
      {
-      case  1:
-        lowPairTF = 1;
-        highPairTF = 3;
-        lowTimeFrame = PERIOD_M1;
-        highTimeFrame = PERIOD_M3;
-        break;
+      //case  1:
+      //  lowPairTF = 1;
+      //  highPairTF = 3;
+      //  lowTimeFrame = PERIOD_M1;
+      //  highTimeFrame = PERIOD_M3;
+      //  break;
       case  2:
         lowPairTF = 1;
         highPairTF = 5;
@@ -7470,120 +7470,6 @@ void deleteLine(datetime time, double price, string name) {
       g_needRedraw = true;
      }
 }
-
-
-//+------------------------------------------------------------------+
-//| Hàm: Vẽ Đoạn Giá Có Mũi Tên Hướng                                |
-//| * Tên đối tượng được tạo dựa trên Thời gian (duy nhất cho mỗi nến) |
-//+------------------------------------------------------------------+
-//+------------------------------------------------------------------+
-//| Hàm: Vẽ Đoạn Giá Có Mũi Tên Hướng (Đã sửa lỗi)                   |
-//+------------------------------------------------------------------+
-//bool DrawDirectionalSegment(
-//    const int direction, // 1: Lên, -1: Xuống
-//    double price_start_draw, // vị trí đặt nét vẽ
-//    datetime time_coord,
-//    double price_dinh, // đỉnh tam giác 
-//    double price_day, // đáy tam giác
-//    color color_val, 
-//    int width_val = 1,
-//    int style = 1 // style cua duong ke
-//    )
-//{
-//    
-//    // Định nghĩa BASE_NAME
-//    const string BASE_NAME = "DirSeg_";
-//    
-//    // TẠO TÊN DUY NHẤT: Kết hợp Tên Cơ Sở và Thời gian của nến
-//    string unique_time_str = TimeToString(time_coord, TIME_DATE|TIME_SECONDS);
-//    StringReplace(unique_time_str, ":", "_"); // Thay thế dấu : để tránh lỗi tên
-//    string seg_name = BASE_NAME + "Seg_" + unique_time_str;
-//    string arr_name = BASE_NAME + "Arr_" + unique_time_str;
-//    
-//    double start_price = price_start_draw; 
-//    double high_of_line = (price_dinh > price_day) ? price_dinh - price_day : price_day - price_dinh;
-//    double end_price;   
-//    int arrow_code;     
-//    //Print("=> Target Line: Hướng "+((direction > 0)? "Tăng" : "Giảm")+". Từ (Đỉnh)="+ DoubleToString(price_dinh,_Digits) + " đến (Đáy)="+ DoubleToString(price_day,_Digits));
-//    // 1. XÁC ĐỊNH HƯỚNG VÀ VỊ TRÍ MŨI TÊN
-//    if (direction == 1) // MŨI TÊN HƯỚNG LÊN 
-//    {
-//        arrow_code = 233; // SỬA: SYMBOL_ARROW_UP → SYMBOL_ARROWUP
-//        end_price   = price_start_draw + high_of_line; // SỬA: fmax → MathMax
-//    }
-//    else if (direction == -1) // MŨI TÊN HƯỚNG XUỐNG
-//    {
-//        arrow_code = 234; // SỬA: SYMBOL_ARROW_DOWN → SYMBOL_ARROWDOWN
-//        end_price   = price_start_draw - high_of_line; // SỬA: fmin → MathMin
-//    }
-//    else
-//    {
-//        Print("Lỗi: Tham số 'direction' không hợp lệ. Chỉ chấp nhận 1 (Lên) hoặc -1 (Xuống).");
-//        return false;
-//    }
-//      //arrow_code = 32;
-//    // 2. KIỂM TRA GIÁ TRỊ HỢP LỆ (SỬA LẠI HOÀN TOÀN)
-//    if (price_dinh <= 0.0 || price_day <= 0.0 || 
-//        !MathIsValidNumber(price_dinh) || !MathIsValidNumber(price_day) ||
-//        time_coord <= 0)
-//    {
-//        Print("Lỗi: Giá trị đầu vào không hợp lệ. Price đỉnh: ", price_dinh, ", Price đáy: ", price_day, ", Time: ", time_coord);
-//        return false;
-//    }
-//
-//    // 3. XÓA ĐỐI TƯỢNG CŨ (NẾU TỒN TẠI)
-//    ObjectDelete(0, seg_name);
-//    ObjectDelete(0, arr_name);
-//
-//    // 4. VẼ ĐOẠN THẲNG (OBJ_TREND) - SỬA: OBJ_FIBOSEG → OBJ_TREND
-//    if (!ObjectCreate(0, seg_name, OBJ_TREND, 0, time_coord, start_price, time_coord, end_price))
-//    {
-//        Print("Lỗi tạo đoạn thẳng: ", GetLastError());
-//        return false;
-//    }
-//    
-//    
-//    // Thiết lập thuộc tính cho đoạn thẳng
-//    ObjectSetInteger(0, seg_name, OBJPROP_COLOR, color_val);
-//    ObjectSetInteger(0, seg_name, OBJPROP_WIDTH, width_val);
-//    ObjectSetInteger(0, seg_name, OBJPROP_RAY, false);
-//    ObjectSetInteger(0, seg_name, OBJPROP_SELECTABLE, false);
-//    // thiet lap kieu ve style cua doan thang
-//    switch(style)
-//      {
-//       case  2: // Dot
-//         ObjectSetInteger(0, seg_name, OBJPROP_STYLE, STYLE_DOT);
-//         break;
-//       case  3: // Dash
-//         ObjectSetInteger(0, seg_name, OBJPROP_STYLE, STYLE_DASH);
-//         break;
-//       case  4: // Dash + dot
-//         ObjectSetInteger(0, seg_name, OBJPROP_STYLE, STYLE_DASHDOT);
-//         break;
-//       default:
-//         ObjectSetInteger(0, seg_name, OBJPROP_STYLE, STYLE_SOLID);
-//         break;
-//      }
-//
-////    // 5. VẼ MŨI TÊN (OBJ_ARROW_CHECK) - SỬA: OBJ_ARROW → OBJ_ARROW_CHECK
-////    if (!ObjectCreate(0, arr_name, OBJ_ARROW_CHECK, 0, time_coord, end_price))
-////    {
-////        Print("Lỗi tạo mũi tên: ", GetLastError());
-////        // Xóa đoạn thẳng đã tạo nếu mũi tên thất bại
-////        ObjectDelete(0, seg_name);
-////        return false;
-////    }
-////    
-////    // Thiết lập thuộc tính cho mũi tên
-////    ObjectSetInteger(0, arr_name, OBJPROP_COLOR, color_val);
-////    ObjectSetInteger(0, arr_name, OBJPROP_ARROWCODE, arrow_code);
-////    ObjectSetInteger(0, arr_name, OBJPROP_WIDTH, width_val + 2); 
-////    ObjectSetInteger(0, arr_name, OBJPROP_SELECTABLE, false);
-//
-//    // 6. VẼ LẠI BIỂU ĐỒ
-//    ChartRedraw();
-//    return true;
-//}
 
 bool DrawDirectionalSegment(
     const int direction,      // 1: Lên, -1: Xuống
@@ -8142,8 +8028,8 @@ void sendNoti(string message = "") {
    
    SendDiscordMessage(str_result);
    //SendNotification(str_result);
-   //Print(str_result);
-   //Print(TAB_STRING);
+   Print(str_result);
+   Print(TAB_STRING);
    
 }
 
