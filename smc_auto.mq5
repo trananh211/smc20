@@ -1515,7 +1515,7 @@ void ProcessSwingLogic(InternalSwingData &main,
       //text += StringFormat("Direction: %d | Time: %s | Swing %s Price: %s", dir, TimeToString(bar.time), (dir==1)?"Low": "High",DoubleToString(candidate.vins_SwingNew, _Digits));
       ///Print(text);
       
-      string message = StringFormat("[HTF] PB Gann Swing %s Price: %s - Time: %s \n  = IsOfMitigated: %s | IsObMitigated: %s", 
+      string message = StringFormat("[HTF] PB Gann Swing %s Price: %s - Time: %s => IsOfMitigated: %s | IsObMitigated: %s", 
                                     (dir==1)?"Low": "High", DoubleToString(candidate.vins_SwingNew,_Digits), TimeToString(bar.time), 
                                     (candidate.vins_isOrderFlowMitigated)? "Yes": "No", (candidate.vins_isPoiZoneMitigated)? "Yes": "No"
                                     );
@@ -2500,12 +2500,7 @@ void checkStatusRealTimeInternalStructHTF(ValueInternal& iVData, MqlRates& bar1)
             text += "[Error]Stoploss "+ ((iVData.vi_ITrend == -1)? "Internal DownTrend." : "Swept Internal Uptrend.");
          } 
          
-         // if((iVData.vi_ITrend == 1 && iVData.vi_wvITrend == 1) || (iVData.vi_ITrend == -1 && iVData.vi_wvITrend == 1)) {
-         //    text += "[Success]Take profit "+ ((iVData.vi_ITrend == 1)? "Internal Uptrend." : "Swept Internal DownTrend.");
-         // } else if ((iVData.vi_ITrend == -1 && iVData.vi_wvITrend == -1) || (iVData.vi_ITrend == 1 && iVData.vi_wvITrend == -1)) {
-         //    text += "[Error]Stoploss "+ ((iVData.vi_ITrend == -1)? "Internal DownTrend." : "Swept Internal Uptrend.");
-         // }
-         text += "\n  - Giá "+DoubleToString(bar1.high, _Digits)+" vượt lên Internal High: "+ DoubleToString(iVData.vi_intSHigh,_Digits)+".\n";
+         text += "Giá "+DoubleToString(bar1.high, _Digits)+" vượt lên Internal High: "+ DoubleToString(iVData.vi_intSHigh,_Digits)+". ";
       }else if (bar1.low < iVData.vi_intSLow) {
          if(myEAs.valueInternal.vi_wvIsSellInternal) {
             text += "[Success]Take profit " + ((iVData.vi_ITrend == -1)? "Internal DownTrend." : "Swept Internal Uptrend.");
@@ -2513,12 +2508,7 @@ void checkStatusRealTimeInternalStructHTF(ValueInternal& iVData, MqlRates& bar1)
             text += "[Error]Stoploss "+ ((iVData.vi_ITrend == 1)? "Internal Uptrend." : "Swept Internal DownTrend.");
          } 
 
-         // if((iVData.vi_ITrend == -1 && iVData.vi_wvITrend == -1) || (iVData.vi_ITrend == 1 && iVData.vi_wvITrend == -1)) {
-         //    text += "[Success]Take profit " + ((iVData.vi_ITrend == -1)? "Internal DownTrend." : "Swept Internal Uptrend.");
-         // } else if ((iVData.vi_ITrend == 1 && iVData.vi_wvITrend == 1) || (iVData.vi_ITrend == -1 && iVData.vi_wvITrend == 1)) {
-         //    text += "[Error]Stoploss "+ ((iVData.vi_ITrend == 1)? "Internal Uptrend." : "Swept Internal DownTrend.");
-         // }
-         text += "\n  - Giá "+DoubleToString(bar1.low, _Digits)+" giảm qua Internal Low: "+ DoubleToString(iVData.vi_intSLow,_Digits)+".\n";
+         text += "Giá "+DoubleToString(bar1.low, _Digits)+" giảm qua Internal Low: "+ DoubleToString(iVData.vi_intSLow,_Digits)+". ";
       }
       // Reset Value Internal
 		myEAs.valueInternal.Reset(text);
@@ -3405,7 +3395,7 @@ struct marketStructs{
    // Hàm vào lệnh theo điều kiện của EA bởi volume Wave
    void CheckMarketForTradeByWaveVolume(TimeFrameData& tfData){
       string text = "";
-      bool print_log = true;
+      bool print_log = false;
       if (print_log) Print("$ Ham CheckMarketForTradeByWaveVolume is running.");
       
       // 1. Kiểm tra xem đã có lệnh nào của cặp tiền này và Magic này chưa
@@ -3675,7 +3665,7 @@ struct marketStructs{
    // Hàm lọc dữ liệu đầu vào để quyết định vào lệnh theo kiểu nào được định sẵn
    void CheckMarketForTradeByPredefinedOptions(TimeFrameData& tfData, int direction_trade, int option_trade, bool getIDM = false){
        string text = "";
-       bool print_log = true;
+       bool print_log = false;
        if(print_log) Print("Timeframe: "+EnumToString(tfData.timeFrame)+"- Kiem tra dieu kien vao lenh theo huong : " + (string) direction_trade +" voi option: " + (string) option_trade +" - " + ((getIDM)? "Da ": "Chua") + " Get IDM");
        if (direction_trade == 1) {
          if (option_trade == 1 || option_trade == 2 || option_trade ==3 || option_trade ==4) {
@@ -4077,10 +4067,10 @@ struct marketStructs{
             
          } 
       }
-      if(StringLen(text) > 0) {
-         if(print_log) Print(text);
-         if(print_log) Print("Ham goi lenh trade");
-         if(print_log) Print(TAB_STRING);
+      if(StringLen(text) > 0 ) {
+         Print(text);
+         Print("Ham goi lenh trade");
+         Print(TAB_STRING);
       }
    }
    
@@ -7941,6 +7931,7 @@ string GetWebhookForSymbol(string symbol)
 
 void sendNoti(string message = "") {
    if(!enabledNotification) return;
+      
    double iTarget = 0, iStoploss = 0;
    bool iTarget_isMitigatedPoizone = false, iTarget_isSweptSwing = false, iStoploss_isMitigatedPoizone = false, iStoploss_isSweptSwing = false;
    
