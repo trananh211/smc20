@@ -360,6 +360,7 @@ struct TradeBasicStatus{
    
 };
 TradeBasicStatus myEAs;
+string gl_status_trade_string;
 //+------------------------------------------------------------------+
 //| PoiZone structure                                                |
 //+------------------------------------------------------------------+
@@ -3442,7 +3443,8 @@ struct marketStructs{
       }
       
       // 5. Bắt đầu kiểm tra điều kiện vào lệnh
-      if(myEAs.valueInternal.vi_TempSwing_High.sub.vins_isSignalConfirm_LTF == 1 || myEAs.valueInternal.vi_TempSwing_Low.sub.vins_isSignalConfirm_LTF == 1) {
+      //if(myEAs.valueInternal.vi_TempSwing_High.sub.vins_isSignalConfirm_LTF == 1 || myEAs.valueInternal.vi_TempSwing_Low.sub.vins_isSignalConfirm_LTF == 1) {
+      if(myEAs.valueInternal.vi_wvIsBuyInternal == 1 || myEAs.valueInternal.vi_wvIsSellInternal == 1 ) {
          goTradeBySMC(tfData);
       }
    }
@@ -4067,11 +4069,13 @@ struct marketStructs{
             
          } 
       }
-      if(StringLen(text) > 0 ) {
-         Print(text);
-         Print("Ham goi lenh trade");
-         Print(TAB_STRING);
-      }
+      gl_status_trade_string = text;
+      //if(StringLen(text) > 0 ) {
+      //   Print(text);
+      //   Print("Ham goi lenh trade");
+      //   Print(TAB_STRING);
+      //   gl_status_trade_string = text;
+      //}
    }
    
    // Todo: Kiểm tra lần lượt zone đã mitigate hay chưa
@@ -8010,7 +8014,8 @@ void sendNoti(string message = "") {
                               DoubleToString(myEAs.valueInternal.vi_intSnR,_Digits), ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), DoubleToString(iSwingPullBack,_Digits), ((iSwingPullBack_isMitigatedPoizone || iSwingPullBack_isSweptPoizone || iSwingPullBack_isMitigatedOrderFlow)? "OK": "W!"), ((iSwingPullBack_isConfirmLTF)? "Confirm": "UnConfirm"),
                               ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), DoubleToString(iSubSwingPullBack,_Digits), ((iSubSwingPullBack_isMitigatedPoizone || iSubSwingPullBack_isSweptPoizone || iSubSwingPullBack_isMitigatedOrderFlow)? "OK": "W!"),((iSubSwingPullBack_isConfirmLTF)? "Confirm": "UnConfirm")
                               );
-   string str_result = first_text +"\n"+" - "+message +"\n"+ text;
+   string str_result = first_text +"\n"+" - "+message +"\n"+ text+"\n - [Result]: ";
+   str_result += (StringLen(gl_status_trade_string) > 0)? gl_status_trade_string : "";
    // Lấy thời gian đóng cửa nến trước của lowTimeFrame
    datetime closeTime = iTime(_Symbol, lowTimeFrame, 1);
    if(closeTime == 0) closeTime = TimeCurrent(); // fallback nếu không lấy được
@@ -8019,8 +8024,8 @@ void sendNoti(string message = "") {
    
    SendDiscordMessage(str_result);
    //SendNotification(str_result);
-   Print(str_result);
-   Print(TAB_STRING);
+   //Print(str_result);
+   //Print(TAB_STRING);
    
 }
 
