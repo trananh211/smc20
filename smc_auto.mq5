@@ -253,8 +253,9 @@ struct ValueInternal{
    // Hàm Reset làm sạch dữ liệu (Cần thiết khi đổi xu hướng)
    void Reset(string text = "") {
       //Print("============= RESET THONG SO [ ValueInternal ] THANH CONG==============");
-      string message = "Reset valueInternal. Xoa pending order.";
+      string message = " Reset valueInternal. Xoa pending order.";
       sendNoti(text+message);
+      gl_status_trade_string = "";
       
       vi_mTrend = 0;
       vi_wvmTrend = 0;
