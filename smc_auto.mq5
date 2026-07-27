@@ -8019,10 +8019,10 @@ void sendNoti(string message = "") {
                               DoubleToString(iTarget,_Digits), ((iTarget_isMitigatedPoizone || iTarget_isSweptSwing)? "W!" : "OK"),  
                               DoubleToString(iStoploss, _Digits), ((iStoploss_isMitigatedPoizone || iStoploss_isSweptSwing)? "OK": "W!"),
                               DoubleToString(myEAs.valueInternal.vi_intSnR,_Digits));
-   text += "\n - PullBack Swing => ";                              
-   text += StringFormat("Main: %s: %s(%s), Pattent: %s - LTF: %s ",((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), 
+   text += "\n - PullBack Swing:";                              
+   text += StringFormat("\n  => Main: %s: %s(%s), Pattent: %s - LTF: %s ",((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), 
                               DoubleToString(iSwingPullBack,_Digits), ((iSwingPullBack_isMitigatedPoizone || iSwingPullBack_isSweptPoizone || iSwingPullBack_isMitigatedOrderFlow)? "OK": "W!"), ((iSwingPullBack_isPattent) ? "Yes" : "No"), ((iSwingPullBack_isConfirmLTF)? "Confirm": "UnConfirm"));                           
-   text += StringFormat("| Sub: %s: %s(%s), Pattent: %s - LTF: %s", ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), 
+   text += StringFormat("\n  => Sub: %s: %s(%s), Pattent: %s - LTF: %s", ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), 
                               DoubleToString(iSubSwingPullBack,_Digits), ((iSubSwingPullBack_isMitigatedPoizone || iSubSwingPullBack_isSweptPoizone || iSubSwingPullBack_isMitigatedOrderFlow)? "OK": "W!"), ((iSubSwingPullBack_isPattent) ? "Yes" : "No"), ((iSubSwingPullBack_isConfirmLTF)? "Confirm": "UnConfirm"));                              
    string str_result = first_text +"\n"+" - "+message +"\n"+ text+"\n - [Result]: ";
    str_result += (StringLen(gl_status_trade_string) > 0)? gl_status_trade_string : "";
