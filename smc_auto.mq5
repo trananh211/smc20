@@ -8013,7 +8013,10 @@ void sendNoti(string message = "") {
    string getIdm = (myEAs.signalInternal.sg_mTrend == 1) ? (string)myEAs.signalInternal.sg_getIdmBuy : (string)myEAs.signalInternal.sg_getIdmSell;
    string isBuyHTF = (myEAs.valueInternal.vi_wvIsBuyInternal)? "Yes" : "No";
    string isSellHTF = (myEAs.valueInternal.vi_wvIsSellInternal)? "Yes" : "No";
-   string first_text = StringFormat("[%s] IsBuy: %s - IsSell: %s",_Symbol, isBuyHTF, isSellHTF);
+   ENUM_TIMEFRAMES chartTF = ChartPeriod(0); // 0 là chart_ID hiện tại
+   string tfName = EnumToString(chartTF);
+   
+   string first_text = StringFormat("[%s.%s] IsBuy: %s - IsSell: %s", tfName, _Symbol, isBuyHTF, isSellHTF);
    text += StringFormat(" - Mtrend: %d(%d) | get IDM: %s | Itrend: %d(%d) - TP: %s(%s) - SL: %s(%s) - SnR: %s",
                               myEAs.valueInternal.vi_mTrend, myEAs.valueInternal.vi_wvmTrend, getIdm, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend,
                               DoubleToString(iTarget,_Digits), ((iTarget_isMitigatedPoizone || iTarget_isSweptSwing)? "W!" : "OK"),  
