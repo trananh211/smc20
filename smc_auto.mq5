@@ -8028,7 +8028,7 @@ void sendNoti(string message = "") {
    text += StringFormat("\n  => Sub: %s: %s(%s), Pattent: %s - LTF: %s", ((myEAs.valueInternal.vi_ITrend == 1)? "Low" : "High"), 
                               DoubleToString(iSubSwingPullBack,_Digits), ((iSubSwingPullBack_isMitigatedPoizone || iSubSwingPullBack_isSweptPoizone || iSubSwingPullBack_isMitigatedOrderFlow)? "OK": "W!"), ((iSubSwingPullBack_isPattent) ? "Yes" : "No"), ((iSubSwingPullBack_isConfirmLTF)? "Confirm": "UnConfirm"));                              
    string str_result = first_text +"\n"+" - "+message +"\n"+ text+"\n - [Result]: ";
-   str_result += (StringLen(gl_status_trade_string) > 0)? gl_status_trade_string : "";
+   str_result += (StringLen(gl_status_trade_string) > 0)? gl_status_trade_string : "No main setup";
    // Lấy thời gian đóng cửa nến trước của lowTimeFrame
    datetime closeTime = iTime(_Symbol, lowTimeFrame, 1);
    if(closeTime == 0) closeTime = TimeCurrent(); // fallback nếu không lấy được
