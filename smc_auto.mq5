@@ -3680,6 +3680,7 @@ struct marketStructs{
    void CheckMarketForTradeByPredefinedOptions(TimeFrameData& tfData, int direction_trade, int option_trade, bool getIDM = false){
        string text = "";
        bool print_log = false;
+       
        if(print_log) Print("Timeframe: "+EnumToString(tfData.timeFrame)+"- Kiem tra dieu kien vao lenh theo huong : " + (string) direction_trade +" voi option: " + (string) option_trade +" - " + ((getIDM)? "Da ": "Chua") + " Get IDM");
        if (direction_trade == 1) {
          if (option_trade == 1 || option_trade == 2 || option_trade ==3 || option_trade ==4) {
@@ -4614,8 +4615,8 @@ struct marketStructs{
                // Trả về trạng thái chấp nhận Buy or Sell của Internal sau cú Break khi xác nhận được swing đầu tiên
                tfData.wvTypeBreakBuyInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", 1);
                tfData.wvIsBuyInternal = (tfData.wvTypeBreakBuyInternal != BREAK_NONE) ? true : false;
-               tfData.wvTypeBreakSellInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", -1);
-               tfData.wvIsSellInternal = (tfData.wvTypeBreakSellInternal != BREAK_NONE) ? true : false;
+               //tfData.wvTypeBreakSellInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", -1);
+               //tfData.wvIsSellInternal = (tfData.wvTypeBreakSellInternal != BREAK_NONE) ? true : false;
                // Set thông số hướng để vẽ line break
                tfData.line_direction_internal = (tfData.isDrawTarget_internal == tfData.iTrend)? tfData.wvItrend : 0;
                // Set thông số để có hướng trade theo Internal HTF. (valueInternal)
@@ -4706,8 +4707,8 @@ struct marketStructs{
                // Trả về trạng thái chấp nhận Buy or Sell của Internal sau cú Break khi xác nhận được swing đầu tiên
                tfData.wvTypeBreakBuyInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", 1);
                tfData.wvIsBuyInternal = (tfData.wvTypeBreakBuyInternal != BREAK_NONE) ? true : false;
-               tfData.wvTypeBreakSellInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", -1);
-               tfData.wvIsSellInternal = (tfData.wvTypeBreakSellInternal != BREAK_NONE) ? true : false;
+               //tfData.wvTypeBreakSellInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", -1);
+               //tfData.wvIsSellInternal = (tfData.wvTypeBreakSellInternal != BREAK_NONE) ? true : false;
                // Set thông số hướng để vẽ line break
                tfData.line_direction_internal = (tfData.isDrawTarget_internal == tfData.iTrend)? tfData.wvItrend : 0;
                // Set thông số để có hướng trade theo Internal HTF. (valueInternal)
@@ -5016,8 +5017,8 @@ struct marketStructs{
             if (tfData.wvItrend == 0 && tfData.wvolIntSLowTime[0] > tfData.wvolIntSHighTime[0]) {
                tfData.wvItrend = (tfData.wvolIntSLows[0] > tfData.wvolIntSHighs[0]) ? -1 : 1;
                // Trả về trạng thái chấp nhận Buy or Sell của Internal sau cú Break khi xác nhận được swing đầu tiên
-               tfData.wvTypeBreakBuyInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", 1);
-               tfData.wvIsBuyInternal = (tfData.wvTypeBreakBuyInternal != BREAK_NONE) ? true : false;
+               //tfData.wvTypeBreakBuyInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", 1);
+               //tfData.wvIsBuyInternal = (tfData.wvTypeBreakBuyInternal != BREAK_NONE) ? true : false;
                tfData.wvTypeBreakSellInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", -1);
                tfData.wvIsSellInternal = (tfData.wvTypeBreakSellInternal != BREAK_NONE) ? true : false;
                // Set thông số hướng để vẽ line break
@@ -5105,8 +5106,8 @@ struct marketStructs{
             if (tfData.wvItrend != 0 && tfData.wvolIntSLowTime[0] > tfData.wvolIntSHighTime[0]) {
                tfData.wvItrend = (tfData.wvolIntSLows[0] > tfData.wvolIntSHighs[0]) ? -1 : 1;
                // Trả về trạng thái chấp nhận Buy or Sell của Internal sau cú Break khi xác nhận được swing đầu tiên
-               tfData.wvTypeBreakBuyInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", 1);
-               tfData.wvIsBuyInternal = (tfData.wvTypeBreakBuyInternal != BREAK_NONE) ? true : false;
+               //tfData.wvTypeBreakBuyInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", 1);
+               //tfData.wvIsBuyInternal = (tfData.wvTypeBreakBuyInternal != BREAK_NONE) ? true : false;
                tfData.wvTypeBreakSellInternal = tfData.getStatusLegalByVolumeOfBreakStruct(tfData, "Internal", -1);
                tfData.wvIsSellInternal = (tfData.wvTypeBreakSellInternal != BREAK_NONE) ? true : false;
                // Set thông số hướng để vẽ line break
@@ -7831,7 +7832,6 @@ string getSwingInternalLog(string name, const InternalSwingData& data) {
 void showComment(TimeFrameData& tfData) {
    return;
    //Print("Timeframe: "+ (string) tfData.isTimeframe);
-   
       //Print("Highs: "); ArrayPrint(tfData.Highs);
       //Print("HighsTime: "); ArrayPrint(tfData.HighsTime);
       //Print("Vol Highs: "); ArrayPrint(tfData.volHighs);
@@ -8029,13 +8029,13 @@ void sendNoti(string message = "") {
    
    string getIdm = (myEAs.signalInternal.sg_mTrend == 1) ? (string)myEAs.signalInternal.sg_getIdmBuy : (string)myEAs.signalInternal.sg_getIdmSell;
    string isBuyHTF = (myEAs.valueInternal.vi_wvIsBuyInternal)? "Yes" : "No"; 
-   string isTypeBreakBuyHTF = (myEAs.valueInternal.vi_wvTypeBreakBuyInternal == BREAK_HIGH) ? "High" : ((myEAs.valueInternal.vi_wvTypeBreakBuyInternal == BREAK_MEDIUM)? "Med" : "None");
+   string isTypeBreakBuyHTF = (myEAs.valueInternal.vi_wvTypeBreakBuyInternal == BREAK_HIGH) ? "High" : ((myEAs.valueInternal.vi_wvTypeBreakBuyInternal == BREAK_MEDIUM)? "Med" : "Na");
    string isSellHTF = (myEAs.valueInternal.vi_wvIsSellInternal)? "Yes" : "No";
-   string isTypeBreakSellHTF = (myEAs.valueInternal.vi_wvTypeBreakSellInternal == BREAK_HIGH) ? "High" : ((myEAs.valueInternal.vi_wvTypeBreakSellInternal == BREAK_MEDIUM)? "Med" : "None");
+   string isTypeBreakSellHTF = (myEAs.valueInternal.vi_wvTypeBreakSellInternal == BREAK_HIGH) ? "High" : ((myEAs.valueInternal.vi_wvTypeBreakSellInternal == BREAK_MEDIUM)? "Med" : "Na");
    ENUM_TIMEFRAMES chartTF = ChartPeriod(0); // 0 là chart_ID hiện tại
    string tfName = EnumToString(chartTF);
    
-   string first_text = StringFormat("[%s.%s] IsBuy: %s %s - IsSell: %s %s", tfName, _Symbol, isBuyHTF, isTypeBreakBuyHTF, isSellHTF, isTypeBreakSellHTF);
+   string first_text = StringFormat("[%s.%s] %d(%d) IsBuy: %s_%s - IsSell: %s_%s", tfName, _Symbol, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend, isBuyHTF, isTypeBreakBuyHTF, isSellHTF, isTypeBreakSellHTF);
    text += StringFormat(" - Mtrend: %d(%d) | get IDM: %s | Itrend: %d(%d) - TP: %s(%s) - SL: %s(%s) - SnR: %s",
                               myEAs.valueInternal.vi_mTrend, myEAs.valueInternal.vi_wvmTrend, getIdm, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend,
                               DoubleToString(iTarget,_Digits), ((iTarget_isMitigatedPoizone || iTarget_isSweptSwing)? "W!" : "OK"),  
@@ -8054,10 +8054,10 @@ void sendNoti(string message = "") {
    string endStr = TimeToString(closeTime, TIME_DATE|TIME_SECONDS);
    str_result += "\n------" + endStr + "------\n\n";                 
    
-   //SendDiscordMessage(str_result);
+   SendDiscordMessage(str_result);
    //SendNotification(str_result);
-   Print(str_result);
-   Print(TAB_STRING);
+   //Print(str_result);
+   //Print(TAB_STRING);
    
 }
 
