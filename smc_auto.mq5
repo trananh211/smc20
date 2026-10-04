@@ -876,39 +876,6 @@ public:
       return true;
    }
    
-   // Phương thức tìm kiếm phần tử trong mảng double
-   int FindInDoubleArray(double &array[], double value, double tolerance = 0.00001)
-   {
-      for(int i = 0; i < ArraySize(array); i++)
-      {
-         if(MathAbs(array[i] - value) <= tolerance)
-            return i;
-      }
-      return -1;
-   }
-   
-   // Phương thức tìm kiếm phần tử trong mảng datetime
-   int FindInDateTimeArray(datetime &array[], datetime value)
-   {
-      for(int i = 0; i < ArraySize(array); i++)
-      {
-         if(array[i] == value)
-            return i;
-      }
-      return -1;
-   }
-   
-   // Phương thức tìm kiếm phần tử trong mảng PoiZone theo time
-   int FindInPoiZoneArrayByTime(PoiZone &array[], datetime time)
-   {
-      for(int i = 0; i < ArraySize(array); i++)
-      {
-         if(array[i].time == time)
-            return i;
-      }
-      return -1;
-   }
-   
    // Phương thức sắp xếp mảng double sau khi xoa phần tử 
    void SortDoubleArrayAfterDelete(double& array[]) {
       if (ArraySize(array) > 2) {
@@ -949,151 +916,10 @@ public:
       }
    }
    
-   // Phương thức sắp xếp mảng double giảm dần
-   void SortDoubleArrayDesc(double &array[])
-   {
-      int size = ArraySize(array);
-      for(int i = 0; i < size - 1; i++)
-      {
-         for(int j = i + 1; j < size; j++)
-         {
-            if(array[i] < array[j])
-            {
-               double temp = array[i];
-               array[i] = array[j];
-               array[j] = temp;
-            }
-         }
-      }
-   }
-   
-   // Phương thức sắp xếp mảng double tăng dần
-   void SortDoubleArrayAsc(double &array[])
-   {
-      int size = ArraySize(array);
-      for(int i = 0; i < size - 1; i++)
-      {
-         for(int j = i + 1; j < size; j++)
-         {
-            if(array[i] > array[j])
-            {
-               double temp = array[i];
-               array[i] = array[j];
-               array[j] = temp;
-            }
-         }
-      }
-   }
-   
-   // Phương thức sắp xếp mảng PoiZone theo time giảm dần
-   void SortPoiZoneArrayByTimeDesc(PoiZone &array[])
-   {
-      int size = ArraySize(array);
-      for(int i = 0; i < size - 1; i++)
-      {
-         for(int j = i + 1; j < size; j++)
-         {
-            if(array[i].time < array[j].time)
-            {
-               PoiZone temp = array[i];
-               array[i] = array[j];
-               array[j] = temp;
-            }
-         }
-      }
-   }
-   
-   // Phương thức lọc mảng PoiZone theo time range
-   int FilterPoiZoneArrayByTime(PoiZone &source[], PoiZone &result[], datetime fromTime, datetime toTime)
-   {
-      int count = 0;
-      for(int i = 0; i < ArraySize(source); i++)
-      {
-         if(source[i].time >= fromTime && source[i].time <= toTime)
-         {
-            AddToPoiZoneArray(result, source[i]);
-            count++;
-         }
-      }
-      return count;
-   }
-   
-   // Phương thức xóa tất cả phần tử trong mảng double
-   void ClearDoubleArray(double &array[])
-   {
-      ArrayResize(array, 0);
-   }
-   
-   // Phương thức xóa tất cả phần tử trong mảng datetime
-   void ClearDateTimeArray(datetime &array[])
-   {
-      ArrayResize(array, 0);
-   }
-   
    // Phương thức xóa tất cả phần tử trong mảng PoiZone
    void ClearPoiZoneArray(PoiZone &array[])
    {
       ArrayResize(array, 0);
-   }
-   
-   // Phương thức lấy giá trị cao nhất từ mảng double
-   double GetMaxFromDoubleArray(double &array[])
-   {
-      if(ArraySize(array) == 0) return EMPTY_VALUE;
-      
-      double maxVal = array[0];
-      for(int i = 1; i < ArraySize(array); i++)
-      {
-         if(array[i] > maxVal)
-            maxVal = array[i];
-      }
-      return maxVal;
-   }
-   
-   // Phương thức lấy giá trị thấp nhất từ mảng double
-   double GetMinFromDoubleArray(double &array[])
-   {
-      if(ArraySize(array) == 0) return EMPTY_VALUE;
-      
-      double minVal = array[0];
-      for(int i = 1; i < ArraySize(array); i++)
-      {
-         if(array[i] < minVal)
-            minVal = array[i];
-      }
-      return minVal;
-   }
-   
-   // Phương thức lấy PoiZone mới nhất từ mảng PoiZone
-   bool GetLatestPoiZone(PoiZone &array[], PoiZone &result)
-   {
-      if(ArraySize(array) == 0) return false;
-      
-      int latestIndex = 0;
-      for(int i = 1; i < ArraySize(array); i++)
-      {
-         if(array[i].time > array[latestIndex].time)
-            latestIndex = i;
-      }
-      
-      result = array[latestIndex];
-      return true;
-   }
-   
-   // Phương thức lấy PoiZone cũ nhất từ mảng PoiZone
-   bool GetOldestPoiZone(PoiZone &array[], PoiZone &result)
-   {
-      if(ArraySize(array) == 0) return false;
-      
-      int oldestIndex = 0;
-      for(int i = 1; i < ArraySize(array); i++)
-      {
-         if(array[i].time < array[oldestIndex].time)
-            oldestIndex = i;
-      }
-      
-      result = array[oldestIndex];
-      return true;
    }
    
    // TODO: suy nghix ky ham nay. Hàm trả về true hoặc false trạng thái check logic volume wave Buy or Sell của 1 con sóng
@@ -1239,114 +1065,6 @@ public:
       m_total++;
 
       return m_timeframeData[m_total - 1];
-   }
-
-   // Remove timeframe data
-   bool RemoveTimeFrame(ENUM_TIMEFRAMES timeframe)
-   {
-      int index = FindTimeFrameIndex(timeframe);
-      if(index < 0)
-         return false;
-
-      if(CheckPointer(m_timeframeData[index]) == POINTER_DYNAMIC)
-         delete m_timeframeData[index];
-
-      // Shift arrays
-      for(int i = index; i < m_total - 1; i++)
-      {
-         m_timeframeData[i] = m_timeframeData[i + 1];
-         m_timeframes[i] = m_timeframes[i + 1];
-      }
-
-      m_total--;
-      return true;
-   }
-
-   // Get all timeframes
-   int GetTimeframes(ENUM_TIMEFRAMES &timeframes[])
-   {
-      ArrayResize(timeframes, m_total);
-      for(int i = 0; i < m_total; i++)
-         timeframes[i] = m_timeframes[i];
-      
-      return m_total;
-   }
-   
-   // Helper Methods for easier access
-   
-   // Thêm giá trị vào mảng Highs của timeframe cụ thể
-   int AddToHighs(ENUM_TIMEFRAMES timeframe, double value)
-   {
-      TimeFrameData* data = GetData(timeframe);
-      if(data == NULL) return -1;
-      return data.AddToDoubleArray(data.Highs, value);
-   }
-   
-   // Thêm PoiZone vào mảng zHighs của timeframe cụ thể
-   int AddToZHighs(ENUM_TIMEFRAMES timeframe, PoiZone &value)
-   {
-      TimeFrameData* data = GetData(timeframe);
-      if(data == NULL) return -1;
-      return data.AddToPoiZoneArray(data.zHighs, value);
-   }
-   
-   // Lấy kích thước mảng Highs của timeframe cụ thể
-   int GetHighsSize(ENUM_TIMEFRAMES timeframe)
-   {
-      TimeFrameData* data = GetData(timeframe);
-      if(data == NULL) return 0;
-      return ArraySize(data.Highs);
-   }
-   
-   // Lấy giá trị từ mảng Highs của timeframe cụ thể
-   bool GetHighsValue(ENUM_TIMEFRAMES timeframe, int index, double &value)
-   {
-      TimeFrameData* data = GetData(timeframe);
-      if(data == NULL || index < 0 || index >= ArraySize(data.Highs)) 
-         return false;
-      
-      value = data.Highs[index];
-      return true;
-   }
-   
-   // Lấy giá trị cao nhất từ mảng Highs của timeframe cụ thể
-   double GetHighsMax(ENUM_TIMEFRAMES timeframe)
-   {
-      TimeFrameData* data = GetData(timeframe);
-      if(data == NULL) return EMPTY_VALUE;
-      return data.GetMaxFromDoubleArray(data.Highs);
-   }
-   
-   // Lấy giá trị thấp nhất từ mảng Lows của timeframe cụ thể
-   double GetLowsMin(ENUM_TIMEFRAMES timeframe)
-   {
-      TimeFrameData* data = GetData(timeframe);
-      if(data == NULL) return EMPTY_VALUE;
-      return data.GetMinFromDoubleArray(data.Lows);
-   }
-   
-   // Lấy PoiZone mới nhất từ mảng zHighs của timeframe cụ thể
-   bool GetLatestZHighs(ENUM_TIMEFRAMES timeframe, PoiZone &result)
-   {
-      TimeFrameData* data = GetData(timeframe);
-      if(data == NULL) return false;
-      return data.GetLatestPoiZone(data.zHighs, result);
-   }
-   
-   // Xóa tất cả dữ liệu trong mảng Highs của timeframe cụ thể
-   void ClearHighs(ENUM_TIMEFRAMES timeframe)
-   {
-      TimeFrameData* data = GetData(timeframe);
-      if(data != NULL)
-         data.ClearDoubleArray(data.Highs);
-   }
-   
-   // Xóa tất cả dữ liệu trong mảng zHighs của timeframe cụ thể
-   void ClearZHighs(ENUM_TIMEFRAMES timeframe)
-   {
-      TimeFrameData* data = GetData(timeframe);
-      if(data != NULL)
-         data.ClearPoiZoneArray(data.zHighs);
    }
    
    // Dọn dẹp dữ liệu cũ theo thời gian
@@ -8054,10 +7772,10 @@ void sendNoti(string message = "") {
    string endStr = TimeToString(closeTime, TIME_DATE|TIME_SECONDS);
    str_result += "\n------" + endStr + "------\n\n";                 
    
-   SendDiscordMessage(str_result);
+   //SendDiscordMessage(str_result);
    //SendNotification(str_result);
-   //Print(str_result);
-   //Print(TAB_STRING);
+   Print(str_result);
+   Print(TAB_STRING);
    
 }
 
