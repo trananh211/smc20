@@ -68,7 +68,7 @@ input group "=== Market Struct Inputs ==="
 input int _PointSpace = 1000; // Khoảng cách để vẽ swing, line so với high và low 
 input int poi_limit = 30; // Số lượng mảng POI tối đa để lưu vào hệ thống
 int limit = 30; // Khối lượng tối đa để lưu trữ mảng của Swing High, Low
-input int lookback = 100; // Số lượng thanh Bar được đếm ngược lại so với thời điểm chạy bot
+input int lookback = 200; // Số lượng thanh Bar được đếm ngược lại so với thời điểm chạy bot
 datetime lookback_time = 0; 
 int lookback_LTF = 0;
 // định nghĩa riêng cặp khung thời gian trade
@@ -3029,12 +3029,12 @@ struct marketStructs{
    // Ham tim look back bar cua low timeframe tu High timeframe
    void lookBackCandle(TimeFrameData& tfData) {
       if (tfData.iTrend == 1) {
-         if (ArraySize(tfData.intSLowTime) >= 6) {
-            lookback_time = tfData.intSLowTime[5];
+         if (ArraySize(tfData.intSLowTime) >= 5) {
+            lookback_time = tfData.intSLowTime[4];
          }
       } else if (tfData.iTrend == -1) {
-         if (ArraySize(tfData.intSHighTime) >= 6) {
-            lookback_time = tfData.intSHighTime[5];
+         if (ArraySize(tfData.intSHighTime) >= 5) {
+            lookback_time = tfData.intSHighTime[4];
          }
       }
       //Print("lookback time: "+ TimeToString(lookback_time));
@@ -6896,13 +6896,14 @@ int OnInit()
    prewHighTFStruct.originalDefinition(highTimeFrame);
    prewLowTFStruct.originalDefinition(lowTimeFrame);
 //---
-      
+   
+   // Gửi tin nhắn chào khi EA được gắn vào biểu đồ
+   prewHighTFStruct.getStatusData(highTimeFrame);
+   
    //CurrentSpread = NormalizeDouble(Ask - Bid, _Digits);
    // Sau khi tất cả setup xong. bat dâu show noti 
    enabledNotification = true;
    
-   // Gửi tin nhắn chào khi EA được gắn vào biểu đồ
-   prewHighTFStruct.getStatusData(highTimeFrame);
    return(INIT_SUCCEEDED);
 }
 
@@ -7787,9 +7788,9 @@ void sendNoti(string message = "") {
    str_result += "\n------" + endStr + "------\n\n";                 
    
    SendDiscordMessage(str_result);
-   SendNotification(str_result);
-   //Print(str_result);
-   //Print(TAB_STRING);
+   //SendNotification(str_result);
+   Print(str_result);
+   Print(TAB_STRING);
    
 }
 
