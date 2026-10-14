@@ -68,7 +68,7 @@ input group "=== Market Struct Inputs ==="
 input int _PointSpace = 1000; // Khoảng cách để vẽ swing, line so với high và low 
 input int poi_limit = 30; // Số lượng mảng POI tối đa để lưu vào hệ thống
 int limit = 30; // Khối lượng tối đa để lưu trữ mảng của Swing High, Low
-int lookback = 100; // Số lượng thanh Bar được đếm ngược lại so với thời điểm chạy bot
+input int lookback = 100; // Số lượng thanh Bar được đếm ngược lại so với thời điểm chạy bot
 datetime lookback_time = 0; 
 int lookback_LTF = 0;
 // định nghĩa riêng cặp khung thời gian trade
@@ -2784,6 +2784,20 @@ struct marketStructs{
       gannWave(*tfData);
    }
    
+   // hàm lấy thông tin Data để show ra ngoài
+   void getStatusData(ENUM_TIMEFRAMES timeframe) {
+      // Lấy dữ liệu cho khung timeframe
+      TimeFrameData* tfData = GlobalVars.GetData(timeframe);
+      string result = StringFormat("EA đã được khởi động trên [%s.%s]", EnumToString(timeframe) , _Symbol);
+      result += "\n"+StringFormat("mTrend:%s(%s) - iTrend: %s(%s)", 
+                           (string)tfData.mTrend, (string)tfData.wvMtrend,
+                           (string)tfData.iTrend, (string)tfData.wvItrend
+                           );  ;
+      webhook = GetWebhookForSymbol(_Symbol);      
+      SendDiscordMessage(result);
+   }
+   
+   // End hàm gọi bởi Init
    // Ham goi boi OnTick
    void realTimeDefinition(ENUM_TIMEFRAMES timeframe) {
       
@@ -2972,7 +2986,7 @@ struct marketStructs{
       tfData.lastH = high;
       tfData.lastL = low;
    }
-      
+   
    // Ham ve swing point
    void drawPointStructure(TimeFrameData& tfData, int itype, double priceNew, datetime timeNew, int typeStructure, bool del, bool isDraw) { // type: 1 High, -1 Low
       int iWingding = 0;
@@ -3015,14 +3029,16 @@ struct marketStructs{
    // Ham tim look back bar cua low timeframe tu High timeframe
    void lookBackCandle(TimeFrameData& tfData) {
       if (tfData.iTrend == 1) {
-         if (ArraySize(tfData.intSLowTime) >= 5) {
-            lookback_time = tfData.intSLowTime[4];
+         if (ArraySize(tfData.intSLowTime) >= 6) {
+            lookback_time = tfData.intSLowTime[5];
          }
       } else if (tfData.iTrend == -1) {
-         if (ArraySize(tfData.intSHighTime) >= 5) {
-            lookback_time = tfData.intSHighTime[4];
+         if (ArraySize(tfData.intSHighTime) >= 6) {
+            lookback_time = tfData.intSHighTime[5];
          }
       }
+      //Print("lookback time: "+ TimeToString(lookback_time));
+      //Print("---");
    }
    
    void gannWave(TimeFrameData& tfData){
@@ -3033,23 +3049,23 @@ struct marketStructs{
       string resultMarjorStruct = "";
       for (int j = 1; j <= ArraySize(waveRates) - 2; j++){
          
-         Print("TF: "+ (string)tfData.isTimeframe+" No:" + (string) j);
+         //Print("TF: "+ (string)tfData.isTimeframe+" No:" + (string) j);
          
          bar1 = waveRates[j+1];
          bar2 = waveRates[j];
          bar3 = waveRates[j-1];
          
-         Print(inInfoBar(bar1, bar2, bar3));
-         Print("First: "+getValueTrend(tfData));
+         //Print(inInfoBar(bar1, bar2, bar3));
+         //Print("First: "+getValueTrend(tfData));
          
          resultStructure = drawStructureInternal(tfData, bar1, bar2, bar3, enabledComment);
-         if(StringLen(resultStructure) > 0) {
-            Print(resultStructure);
-         }
+         //if(StringLen(resultStructure) > 0) {
+         //   Print(resultStructure);
+         //}
          resultMarjorStruct = updatePointTopBot(tfData, bar1, bar2, bar3, enabledComment);
-         if (StringLen(resultMarjorStruct) > 0) {
-            Print(resultMarjorStruct);
-         }
+         //if (StringLen(resultMarjorStruct) > 0) {
+         //   Print(resultMarjorStruct);
+         //}
          drawMarketStruct(tfData, bar1);
          // POI
          checkStatusSettingPoiZone(tfData, bar1);
@@ -3057,8 +3073,8 @@ struct marketStructs{
          // Mitigation
          checkMitigateZone(tfData, bar1);         
          
-         Print("\nFinal:"+getValueTrend(tfData));
-         Print("------------ End Gann wave---------------\n");
+         //Print("\nFinal:"+getValueTrend(tfData));
+         //Print("------------ End Gann wave---------------\n");
       }
       // danh dau vi tri ket thuc
       createObj(waveRates[ArraySize(waveRates) - 1].time, waveRates[ArraySize(waveRates) - 1].low, 238, -1, tfData.tfColor, "Stop");
@@ -6886,9 +6902,7 @@ int OnInit()
    enabledNotification = true;
    
    // Gửi tin nhắn chào khi EA được gắn vào biểu đồ
-   webhook = GetWebhookForSymbol(_Symbol);
-   SendDiscordMessage("EA đã được khởi động trên " + _Symbol);
-   
+   prewHighTFStruct.getStatusData(highTimeFrame);
    return(INIT_SUCCEEDED);
 }
 
@@ -7772,10 +7786,10 @@ void sendNoti(string message = "") {
    string endStr = TimeToString(closeTime, TIME_DATE|TIME_SECONDS);
    str_result += "\n------" + endStr + "------\n\n";                 
    
-   //SendDiscordMessage(str_result);
-   //SendNotification(str_result);
-   Print(str_result);
-   Print(TAB_STRING);
+   SendDiscordMessage(str_result);
+   SendNotification(str_result);
+   //Print(str_result);
+   //Print(TAB_STRING);
    
 }
 
