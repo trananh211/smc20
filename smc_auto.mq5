@@ -6908,12 +6908,13 @@ int OnInit()
 //---
    
    // Gửi tin nhắn chào khi EA được gắn vào biểu đồ
+   webhook = GetWebhookForSymbol(_Symbol);
    string start_string = prewHighTFStruct.getStatusData(highTimeFrame);
-   
+   SendDiscordMessage(start_string);
    //CurrentSpread = NormalizeDouble(Ask - Bid, _Digits);
    // Sau khi tất cả setup xong. bat dâu show noti 
    enabledNotification = true;
-   sendNoti(start_string);
+   //sendNoti(start_string);
    
    return(INIT_SUCCEEDED);
 }
