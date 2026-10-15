@@ -1204,7 +1204,8 @@ void ProcessSwingLogic(InternalSwingData &main,
    
    bool isOrderFlowMitigated = false;
    bool isPoiZoneMitigated = false; // Hiện tại đang mặc định false theo code của bạn
-
+   //string str = StringFormat("dir = -1 | bar.high (%s) | main.vins_SwingNew (%s) - dir = 1 | bar.low (%s) | main.vins_SwingNew (%s) ", DoubleToString(bar.high), DoubleToString(main.vins_SwingNew), DoubleToString(bar.low), DoubleToString(main.vins_SwingNew));
+   //Print("Buoc 1" + str);
    // --- BƯỚC 1: KIỂM TRA TÍNH HỢP LỆ (VALIDITY) ---
    // Đỉnh phải thấp hơn đỉnh Main hoặc đáy phải cao hơn đáy main
    if (dir == 1) { // Direction BUY (xử lý Low Swing)
@@ -1212,7 +1213,9 @@ void ProcessSwingLogic(InternalSwingData &main,
    } else { // Direction SELL (xử lý High Swing)
       if (bar.high > main.vins_SwingNew) return;
    }
-
+   
+   //str = ("Bat dau kiem tra mitigate Snr, orderblock, order flow");
+   //Print("Buoc 2"+ str);
    // --- BƯỚC 2: KIỂM TRA MITIGATED ORDER FLOW (GANN PULLBACK) ---
    if (snr_gann != 0) {
       isOrderFlowMitigated = (dir == 1) ? (bar.low <= snr_gann) : (bar.high >= snr_gann);
@@ -1258,7 +1261,7 @@ void ProcessSwingLogic(InternalSwingData &main,
 void setValueToCandidateSwingHTF(TimeFrameData& tfData, MqlRates& barSwing, int direction = 0) {
    // Bảo vệ: Nếu direction = 0 hoặc dữ liệu không hợp lệ thì thoát
    if (direction == 0) return;
-
+   
    if (direction == 1) {
       // Chuẩn bị SnR Gann cho hướng BUY
       double snr = (ArraySize(tfData.Highs) > 1) ? tfData.Highs[1] : 0;
@@ -1562,18 +1565,23 @@ bool FindCandleByRates(int type, ENUM_TIMEFRAMES timeframe, MqlRates &current_ba
 //| Mọi logic trade về lấy thông số sẽ được viết tại hàm này.                  |
 //+----------------------------------------------------------------------------+
 void checkValueWithInternalSwingHTF(TimeFrameData& tfData, MqlRates& barPrev, MqlRates& barSwing, MqlRates& barNext, int direction = 0, int type = 0) {
+   //Print("Todo Mổ sẻ hàm Pullback: checkValueWithInternalSwingHTF");
    if(myEAs.valueInternal.vi_ITrend == 0 || (direction != 1 && direction != -1)) return;
+   //Print("Pass 1");
+   
    if (type == INTERNAL_PULLBACK_MAIN) {
       myEAs.valueInternal.vi_ITrend = tfData.iTrend;
       myEAs.valueInternal.vi_wvITrend = tfData.wvItrend;
       myEAs.valueInternal.vi_mTrend = tfData.mTrend;
       myEAs.valueInternal.vi_wvmTrend = tfData.wvMtrend;
+      //Print("Pass 2 type == INTERNAL_PULLBACK_MAIN");
    }
+   
    int pattent = -1, pattent_again = -1, check_lowtf = -1;
    bool isMitigated = false, isSwept = false;
    // BULLISH
    if (direction == 1) { 
-      
+      //Print("direction == 1");
       #define sData myEAs.valueInternal.candidate_Low
       if (type == INTERNAL_PULLBACK_MAIN) {
          sData.Reset();
@@ -1643,7 +1651,7 @@ void checkValueWithInternalSwingHTF(TimeFrameData& tfData, MqlRates& barPrev, Mq
       #undef sData
    } 
    else { 
-      
+      //Print("Direction 2");
       #define sData myEAs.valueInternal.candidate_High
       if (type == INTERNAL_PULLBACK_MAIN) {
          sData.Reset();
@@ -1694,8 +1702,6 @@ void checkValueWithInternalSwingHTF(TimeFrameData& tfData, MqlRates& barPrev, Mq
                sData.vins_isPoiZoneMitigated = true; break;
             }
          }
-      } else if (type == INTERNAL_PULLBACK_SUB) {
-      
       }
       
       pattent = sData.vins_isSignalConfirm_Patten;
@@ -1716,10 +1722,10 @@ void checkValueWithInternalSwingHTF(TimeFrameData& tfData, MqlRates& barPrev, Mq
    message = StringFormat("[HTF] PB %s Swing %s at %s is [%s] ===> Pattent: %s | Scan Again: %s | Check LowTF: %s | IsMitigatedPoizone: %s | IsSweptPoiZone: %s",
                           (direction == 1)? "LOW" : "HIGH", (direction == 1)? DoubleToString(barSwing.low, _Digits) : DoubleToString(barSwing.high, _Digits) , TimeToString(barSwing.time), str_completed, (pattent == 1)? "yes" : "no", 
                           (pattent_again == 1)? "yes" : "no", (check_lowtf == 1)? "yes" : "no", (isMitigated)? "yes" : "no", (isSwept)? "yes" : "no");
-   
+   sendNoti(message);
    //string text = "========[CHECK "+((direction == 1)? "LOW":"HIGH")+"] Kiểm tra thông số tín hiệu PullBack (EG hoặc Swept) Swing HTF "+((type == INTERNAL_PULLBACK_MAIN)? "MAIN": "SUB")+" hoàn tất ========";
    //Print(text);
-   sendNoti(message);
+   
 }
          
 
@@ -2785,16 +2791,16 @@ struct marketStructs{
    }
    
    // hàm lấy thông tin Data để show ra ngoài
-   void getStatusData(ENUM_TIMEFRAMES timeframe) {
+   string getStatusData(ENUM_TIMEFRAMES timeframe) {
       // Lấy dữ liệu cho khung timeframe
       TimeFrameData* tfData = GlobalVars.GetData(timeframe);
       string result = StringFormat("EA đã được khởi động trên [%s.%s]", EnumToString(timeframe) , _Symbol);
-      result += "\n"+StringFormat("mTrend:%s(%s) - iTrend: %s(%s)", 
+      result += ". "+StringFormat("mTrend:%s(%s) - iTrend: %s(%s)", 
                            (string)tfData.mTrend, (string)tfData.wvMtrend,
                            (string)tfData.iTrend, (string)tfData.wvItrend
                            );  ;
-      webhook = GetWebhookForSymbol(_Symbol);      
-      SendDiscordMessage(result);
+      //webhook = GetWebhookForSymbol(_Symbol);      
+      return result;
    }
    
    // End hàm gọi bởi Init
@@ -3047,6 +3053,7 @@ struct marketStructs{
       createObj(waveRates[0].time, waveRates[0].low, 238, -1, tfData.tfColor, "Start");
       string resultStructure = "";
       string resultMarjorStruct = "";
+      
       for (int j = 1; j <= ArraySize(waveRates) - 2; j++){
          
          //Print("TF: "+ (string)tfData.isTimeframe+" No:" + (string) j);
@@ -3076,6 +3083,7 @@ struct marketStructs{
          //Print("\nFinal:"+getValueTrend(tfData));
          //Print("------------ End Gann wave---------------\n");
       }
+      
       // danh dau vi tri ket thuc
       createObj(waveRates[ArraySize(waveRates) - 1].time, waveRates[ArraySize(waveRates) - 1].low, 238, -1, tfData.tfColor, "Stop");
       
@@ -3083,6 +3091,8 @@ struct marketStructs{
       // Ham tim look back bar cua low timeframe tu High timeframe
       if (tfData.isHighTF) lookBackCandle(tfData);
       
+      Print("\nFinal Total:"+getValueTrend(tfData));
+      Print("------------ End Gann wave---------------\n\n\n");
    }
    
    void realGannWave(TimeFrameData& tfData, ENUM_TIMEFRAMES timeframe) {
@@ -4854,7 +4864,7 @@ struct marketStructs{
                   if (myEAs.valueInternal.vi_ITrend != myEAs.valueInternal.vi_wvITrend && 
                      (myEAs.valueInternal.vi_isSwept || myEAs.valueInternal.vi_isMitigatedPoiZone || myEAs.valueInternal.vi_isSweptPoiZone)) {        
                      //Print("Swept High hoac Mitigated poizone Marjor. Tiếp tục check Low timeframe để tìm tín hiệu sớm.");
-                     Print("Low 2");
+                     //Print("Low 2");
                      checkValueWithInternalSwingHTF(tfData,  bar3, bar2, bar1, 1, INTERNAL_PULLBACK_MAIN);
                      //Print("Swept Low hoac Mitigated poizone Marjor. ");
                   }
@@ -6898,11 +6908,12 @@ int OnInit()
 //---
    
    // Gửi tin nhắn chào khi EA được gắn vào biểu đồ
-   prewHighTFStruct.getStatusData(highTimeFrame);
+   string start_string = prewHighTFStruct.getStatusData(highTimeFrame);
    
    //CurrentSpread = NormalizeDouble(Ask - Bid, _Digits);
    // Sau khi tất cả setup xong. bat dâu show noti 
    enabledNotification = true;
+   sendNoti(start_string);
    
    return(INIT_SUCCEEDED);
 }
@@ -7788,9 +7799,9 @@ void sendNoti(string message = "") {
    str_result += "\n------" + endStr + "------\n\n";                 
    
    SendDiscordMessage(str_result);
-   //SendNotification(str_result);
-   Print(str_result);
-   Print(TAB_STRING);
+   
+   //Print(str_result);
+   //Print(TAB_STRING);
    
 }
 
