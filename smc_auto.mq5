@@ -231,6 +231,7 @@ struct ValueInternal{
    long vi_wvmTrend;
    int vi_ITrend;
    long vi_wvITrend;
+   int vi_GTrend;
    
    bool vi_wvIsBuyInternal; int vi_wvTypeBreakBuyInternal;
    bool vi_wvIsSellInternal; int vi_wvTypeBreakSellInternal;
@@ -267,6 +268,7 @@ struct ValueInternal{
       vi_wvmTrend = 0;
       vi_ITrend = 0;
       vi_wvITrend = 0;
+      vi_GTrend = 0;
       vi_wvIsBuyInternal = false; vi_wvTypeBreakBuyInternal = 0;
       vi_wvIsSellInternal = false; vi_wvTypeBreakSellInternal = 0;
       vi_isSwept = false;
@@ -1291,6 +1293,7 @@ void setValueToInternalSwingHTF(TimeFrameData& tfData, MqlRates& barBreak, MqlRa
    myEAs.valueInternal.vi_wvmTrend = tfData.wvMtrend;
    myEAs.valueInternal.vi_ITrend = tfData.iTrend;
    myEAs.valueInternal.vi_wvITrend = tfData.wvItrend;
+   
    myEAs.valueInternal.vi_wvIsBuyInternal = tfData.wvIsBuyInternal;
    myEAs.valueInternal.vi_wvTypeBreakBuyInternal = tfData.wvTypeBreakBuyInternal;
    myEAs.valueInternal.vi_wvIsSellInternal = tfData.wvIsSellInternal;
@@ -4308,14 +4311,19 @@ struct marketStructs{
                resulCheckPullbackGannHigh = true;
             }
          }
-         // Kiem tra xem co phai swing pullback hay khong
-         if (tfData.isHighTF && resulCheckPullbackGannHigh && myEAs.valueInternal.vi_TempSwing_High.main.vins_SwingNew != 0){
-            setValueToCandidateSwingHTF(tfData, bar2, -1);
-            if(myEAs.valueInternal.candidate_High.vins_SwingNew != 0) {
-               //Print("Gann High 1");
-               checkValueWithInternalSwingHTF(tfData,  bar3, bar2, bar1, -1, INTERNAL_PULLBACK_SUB);
+         if(tfData.isHighTF) {
+            // Truyền trạng thái gann Trend vào valueInternal
+            setValueToInternalSwingHTF(tfData, bar3, bar2);
+            // Kiem tra xem co phai swing pullback hay khong
+            if (resulCheckPullbackGannHigh && myEAs.valueInternal.vi_TempSwing_High.main.vins_SwingNew != 0){
+               setValueToCandidateSwingHTF(tfData, bar2, -1);
+               if(myEAs.valueInternal.candidate_High.vins_SwingNew != 0) {
+                  //Print("Gann High 1");
+                  checkValueWithInternalSwingHTF(tfData,  bar3, bar2, bar1, -1, INTERNAL_PULLBACK_SUB);
+               }
             }
          }
+         
          
          //+------------------------------------------------------------------+
          //| Phần dành cho scalping Robot                                     |
@@ -7801,8 +7809,8 @@ void sendNoti(string message = "") {
    
    SendDiscordMessage(str_result);
    
-   //Print(str_result);
-   //Print(TAB_STRING);
+   Print(str_result);
+   Print(TAB_STRING);
    
 }
 
