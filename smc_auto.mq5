@@ -433,6 +433,7 @@ public:
    int LastSwingMeter;
    int gTrend;
    int vGTrend;
+   int wvGTrend;
    int waitingHighs; // Chờ nến phá vỡ đỉnh Highs. default = 0;
    int waitingLows; //  Chờ nến phá vỡ đỉnh Lows.  default = 0;
 
@@ -1560,6 +1561,12 @@ bool FindCandleByRates(int type, ENUM_TIMEFRAMES timeframe, MqlRates &current_ba
    }
 
    return false; // Không tìm thấy nến nào thỏa mãn
+}
+
+// Hàm truyền giá trị cấu trúc sóng nhỏ tại HTF
+void setValueToGannSwingHTF(TimeFrameData& tfData) {
+   //if(myEAs.valueInternal.vi_ITrend == 0) return;
+   myEAs.valueInternal.vi_GTrend = tfData.gTrend;
 }
 
 //+----------------------------------------------------------------------------+
@@ -4313,7 +4320,7 @@ struct marketStructs{
          }
          if(tfData.isHighTF) {
             // Truyền trạng thái gann Trend vào valueInternal
-            setValueToInternalSwingHTF(tfData, bar3, bar2);
+            setValueToGannSwingHTF(tfData);
             // Kiem tra xem co phai swing pullback hay khong
             if (resulCheckPullbackGannHigh && myEAs.valueInternal.vi_TempSwing_High.main.vins_SwingNew != 0){
                setValueToCandidateSwingHTF(tfData, bar2, -1);
@@ -4724,14 +4731,19 @@ struct marketStructs{
             }
          }
          
-         // Kiem tra xem co phai swing pullback hay khong
-         if (tfData.isHighTF && resulCheckPullbackGannLow && myEAs.valueInternal.vi_TempSwing_Low.main.vins_SwingNew != 0){
-            setValueToCandidateSwingHTF(tfData, bar2, 1);
-            if(myEAs.valueInternal.candidate_Low.vins_SwingNew != 0) {
-               //Print("Gann Low -1");
-               checkValueWithInternalSwingHTF(tfData,  bar3, bar2, bar1, 1, INTERNAL_PULLBACK_SUB);
+         if (tfData.isHighTF) {
+            // Truyền trạng thái gann Trend vào valueInternal
+            setValueToGannSwingHTF(tfData);
+            // Kiem tra xem co phai swing pullback hay khong
+            if (resulCheckPullbackGannLow && myEAs.valueInternal.vi_TempSwing_Low.main.vins_SwingNew != 0){
+               setValueToCandidateSwingHTF(tfData, bar2, 1);
+               if(myEAs.valueInternal.candidate_Low.vins_SwingNew != 0) {
+                  //Print("Gann Low -1");
+                  checkValueWithInternalSwingHTF(tfData,  bar3, bar2, bar1, 1, INTERNAL_PULLBACK_SUB);
+               }
             }
          }
+         
          
          //+------------------------------------------------------------------+
          //| Phần dành cho scalping Robot                                     |
@@ -7788,7 +7800,7 @@ void sendNoti(string message = "") {
    ENUM_TIMEFRAMES chartTF = ChartPeriod(0); // 0 là chart_ID hiện tại
    string tfName = EnumToString(chartTF);
    
-   string first_text = StringFormat("[%s.%s] %d(%d) IsBuy: %s_%s - IsSell: %s_%s", tfName, _Symbol, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend, isBuyHTF, isTypeBreakBuyHTF, isSellHTF, isTypeBreakSellHTF);
+   string first_text = StringFormat("[%s.%s] %d(%d) IsBuy: %s_%s - IsSell: %s_%s | Gann: %d", tfName, _Symbol, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend, isBuyHTF, isTypeBreakBuyHTF, isSellHTF, isTypeBreakSellHTF, myEAs.valueInternal.vi_GTrend);
    text += StringFormat(" - Mtrend: %d(%d) | get IDM: %s | Itrend: %d(%d) - TP: %s(%s) - SL: %s(%s) - SnR: %s",
                               myEAs.valueInternal.vi_mTrend, myEAs.valueInternal.vi_wvmTrend, getIdm, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend,
                               DoubleToString(iTarget,_Digits), ((iTarget_isMitigatedPoizone || iTarget_isSweptSwing)? "W!" : "OK"),  
