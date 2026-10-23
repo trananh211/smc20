@@ -5107,6 +5107,10 @@ struct marketStructs{
             tfData.vGTrend = (checkVolumeBreak(1, bar1, tfData.Highs[0], tfData.volHighs[0])) ? 1: -1;
          }
          
+         if(tfData.isHighTF) {
+            // Truyền trạng thái gann Trend vào valueInternal
+            setValueToGannSwingHTF(tfData);
+         }
       }
       
       // BOS Low
@@ -5125,6 +5129,10 @@ struct marketStructs{
             tfData.vGTrend = (checkVolumeBreak(-1, bar1, tfData.Lows[0], tfData.volLows[0])) ? -1: 1;
          }
          
+         if(tfData.isHighTF) {
+            // Truyền trạng thái gann Trend vào valueInternal
+            setValueToGannSwingHTF(tfData);
+         }
       }
       // END Gann wave
       
@@ -5694,6 +5702,9 @@ struct marketStructs{
          myEAs.signalInternal.sg_wvIsBuyInternal = getStatusInternalBuySell(tfData, 1); 
          myEAs.signalInternal.sg_wvIsSellInternal = getStatusInternalBuySell(tfData, -1);
          //Print("== SET thong so Status Global Signal Thanh cong==");
+         
+         //// Truyền trạng thái gann Trend vào valueInternal
+         //setValueToGannSwingHTF(tfData);
       } else { // Set thong so co ban cho Low Timeframe
          if (myEAs.marketStructStatus.iMSS_findH == 1) {
             if (myEAs.marketStructStatus.iMSS_H_AF_LTFRealTime <= 0 || (myEAs.marketStructStatus.iMSS_H_AF_LTFRealTime > 0 && myEAs.marketStructStatus.iMSS_H_AF_LTFRealTime < tfData.intSHighs[0])) {
@@ -7821,8 +7832,8 @@ void sendNoti(string message = "") {
    
    SendDiscordMessage(str_result);
    
-   Print(str_result);
-   Print(TAB_STRING);
+   //Print(str_result);
+   //Print(TAB_STRING);
    
 }
 
