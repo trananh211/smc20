@@ -478,7 +478,12 @@ public:
    int wvTypeBreakSellInternal; // Trả về kiểu break là High, medium hay none
    int waitingIntSHighs; // Chờ nến phá vỡ đỉnh internal swing highs. default = 0
    int waitingIntSLows;  // Chờ nến phá vỡ đỉnh internal swing lows.  default = 0
-
+   
+   // Gann belong to Internal Trend
+   int gITrend;
+   long wvGITrend;
+   double gIHigh_prev, gILow_prev;
+   
    // Array pullback
    double arrTop[];
    double arrBot[];
@@ -637,6 +642,11 @@ public:
       mTarget = 0; mTargetTime = 0;
       mFullTarget = 0;
       mSnR = 0;
+      
+      // Gann belong to Internal Trend
+      gITrend = 0;
+      wvGITrend = 0;
+      gIHigh_prev = 0; gILow_prev = 0;
       
       ArrayInitialize(Highs, 0.0);
       ArrayInitialize(Lows, 0.0);
@@ -995,6 +1005,97 @@ public:
       
       // Print("Đã copy thành công ", size, " vùng POI.");
    }
+   
+   
+   // Hàm set lại toàn bộ giá trị liên quan của Gann belong to Internal
+   void checkDataGannInternalSwing(TimeFrameData& tfData, int type = 0) {
+      if (tfData.iTrend == 0) return;
+      // Buoc 1: set thong so mac dinh theo Itrend lan dau tien
+      tfData.gITrend = tfData.iTrend;
+      // Buoc 2: scan Swing Gann truoc do de xac dinh mốc giá preGIHigh or preGILow 
+      if (tfData.iTrend == -1 && type == 1) {
+         // Scan tim preGIHigh từ swing SL đến bên trái của swing TP
+         for(int i=ArraySize(tfData.Highs);i >= 0;i--){
+            // Nếu thời gian k thuộc khoảng từ Internal High -> Internal Low thì bỏ qua
+            if (tfData.HighsTime[i] < tfData.intSHighTime[0]) continue;   
+            if (tfData.Highs[i] < tfData.intSHighs[0] && tfData.Highs[i] > tfData.gIHigh_prev) tfData.gIHigh_prev = tfData.Highs[i];
+         }
+      } else if (myEAs.valueInternal.vi_ITrend == 1 && type == -1) {
+         // Scan tim preGILow
+         for(int i=ArraySize(tfData.Lows);i >= 0;i--){
+            // Nếu thời gian k thuộc khoảng từ Internal Low -> Internal High thì bỏ qua
+            if (tfData.LowsTime[i] < tfData.intSLowTime[0]) continue;   
+            if (tfData.Lows[i] > tfData.intSLows[0] && tfData.Lows[i] < tfData.gILow_prev) tfData.gILow_prev = tfData.Lows[i];
+         }
+      }
+   }
+   
+   // Hàm truyền giá trị cấu trúc sóng gann thuộc Internal nhỏ  - Khi tìm thấy Swing Highs hoặc Lows
+   // Type = 1: Swing High, type = -1: Swing Low
+   void setValueToGannInternalSwing(TimeFrameData& tfData, int type = 0) {
+      if(tfData.iTrend == 0) return;
+      if (tfData.iTrend == 1) {
+         // Swing Low
+         if (type == -1) {
+            // Chua set lan nao
+            if (tfData.gILow_prev == 0 && tfData.Lows[0] > tfData.intSLows[0]) {
+               tfData.gILow_prev = tfData.Lows[0];
+               return;
+            }
+         }
+         // Swing High
+         else if (type == 1) {
+            // Chua set lan nao
+            if (tfData.gIHigh_prev == 0 && tfData.Highs[0] <= tfData.intSHighs[0]) {
+               tfData.gIHigh_prev = tfData.Highs[0];
+               return;
+            }
+         } 
+         
+      } else (tfData.iTrend == -1) {
+         // Swing High
+         if (type == 1) {
+            // Chua set lan nao
+            if (tfData.gIHigh_prev == 0 && tfData.Highs[0] < tfData.intSHighs[0]) {
+               tfData.gIHigh_prev = tfData.Highs[0];
+               return;
+            } 
+         } 
+         // Swing Low
+         else if (type == -1) {
+            // Chua set lan nao
+            if (tfData.gILow_prev == 0 && tfData.Lows[0] >= tfData.intSLows[0]) {
+               tfData.gILow_prev = tfData.Lows[0];
+               return;
+            }
+            // Da co gia tri
+            if (tfData.gILow_prev > 0 && tfData.Lows[0] < tfData.gILow_prev) {
+               tfData.gILow_prev = tfData.Lows[0];
+               tfData.gITrend = -1;
+               return;
+            }
+         }
+      }
+      
+      
+      // Swing High
+      if(type == 1) {
+         // Đã set pre GI High trước đó rồi
+         if (tfData.gIHigh_prev != 0) {
+            if (tfData.Highs[0] > tfData.gIHigh_prev && tfData.Highs[0] < tfData.intSHighs[0]) tfData.gIHigh_prev = tfData.Highs[0];
+         } else { // Chưa set pre GI High lần nào
+            tfData.gIHigh_prev = tfData.Highs[0];
+         }
+      } else if (type == -1) {
+         // Đã set pre GI Low trước đó rồi
+         if (tfData.gILow_prev != 0) {
+            if (tfData.Lows[0] < tfData.gILow_prev) tfData.gILow_prev = tfData.Lows[0];
+         } else { // Chưa set pre GI Low lần nào
+            tfData.gILow_prev = tfData.Lows[0];
+         }
+      }
+   }
+   
    
 };
 
@@ -1566,74 +1667,6 @@ bool FindCandleByRates(int type, ENUM_TIMEFRAMES timeframe, MqlRates &current_ba
    return false; // Không tìm thấy nến nào thỏa mãn
 }
 
-// Hàm truyền giá trị cấu trúc sóng nhỏ tại HTF - Khi tìm thấy Swing Highs hoặc Lows
-// Type = 1: Swing High, type = -1: Swing Low
-void setValueToGannSwingHTF(TimeFrameData& tfData, int type = 0) {
-   #define iData myEAs.valueInternal
-   if(iData.vi_ITrend == 0) return;
-   // Nếu chưa xác định được gann trend trước đó. Trường hợp lần đầu tiên thấy swing sau khi break cấu trúc
-   if(iData.vi_GITrend == 0) {
-      int GITrend = 0;
-      // Buoc 1: set thong so mac dinh theo Itrend lan dau tien
-      GITrend = myEAs.valueInternal.vi_ITrend;
-      // Buoc 2: scan Swing Gann truoc do de xac dinh mốc giá preGIHigh or preGILow 
-      if (myEAs.valueInternal.vi_ITrend == 1) {
-         // Scan tim preGIHigh từ swing SL đến bên trái của swing TP
-         for(int i=ArraySize(tfData.Highs);i >= 0;i--){
-            // Nếu thời gian k thuộc khoảng từ Internal High -> Internal Low thì bỏ qua
-            if (tfData.HighsTime[i] < tfData.intSHighTime[0]) continue;   
-            if (tfData.Highs[i] < tfData.intSHighs[0] && tfData.Highs[i] > myEAs.valueInternal.vi_preGIHigh) myEAs.valueInternal.vi_preGIHigh = tfData.Highs[i];
-            if (tfData.HighsTime[i] > tfData.intSLowTime[0]) break;
-         }
-         // Scan lần cuối tìm preGIHigh bên phải của swing TP
-         for(int i=ArraySize(tfData.Highs);i >= 0;i--){
-            // Nếu thời gian k thuộc khoảng từ Internal High -> Internal Low thì bỏ qua
-            if (tfData.HighsTime[i] < tfData.intSLowTime[0]) continue;   
-            if (tfData.Highs[i] < tfData.intSHighs[0] && tfData.Highs[i] > myEAs.valueInternal.vi_preGIHigh) myEAs.valueInternal.vi_preGIHigh = tfData.Highs[i];
-         }
-      } else if (myEAs.valueInternal.vi_ITrend == -1) {
-         // Scan tim preGILow
-         for(int i=ArraySize(tfData.Lows);i >= 0;i--){
-            // Nếu thời gian k thuộc khoảng từ Internal Low -> Internal High thì bỏ qua
-            if (tfData.LowsTime[i] < tfData.intSLowTime[0]) continue;   
-            if (tfData.Lows[i] > tfData.intSLows[0] && tfData.Lows[i] < myEAs.valueInternal.vi_preGILow) myEAs.valueInternal.vi_preGILow = tfData.Lows[i];
-            if (tfData.LowsTime[i] > tfData.intSLowTime[0]) break;
-         }
-      }
-      // Buoc 3 : scan Swing Gann phía bên phải sau mốc thời gian swing TP để chốt preGIHigh or preGILow lần cuối cùng.
-      
-      //--- Swing High
-      if (type == 1) {
-         
-      }
-      //--- Swing Low
-      else if(type == -1) {
-      
-      }
-   }
-   // TH đã xác định được gann trend trước đó rồi. Chỉ cập nhật Last GIHigh và Last GILow 
-   else{
-      // Swing High
-      if(type == 1) {
-         // Đã set pre GI High trước đó rồi
-         if (myEAs.valueInternal.vi_preGIHigh != 0) {
-            if (tfData.Highs[0] > myEAs.valueInternal.vi_preGIHigh) iData.vi_preGIHigh = tfData.Highs[0];
-         } else { // Chưa set pre GI High lần nào
-            iData.vi_preGIHigh = tfData.Highs[0];
-         }
-      } else if (type == -1) {
-         // Đã set pre GI Low trước đó rồi
-         if (myEAs.valueInternal.vi_preGILow != 0) {
-            if (tfData.Lows[0] < myEAs.valueInternal.vi_preGILow) myEAs.valueInternal.vi_preGILow = tfData.Lows[0];
-         } else { // Chưa set pre GI Low lần nào
-            myEAs.valueInternal.vi_preGILow = tfData.Lows[0];
-         }
-      }
-   }
-   //myEAs.valueInternal.vi_GITrend = tfData.gTrend;
-   
-   #undef iData
-}
 
 //+----------------------------------------------------------------------------+
 //| Hàm quan trọng. Check sóng PullBack                                        |
@@ -4723,10 +4756,7 @@ struct marketStructs{
          //+------------------------------------------------------------------+
          //| Phần dành cho Gann belong to Internal Trend                      |
          //+------------------------------------------------------------------+
-         if(tfData.isHighTF) {
-            // Truyền trạng thái gann Trend vào valueInternal
-            setValueToGannSwingHTF(tfData, 1);
-         }
+         tfData.setValueToGannInternalSwing(tfData, 1);
          
          //+------------------------------------------------------------------+
          //| Phần dành cho scalping Robot                                     |
@@ -4804,9 +4834,6 @@ struct marketStructs{
             }
          }
          
-         //+------------------------------------------------------------------+
-         //| Phần dành cho Gann belong to Internal Trend                      |
-         //+------------------------------------------------------------------+
          if (tfData.isHighTF) {
             // Kiem tra xem co phai swing pullback hay khong
             if (resulCheckPullbackGannLow && myEAs.valueInternal.vi_TempSwing_Low.main.vins_SwingNew != 0){
@@ -5146,10 +5173,7 @@ struct marketStructs{
          //+------------------------------------------------------------------+
          //| Phần dành cho Gann belong to Internal Trend                      |
          //+------------------------------------------------------------------+
-         if (tfData.isHighTF) {
-            // Truyền trạng thái gann Trend vào valueInternal
-            setValueToGannSwingHTF(tfData, -1);
-         }
+         tfData.setValueToGannInternalSwing(tfData, -1);
          
          //+------------------------------------------------------------------+
          //| Phần dành cho scalping Robot                                     |
@@ -5190,10 +5214,6 @@ struct marketStructs{
             tfData.vGTrend = (checkVolumeBreak(1, bar1, tfData.Highs[0], tfData.volHighs[0])) ? 1: -1;
          }
          
-         if(tfData.isHighTF) {
-            // Thay đổi trạng thái gann Trend vào valueInternal
-            changeValueToGannInternalSwingHTF(tfData);
-         }
       }
       
       // BOS Low
@@ -5212,16 +5232,14 @@ struct marketStructs{
             tfData.vGTrend = (checkVolumeBreak(-1, bar1, tfData.Lows[0], tfData.volLows[0])) ? -1: 1;
          }
          
-         if(tfData.isHighTF) {
-            // Thay đổi trạng thái gann Trend vào valueInternal
-            changeValueToGannInternalSwingHTF(tfData);
-         }
       }
       // END Gann wave
       
       //reset log
       textInternalLow = "";
       textInternalHigh = "";
+      // defind new gann belong to internal
+      bool isScanGannInternalHigh = false;
       // Internal wave
       // High
       if (tfData.waitingIntSHighs == 0) {
@@ -5294,6 +5312,9 @@ struct marketStructs{
                // Scan lại các zone Internal Trade Zone HighTF
                scanInternalTradeZoneHighTF(tfData, bar1);
             }
+            
+            // active scan Gann Internal Swing Prev High
+            isScanGannInternalHigh = true;
          }
          
          //3 choch high
@@ -5364,6 +5385,9 @@ struct marketStructs{
                // Scan lại các zone Internal Trade Zone HighTF
                scanInternalTradeZoneHighTF(tfData, bar1);
             }
+            
+            // active scan Gann Internal Swing Prev High
+            isScanGannInternalHigh = true;
          }
          
          // 4 choch high
@@ -5464,7 +5488,16 @@ struct marketStructs{
                // Scan lại các zone Internal Trade Zone HighTF
                scanInternalTradeZoneHighTF(tfData, bar1);
             }
+            
+            // active scan Gann Internal Swing Prev High
+            isScanGannInternalHigh = true;
          }
+         
+         // scan Swing Prev High of Gann Internal 
+         if(isScanGannInternalHigh) {
+            tfData.checkDataGannInternalSwing(tfData, 1);
+         }
+         
          // show draw target line
          if ((showTargetHighTF == true && tfData.isTimeframe == highPairTF) || (showTargetLowTF == true && tfData.isTimeframe == lowPairTF)) {
             if (isDrawInternal == true && isDrawTarget == true) {
@@ -5480,6 +5513,8 @@ struct marketStructs{
       }
       
       // Low
+      // defind new gann belong to internal
+      bool isScanGannInternalLow = false;
       if (tfData.waitingIntSLows == 0) {
          //1 continue bos 
          if (tfData.iTrend == -1 && tfData.LastSwingInternal == -1 && bar1.low < tfData.intSLows[0]) {
@@ -5549,6 +5584,9 @@ struct marketStructs{
                // Scan lại các zone Internal Trade Zone HighTF
                scanInternalTradeZoneHighTF(tfData, bar1);
             }
+            
+            // active scan Gann Internal Swing Prev Low
+            isScanGannInternalLow = true;
          }
          
          //3 choch low
@@ -5620,6 +5658,9 @@ struct marketStructs{
                // Scan lại các zone Internal Trade Zone HighTF
                scanInternalTradeZoneHighTF(tfData, bar1);
             }
+            
+            // active scan Gann Internal Swing Prev Low
+            isScanGannInternalLow = true;
          }
          
          // 4+5 choch low
@@ -5721,7 +5762,16 @@ struct marketStructs{
                // Scan lại các zone Internal Trade Zone HighTF
                scanInternalTradeZoneHighTF(tfData, bar1);
             }
+            
+            // active scan Gann Internal Swing Prev Low
+            isScanGannInternalLow = true;
          }
+         
+         // scan Swing Prev High of Gann Internal 
+         if(isScanGannInternalLow) {
+            tfData.checkDataGannInternalSwing(tfData, -1);
+         }
+         
          // Show draw target line
          if ((showTargetHighTF == true && tfData.isTimeframe == highPairTF) || (showTargetLowTF == true && tfData.isTimeframe == lowPairTF)) {
             if (isDrawInternal == true && isDrawTarget == true) {
@@ -7687,8 +7737,9 @@ string getSwingInternalLog(string name, const InternalSwingData& data) {
 }
 
 void showComment(TimeFrameData& tfData) {
-   return;
-   //Print("Timeframe: "+ (string) tfData.isTimeframe);
+   //return;
+   Print("Timeframe: "+ (string) tfData.isTimeframe);
+   PrintFormat("tfData.iTrend = %d; tfData.gITrend = %d ; tfData.wvGITrend = %d; Pre High = %d; Pre Low = %d", tfData.iTrend, tfData.gITrend, tfData.wvGITrend, tfData.gIHigh_prev, tfData.gILow_prev);
       //Print("Highs: "); ArrayPrint(tfData.Highs);
       //Print("HighsTime: "); ArrayPrint(tfData.HighsTime);
       //Print("Vol Highs: "); ArrayPrint(tfData.volHighs);
@@ -7788,6 +7839,7 @@ void showComment(TimeFrameData& tfData) {
       //Print("zArrPoiZoneLTFBullishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBullishBelongHighTF);
       //Print("zArrPoiZoneLTFBearishBelongHighTF: "); ArrayPrint(zArrPoiZoneLTFBearishBelongHighTF);
       
+      Print("###");
 } 
 
 string GetWebhookForSymbol(string symbol)
