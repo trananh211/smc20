@@ -227,11 +227,16 @@ struct StructureManager {
 // Khai báo thông số của Internal wave sau khi breakout và tạo swing high low continue
 struct ValueInternal{
    // Thông số cơ bản
+   // Marjor Trend
    int vi_mTrend;
    long vi_wvmTrend;
+   // Internal trend
    int vi_ITrend;
    long vi_wvITrend;
-   int vi_GTrend;
+   // Gann belong to Internal Trend
+   int vi_GITrend;
+   long vi_wvGITrend;
+   double vi_preGIHigh, vi_preGILow;
    
    bool vi_wvIsBuyInternal; int vi_wvTypeBreakBuyInternal;
    bool vi_wvIsSellInternal; int vi_wvTypeBreakSellInternal;
@@ -264,11 +269,9 @@ struct ValueInternal{
       sendNoti(text+message);
       gl_status_trade_string = "";
       
-      vi_mTrend = 0;
-      vi_wvmTrend = 0;
-      vi_ITrend = 0;
-      vi_wvITrend = 0;
-      vi_GTrend = 0;
+      vi_mTrend = 0; vi_wvmTrend = 0;
+      vi_ITrend = 0; vi_wvITrend = 0;
+      vi_GITrend = 0; vi_wvGITrend = 0; vi_preGIHigh = 0; vi_preGILow = 0;
       vi_wvIsBuyInternal = false; vi_wvTypeBreakBuyInternal = 0;
       vi_wvIsSellInternal = false; vi_wvTypeBreakSellInternal = 0;
       vi_isSwept = false;
@@ -1563,10 +1566,73 @@ bool FindCandleByRates(int type, ENUM_TIMEFRAMES timeframe, MqlRates &current_ba
    return false; // Không tìm thấy nến nào thỏa mãn
 }
 
-// Hàm truyền giá trị cấu trúc sóng nhỏ tại HTF
-void setValueToGannSwingHTF(TimeFrameData& tfData) {
-   //if(myEAs.valueInternal.vi_ITrend == 0) return;
-   myEAs.valueInternal.vi_GTrend = tfData.gTrend;
+// Hàm truyền giá trị cấu trúc sóng nhỏ tại HTF - Khi tìm thấy Swing Highs hoặc Lows
+// Type = 1: Swing High, type = -1: Swing Low
+void setValueToGannSwingHTF(TimeFrameData& tfData, int type = 0) {
+   #define iData myEAs.valueInternal
+   if(iData.vi_ITrend == 0) return;
+   // Nếu chưa xác định được gann trend trước đó. Trường hợp lần đầu tiên thấy swing sau khi break cấu trúc
+   if(iData.vi_GITrend == 0) {
+      int GITrend = 0;
+      // Buoc 1: set thong so mac dinh theo Itrend lan dau tien
+      GITrend = myEAs.valueInternal.vi_ITrend;
+      // Buoc 2: scan Swing Gann truoc do de xac dinh mốc giá preGIHigh or preGILow 
+      if (myEAs.valueInternal.vi_ITrend == 1) {
+         // Scan tim preGIHigh từ swing SL đến bên trái của swing TP
+         for(int i=ArraySize(tfData.Highs);i >= 0;i--){
+            // Nếu thời gian k thuộc khoảng từ Internal High -> Internal Low thì bỏ qua
+            if (tfData.HighsTime[i] < tfData.intSHighTime[0]) continue;   
+            if (tfData.Highs[i] < tfData.intSHighs[0] && tfData.Highs[i] > myEAs.valueInternal.vi_preGIHigh) myEAs.valueInternal.vi_preGIHigh = tfData.Highs[i];
+            if (tfData.HighsTime[i] > tfData.intSLowTime[0]) break;
+         }
+         // Scan lần cuối tìm preGIHigh bên phải của swing TP
+         for(int i=ArraySize(tfData.Highs);i >= 0;i--){
+            // Nếu thời gian k thuộc khoảng từ Internal High -> Internal Low thì bỏ qua
+            if (tfData.HighsTime[i] < tfData.intSLowTime[0]) continue;   
+            if (tfData.Highs[i] < tfData.intSHighs[0] && tfData.Highs[i] > myEAs.valueInternal.vi_preGIHigh) myEAs.valueInternal.vi_preGIHigh = tfData.Highs[i];
+         }
+      } else if (myEAs.valueInternal.vi_ITrend == -1) {
+         // Scan tim preGILow
+         for(int i=ArraySize(tfData.Lows);i >= 0;i--){
+            // Nếu thời gian k thuộc khoảng từ Internal Low -> Internal High thì bỏ qua
+            if (tfData.LowsTime[i] < tfData.intSLowTime[0]) continue;   
+            if (tfData.Lows[i] > tfData.intSLows[0] && tfData.Lows[i] < myEAs.valueInternal.vi_preGILow) myEAs.valueInternal.vi_preGILow = tfData.Lows[i];
+            if (tfData.LowsTime[i] > tfData.intSLowTime[0]) break;
+         }
+      }
+      // Buoc 3 : scan Swing Gann phía bên phải sau mốc thời gian swing TP để chốt preGIHigh or preGILow lần cuối cùng.
+      
+      //--- Swing High
+      if (type == 1) {
+         
+      }
+      //--- Swing Low
+      else if(type == -1) {
+      
+      }
+   }
+   // TH đã xác định được gann trend trước đó rồi. Chỉ cập nhật Last GIHigh và Last GILow 
+   else{
+      // Swing High
+      if(type == 1) {
+         // Đã set pre GI High trước đó rồi
+         if (myEAs.valueInternal.vi_preGIHigh != 0) {
+            if (tfData.Highs[0] > myEAs.valueInternal.vi_preGIHigh) iData.vi_preGIHigh = tfData.Highs[0];
+         } else { // Chưa set pre GI High lần nào
+            iData.vi_preGIHigh = tfData.Highs[0];
+         }
+      } else if (type == -1) {
+         // Đã set pre GI Low trước đó rồi
+         if (myEAs.valueInternal.vi_preGILow != 0) {
+            if (tfData.Lows[0] < myEAs.valueInternal.vi_preGILow) myEAs.valueInternal.vi_preGILow = tfData.Lows[0];
+         } else { // Chưa set pre GI Low lần nào
+            myEAs.valueInternal.vi_preGILow = tfData.Lows[0];
+         }
+      }
+   }
+   //myEAs.valueInternal.vi_GITrend = tfData.gTrend;
+   
+   #undef iData
 }
 
 //+----------------------------------------------------------------------------+
@@ -4317,10 +4383,9 @@ struct marketStructs{
                tfData.waitingHighs = 0;
                resulCheckPullbackGannHigh = true;
             }
-         }
+         }         
+         
          if(tfData.isHighTF) {
-            // Truyền trạng thái gann Trend vào valueInternal
-            setValueToGannSwingHTF(tfData);
             // Kiem tra xem co phai swing pullback hay khong
             if (resulCheckPullbackGannHigh && myEAs.valueInternal.vi_TempSwing_High.main.vins_SwingNew != 0){
                setValueToCandidateSwingHTF(tfData, bar2, -1);
@@ -4330,7 +4395,6 @@ struct marketStructs{
                }
             }
          }
-         
          
          //+------------------------------------------------------------------+
          //| Phần dành cho scalping Robot                                     |
@@ -4655,6 +4719,15 @@ struct marketStructs{
                scanInternalTradeZoneHighTF(tfData, bar1);
             }
          }
+         
+         //+------------------------------------------------------------------+
+         //| Phần dành cho Gann belong to Internal Trend                      |
+         //+------------------------------------------------------------------+
+         if(tfData.isHighTF) {
+            // Truyền trạng thái gann Trend vào valueInternal
+            setValueToGannSwingHTF(tfData, 1);
+         }
+         
          //+------------------------------------------------------------------+
          //| Phần dành cho scalping Robot                                     |
          //+------------------------------------------------------------------+
@@ -4731,9 +4804,10 @@ struct marketStructs{
             }
          }
          
+         //+------------------------------------------------------------------+
+         //| Phần dành cho Gann belong to Internal Trend                      |
+         //+------------------------------------------------------------------+
          if (tfData.isHighTF) {
-            // Truyền trạng thái gann Trend vào valueInternal
-            setValueToGannSwingHTF(tfData);
             // Kiem tra xem co phai swing pullback hay khong
             if (resulCheckPullbackGannLow && myEAs.valueInternal.vi_TempSwing_Low.main.vins_SwingNew != 0){
                setValueToCandidateSwingHTF(tfData, bar2, 1);
@@ -5068,6 +5142,15 @@ struct marketStructs{
                scanInternalTradeZoneHighTF(tfData, bar1);
             }
          }
+         
+         //+------------------------------------------------------------------+
+         //| Phần dành cho Gann belong to Internal Trend                      |
+         //+------------------------------------------------------------------+
+         if (tfData.isHighTF) {
+            // Truyền trạng thái gann Trend vào valueInternal
+            setValueToGannSwingHTF(tfData, -1);
+         }
+         
          //+------------------------------------------------------------------+
          //| Phần dành cho scalping Robot                                     |
          //+------------------------------------------------------------------+
@@ -5108,8 +5191,8 @@ struct marketStructs{
          }
          
          if(tfData.isHighTF) {
-            // Truyền trạng thái gann Trend vào valueInternal
-            setValueToGannSwingHTF(tfData);
+            // Thay đổi trạng thái gann Trend vào valueInternal
+            changeValueToGannInternalSwingHTF(tfData);
          }
       }
       
@@ -5130,8 +5213,8 @@ struct marketStructs{
          }
          
          if(tfData.isHighTF) {
-            // Truyền trạng thái gann Trend vào valueInternal
-            setValueToGannSwingHTF(tfData);
+            // Thay đổi trạng thái gann Trend vào valueInternal
+            changeValueToGannInternalSwingHTF(tfData);
          }
       }
       // END Gann wave
@@ -5703,8 +5786,6 @@ struct marketStructs{
          myEAs.signalInternal.sg_wvIsSellInternal = getStatusInternalBuySell(tfData, -1);
          //Print("== SET thong so Status Global Signal Thanh cong==");
          
-         //// Truyền trạng thái gann Trend vào valueInternal
-         //setValueToGannSwingHTF(tfData);
       } else { // Set thong so co ban cho Low Timeframe
          if (myEAs.marketStructStatus.iMSS_findH == 1) {
             if (myEAs.marketStructStatus.iMSS_H_AF_LTFRealTime <= 0 || (myEAs.marketStructStatus.iMSS_H_AF_LTFRealTime > 0 && myEAs.marketStructStatus.iMSS_H_AF_LTFRealTime < tfData.intSHighs[0])) {
@@ -7811,7 +7892,7 @@ void sendNoti(string message = "") {
    ENUM_TIMEFRAMES chartTF = ChartPeriod(0); // 0 là chart_ID hiện tại
    string tfName = EnumToString(chartTF);
    
-   string first_text = StringFormat("[%s.%s] %d(%d) IsBuy: %s_%s - IsSell: %s_%s | Gann: %d", tfName, _Symbol, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend, isBuyHTF, isTypeBreakBuyHTF, isSellHTF, isTypeBreakSellHTF, myEAs.valueInternal.vi_GTrend);
+   string first_text = StringFormat("[%s.%s] %d(%d) IsBuy: %s_%s - IsSell: %s_%s | Gann: %d", tfName, _Symbol, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend, isBuyHTF, isTypeBreakBuyHTF, isSellHTF, isTypeBreakSellHTF, myEAs.valueInternal.vi_GITrend);
    text += StringFormat(" - Mtrend: %d(%d) | get IDM: %s | Itrend: %d(%d) - TP: %s(%s) - SL: %s(%s) - SnR: %s",
                               myEAs.valueInternal.vi_mTrend, myEAs.valueInternal.vi_wvmTrend, getIdm, myEAs.valueInternal.vi_ITrend, myEAs.valueInternal.vi_wvITrend,
                               DoubleToString(iTarget,_Digits), ((iTarget_isMitigatedPoizone || iTarget_isSweptSwing)? "W!" : "OK"),  
